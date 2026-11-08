@@ -4,9 +4,11 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.app.AppOpsManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.PowerManager;
+import android.os.Process;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.webkit.JavascriptInterface;
@@ -70,6 +72,23 @@ public class AndroidBridge {
         }
     }
 
+    private boolean granted(String str) {
+        try {
+            return this.act.checkSelfPermission(str) == 0;
+        } catch (Throwable th) {
+            return false;
+        }
+    }
+
+    private boolean usageAccess() {
+        try {
+            AppOpsManager appOpsManager = (AppOpsManager) this.act.getSystemService(Context.APP_OPS_SERVICE);
+            return appOpsManager != null && appOpsManager.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), this.act.getPackageName()) == 0;
+        } catch (Throwable th) {
+            return false;
+        }
+    }
+
     @JavascriptInterface
     public String getSettings() {
         try {
@@ -88,6 +107,10 @@ public class AndroidBridge {
                 z = this.act.checkSelfPermission("android.permission.READ_EXTERNAL_STORAGE") == 0;
             }
             jSONObject.put("storage", z);
+            jSONObject.put("dev", granted("android.permission.WRITE_SECURE_SETTINGS"));
+            jSONObject.put("dump", granted("android.permission.DUMP"));
+            jSONObject.put("logs", granted("android.permission.READ_LOGS"));
+            jSONObject.put("usage", usageAccess());
             return jSONObject.toString();
         } catch (Throwable th) {
             return "{}";

@@ -79,7 +79,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, ~192.4 МБ | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 4, versionName 1.3 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 5, versionName 1.4 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `C:\Users\WorkPC\AppData\Local\Temp\opencode-src`
@@ -127,11 +127,13 @@ C:\Users\WorkPC\Desktop\OpenCodeAPK\
 │       ├── OnboardingActivity.java ← первый запуск (права, папка, модель)
 │       ├── Notifications.java    ← канал уведомлений и показ
 │       ├── Updater.java          ← проверка/скачивание обновлений OpenCode
+│       ├── DeviceService.java    ← occtl: settings/pkg/app для агента (localhost)
 │       └── BootReceiver.java     ← автозапуск после перезагрузки
 ├── tools\
 │   ├── dev_server.py             ← отладка страницы в браузере на ПК
 │   ├── cdp.py                    ← управление WebView телефона через CDP
-│   └── clean_project.py          ← уборка build/ и дублей после рабочей сборки
+│   ├── clean_project.py          ← уборка build/ и дублей после рабочей сборки
+│   └── enable_powers.bat/.sh     ← разовая выдача расширенных прав через ADB
 ```
 
 ## 5. Сборка и установка
@@ -257,6 +259,12 @@ adb install --no-incremental -r -d OpenCodeAndroid.apk
   можно выключить, но тогда пропадёт `run-as`/CDP-отладка.
 - `MANAGE_EXTERNAL_STORAGE` + legacy storage: приложение получает доступ к `/sdcard`.
   Пользователь должен разрешить «Доступ ко всем файлам» (или READ/WRITE на старых).
+- **Расширенные права (1.4)**: `WRITE_SECURE_SETTINGS`, `DUMP`, `READ_LOGS`,
+  `INTERACT_ACROSS_USERS`, `PACKAGE_USAGE_STATS` выдаются только вручную через
+  `adb` (`tools/enable_powers.bat`) и дают агенту менять системные настройки,
+  читать `dumpsys`/`logcat`. `DeviceService` (`occtl`) слушает только
+  `127.0.0.1` и требует токен из `files/.occtl`. Для Play Store такие права
+  и `debuggable` нужно убирать.
 
 ## 8. Отладка
 
@@ -418,6 +426,11 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
 9. **Обновление OpenCode** — ✅ есть `Updater` (проверка/скачивание с бэкапом);
    `opencode upgrade` внутри APK не работает — обновление через APK.
 10. **Git исходников** — ✅ репозиторий вне Drive, см. раздел 13.
+11. **Расширенные права** — ✅ 1.4: одноразовый `tools/enable_powers.bat`,
+    `occtl`, обёртки `settings`/`pm`; агент меняет системные настройки,
+    читает `dumpsys`/`logcat`, открывает удаление приложений.
+12. **Shizuku** — следующий шаг для полного shell (uid 2000) без ПК:
+    тихое удаление/отключение приложений, `pm revoke`, `input`.
 
 ## 11. Быстрый чек-лист после изменений
 
@@ -505,3 +518,66 @@ git log --oneline -5
 
 При переносе проекта на другой ПК git-dir нужно скопировать отдельно
 (он лежит рядом с папкой проекта, не внутри неё).
+
+## 14. Расширенные права и occtl (1.4)
+
+### Почему обычных разрешений недостаточно
+
+Android не даёт приложению shell-права (uid 2000) или root (uid 0) через
+манифест. Даже с `MANAGE_EXTERNAL_STORAGE` процесс остаётся
+`untrusted_app` и не может:
+
+- удалять/отключать чужие приложения (`DELETE_PACKAGES`,
+  `CHANGE_COMPONENT_ENABLED_STATE`);
+- отзывать runtime-разрешения (`REVOKE_RUNTIME_PERMISSIONS`);
+- выполнять `input`, `am start`, `pm disable-user`;
+- читать данные других приложений.
+
+`WRITE_SECURE_SETTINGS`, `DUMP`, `READ_LOGS`, `INTERACT_ACROSS_USERS`,
+`PACKAGE_USAGE_STATS` — **development**-разрешения: их можно выдать один раз
+с ПК через `adb`, и они сохраняются до переустановки.
+
+### Что сделано в 1.4
+
+1. В манифест добавлены development-разрешения.
+2. `tools/enable_powers.bat` (Windows) / `.sh` (Linux/macOS) выдают их:
+   ```powershell
+   tools\enable_powers.bat
+   ```
+3. Добавлен `DeviceService` — локальный сервер на `127.0.0.1` (токен в
+   `files/.occtl`). Клиент — `occtl` в `files/usr/bin`:
+   ```
+   occtl settings get|put|delete system|secure|global KEY [VALUE]
+   occtl pkg list [-3] | occtl pkg path PACKAGE
+   occtl app details|uninstall|notifications|usage PACKAGE
+   occtl toast "текст" | occtl notify "заголовок" "текст"
+   occtl info
+   ```
+4. В `files/usr/bin` добавлены обёртки `settings` и `pm` (PATH ставит их
+   раньше `/system/bin`). Поэтому существующие команды агента работают:
+   - `settings get/put/delete ...` → пишет через API приложения;
+   - `pm list packages` → список пакетов;
+   - `pm uninstall PACKAGE` → системный диалог удаления;
+   - `pm path PACKAGE` → путь к APK.
+5. Глобальный `~/.config/opencode/AGENTS.md` объясняет агенту, что доступно,
+   а что требует Shizuku/root.
+
+### Что теперь реально может агент
+
+- читать и **менять** `system/secure/global` настройки (включая отключение
+  ADB, accessibility, notification listeners — если вендор не запретил);
+- `dumpsys`, `logcat`, списки пакетов, пути APK;
+- открыть экран удаления/настроек приложения (пользователь подтверждает);
+- тосты/уведомления.
+
+### Что всё ещё требует Shizuku или root
+
+- тихое удаление/отключение приложений (`pm uninstall/disable-user`);
+- отзыв runtime-разрешений (`pm revoke`);
+- инъекция ввода (`input`), автоматизация UI;
+- чтение приватных данных чужих приложений;
+- `pm install` без диалога.
+
+План на будущее: интеграция **Shizuku** (пользователь один раз запускает его
+через ADB/беспроводную отладку) — тогда приложение получает настоящий shell
+uid 2000 и перечисленные операции становятся доступны без ПК.

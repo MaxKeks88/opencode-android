@@ -23,9 +23,11 @@ public final class Runtime {
         File file = new File(App.usr, ".version");
         if (file.exists() && str.equals(readText(file).trim()) && App.loader().isFile() && App.opencode().isFile() && App.opencode().length() > 100000000) {
             writeWrappers();
+            syncOcctl(context);
             writeGitConfig();
             writeSshConfig();
             writePasswdFile();
+            writeDeviceGuide();
             return;
         }
         App.log("распаковка рантайма " + str + " → " + String.valueOf(App.usr));
@@ -55,6 +57,8 @@ public final class Runtime {
         App.makeExecutable(new File(App.usr, "python/lib/ld-musl-aarch64.so.1"));
         writeWrappers();
         writeConfig();
+        syncOcctl(context);
+        writeDeviceGuide();
         writeGitConfig();
         writeSshConfig();
         writePasswdFile();
@@ -375,6 +379,49 @@ public final class Runtime {
             return;
         }
         writeText(file2, "{\n  \"$schema\": \"https://opencode.ai/config.json\",\n  \"shell\": \"/system/bin/sh\"\n}\n");
+    }
+
+    /** occtl — команды, которым нужны права приложения (settings, pkg, app). */
+    private static void syncOcctl(Context context) {
+        try {
+            copyIfExists(context.getAssets(), "runtime/occtl.py", new File(App.bin, "occtl.py"), false);
+            File occtl = new File(App.bin, "occtl");
+            writeText(occtl, "#!/system/bin/sh\nB=\"" + App.bin.getAbsolutePath() + "\"\nexec \"$B/python3\" \"$B/occtl.py\" \"$@\"\n");
+            App.makeExecutable(occtl);
+            File settings = new File(App.bin, "settings");
+            writeText(settings, "#!/system/bin/sh\nB=\"" + App.bin.getAbsolutePath() + "\"\nexec \"$B/occtl\" settings \"$@\"\n");
+            App.makeExecutable(settings);
+            File pm = new File(App.bin, "pm");
+            writeText(pm, "#!/system/bin/sh\nB=\"" + App.bin.getAbsolutePath() + "\"\ncase \"$1\" in\n" +
+                "  uninstall|delete) shift; exec \"$B/occtl\" app uninstall \"$@\" ;;\n" +
+                "  list) shift; [ \"$1\" = packages ] && shift; \"$B/occtl\" pkg list \"$@\" | sed 's/^/package:/' ;;\n" +
+                "  path) shift; exec \"$B/occtl\" pkg path \"$@\" ;;\n" +
+                "esac\nexec /system/bin/pm \"$@\"\n");
+            App.makeExecutable(pm);
+        } catch (Throwable th) {
+            App.log("syncOcctl: " + String.valueOf(th));
+        }
+    }
+
+    /** Подсказка агенту, какие команды доступны внутри приложения. */
+    private static void writeDeviceGuide() {
+        String text =
+            "# Устройство Android (OpenCode app)\n\n" +
+            "Ты работаешь внутри приложения OpenCode на телефоне под uid приложения (не root, не shell).\n\n" +
+            "Доступно без дополнительных прав:\n" +
+            "- `settings get|put|delete system|secure|global KEY [VALUE]` — уже перенаправляется\n" +
+            "  в приложение (обёртка в PATH), поэтому просто используй обычную команду.\n" +
+            "- `occtl pkg list [-3]` — список пакетов; `occtl pkg path PACKAGE` — путь к APK.\n" +
+            "- `occtl app uninstall PACKAGE` — открыть системное подтверждение удаления.\n" +
+            "- `occtl app details PACKAGE` — открыть настройки приложения.\n" +
+            "- `occtl notify \"Заголовок\" \"Текст\"`, `occtl toast \"Текст\"`.\n" +
+            "- `occtl info` — версия, модель, порт OpenCode.\n\n" +
+            "Если в приложении выданы расширенные права (ADB): работают `dumpsys`, `logcat`,\n" +
+            "запись secure/global settings.\n\n" +
+            "Недоступно без root или Shizuku: `pm install`, `pm uninstall`, `pm disable-user`,\n" +
+            "`pm revoke`, `input`, чтение данных чужих приложений. Не утверждай, что выполнил\n" +
+            "такие действия: честно скажи, что нужен ADB/Shizuku/root.\n";
+        writeText(new File(App.home, ".config/opencode/AGENTS.md"), text);
     }
 
     private static String readText(File file) {

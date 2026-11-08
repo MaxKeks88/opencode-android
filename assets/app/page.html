@@ -348,6 +348,8 @@ details>summary::-webkit-details-marker{display:none}
 .permok{color:#4ade80}
 .permno{color:#ff7b72}
 .permwarn{color:#fbbf24}
+.pcode{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;
+  font-size:11.5px;line-height:1.5;color:var(--txt);overflow-x:auto;white-space:pre;margin:8px 0}
 .nfwrap{padding:12px}
 .nflab{font-size:11.5px;color:var(--dim);margin:0 2px 9px;word-break:break-all}
 .nfin{width:100%;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:10px;
@@ -2207,6 +2209,12 @@ function renderPermissions(){
             s.battery ? "Настройки" : "Отключить", "battery") +
     permRow("💾", "Хранилище", "Доступ к /sdcard", yes(s.storage), cls(s.storage),
             s.storage ? "Настройки" : "Разрешить", "storage") +
+    permRow("🛠", "Расширенные права",
+            "dumpsys " + (s.dump ? "✓" : "✗") + " · logcat " + (s.logs ? "✓" : "✗") +
+            " · usage " + (s.usage ? "✓" : "✗"),
+            s.dev ? "настройки телефона разрешены" : "только через ADB",
+            s.dev ? "permok" : "permno",
+            s.dev ? "Проверить" : "Инструкция", "power") +
     setRow("keep_screen_on", "💡", "Не выключать экран",
            "экран не гаснет, пока приложение открыто", !!s.keep_screen_on) +
     '<div class="setnote">Автозапуск после перезагрузки включён. Интернет — всегда.</div>';
@@ -2214,6 +2222,7 @@ function renderPermissions(){
     el.onclick = () => {
       const a = el.dataset.perm;
       try{
+        if(a === "power"){ powerHelp(); return; }
         if(a === "notif" && BR.openNotifSettings) BR.openNotifSettings();
         else if(a === "battery" && BR.openBatterySettings) BR.openBatterySettings();
         else if(BR.requestStorage) BR.requestStorage();
@@ -2221,6 +2230,31 @@ function renderPermissions(){
       }catch(e){ toast("Не удалось открыть настройки", "err"); }
     };
   });
+}
+
+function powerHelp(){
+  const cmd = [
+    "adb shell pm grant ru.opencode.android android.permission.WRITE_SECURE_SETTINGS",
+    "adb shell pm grant ru.opencode.android android.permission.WRITE_SETTINGS",
+    "adb shell pm grant ru.opencode.android android.permission.DUMP",
+    "adb shell pm grant ru.opencode.android android.permission.READ_LOGS",
+    "adb shell pm grant ru.opencode.android android.permission.INTERACT_ACROSS_USERS",
+    "adb shell pm grant ru.opencode.android android.permission.MANAGE_APP_OPS_MODES",
+    "adb shell appops set ru.opencode.android GET_USAGE_STATS allow"
+  ].join("\n");
+  $("sbody").innerHTML =
+    '<div class="setnote">Один раз подключите телефон к ПК по USB (отладка включена) и выполните команды. ' +
+    'На ПК это делает <b>tools\\enable_powers.bat</b>. После этого агент сможет менять системные настройки, ' +
+    'читать dumpsys/logcat и писать в secure settings.</div>' +
+    '<pre class="pcode">' + esc(cmd) + '</pre>' +
+    '<div class="btn" data-copypower="1">📋 Копировать команды</div>' +
+    '<div class="btn" data-recheckpower="1">🔄 Проверить снова</div>' +
+    '<div class="setnote">Без этих прав (и без Shizuku/root) приложение — обычный untrusted_app: ' +
+    'Android не разрешает ему удалять чужие приложения и менять системные настройки.</div>';
+  const cp = $("sbody").querySelector("[data-copypower]");
+  if(cp) cp.onclick = () => { try{ BR.copyText(cmd); toast("Команды скопированы"); }catch(e){} };
+  const rc = $("sbody").querySelector("[data-recheckpower]");
+  if(rc) rc.onclick = () => renderSettings();
 }
 
 /* ---- статистика подписки OpenCode Go ---- */

@@ -1029,6 +1029,9 @@ $("att").onclick = e => {
 
 /* ---------------------------------------------------- состояние / UI ---- */
 function applyState(st){
+  const prevMessages = S.messages;
+  const prevHasOlder = S.hasOlder;
+  const prevAtts = JSON.stringify(S.attachments || []);
   S.online = st.online; S.busy = st.busy; S.chat = st.chat || {};
   S.chats = st.chats || []; S.messages = st.messages || [];
   S.attachments = st.attachments || []; S.hasOlder = st.hasOlder;
@@ -1037,7 +1040,18 @@ function applyState(st){
   S.server = st.server || {};
   S.media = st.media || S.media || [];
   setBusy(S.busy);
-  renderAll();
+  /* Полное состояние приходит и при периодической сверке. Если сообщения
+     не изменились — не пересобираем список (иначе экран мигает). */
+  const sameMessages = prevMessages && prevMessages.length === S.messages.length &&
+    S.messages.every((m, i) => m && prevMessages[i] &&
+      m.id && m.id === prevMessages[i].id &&
+      JSON.stringify(m) === JSON.stringify(prevMessages[i]));
+  if(sameMessages && prevHasOlder === S.hasOlder && msgsEl.children.length){
+    if(prevAtts !== JSON.stringify(S.attachments || [])) renderAtt();
+    updJump();
+  } else {
+    renderAll();
+  }
   renderHead();
   renderDrawer();
   renderAsks();

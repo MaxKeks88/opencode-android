@@ -434,8 +434,10 @@
     try {
       switch (o.t) {
         case "init":
+          await refreshAll(true);
+          break;
         case "refresh":
-          await refreshAll();
+          await refreshAll(false);
           break;
         case "open":
           await openSession(o.id);
@@ -1009,7 +1011,7 @@
     } catch (e) {}
   }
 
-  async function refreshAll() {
+  async function refreshAll(full) {
     await refreshChats();
     await refreshActive();
     if (!BS.sid && BS.chats.length) BS.sid = BS.chats[0].id;
@@ -1021,7 +1023,10 @@
       await refreshAsks();
       await tailRefresh();
     }
-    applyState();
+    // Периодическая сверка (команда refresh) не должна перерисовывать весь чат:
+    // шлём только изменения, иначе экран мигает каждые ~25 секунд.
+    if (full === false) push();
+    else applyState();
   }
 
   /* ------------------------------------------------------------- запуск --- */

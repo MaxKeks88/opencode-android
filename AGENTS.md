@@ -406,6 +406,11 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
     `m28lambda$exportBackup$16$...`, а часть методов выглядит иначе, чем
     писалось изначально. Перед крупными правками делайте резервную копию
     `app/src` (архив: `C:\Users\WorkPC\Desktop\OpenCodeAPK-src-2026-11-08.zip`).
+25. **Периодический `refresh` не должен слать полный `state`.** Иначе страница
+    вызывает `renderAll()`, очищает и заново строит весь список сообщений —
+    экран мигает каждые ~25–30 секунд. `refreshAll(false)` в `bridge.js` шлёт
+    `push()` (только изменения), а `applyState()` пропускает `renderAll`, если
+    сообщения не изменились. Полный `state` — только для `init`/открытия чата.
 
 ## 10. Что осталось / следующие шаги
 

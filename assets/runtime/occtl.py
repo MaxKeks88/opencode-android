@@ -2,18 +2,20 @@
 """Клиент к DeviceService внутри приложения OpenCode.
 
 Примеры:
-  occtl settings get global adb_enabled
-  occtl settings put secure enabled_accessibility_services ""
-  occtl pkg list -3
+  occtl settings get|put|delete|list system|secure|global KEY [VALUE]
+  occtl pkg list [-3]
   occtl pkg path org.telegram.messenger
   occtl app uninstall ai.android.claw
   occtl app details ai.android.claw
   occtl toast "Готово"
   occtl notify "OpenCode" "Текст"
   occtl info
+  occtl sh pm list packages          # shell-команда через Shizuku (полный доступ)
+  occtl sh-ready                     # проверка полного доступа (exit 0 = есть)
 """
 import json
 import os
+import shlex
 import socket
 import sys
 
@@ -42,8 +44,17 @@ def main():
         print(__doc__.strip(), file=sys.stderr)
         return 2
     port, token = endpoint()
-    req = json.dumps({"token": token, "cmd": args[0], "args": args[1:]}, ensure_ascii=False) + "\n"
-    with socket.create_connection(("127.0.0.1", port), timeout=30) as conn:
+    if args[0] == "sh":
+        payload = {
+            "token": token,
+            "cmd": "sh",
+            "args": [shlex.join(args[1:]) if len(args) > 1 else ""],
+            "cwd": os.getcwd(),
+        }
+    else:
+        payload = {"token": token, "cmd": args[0], "args": args[1:], "cwd": os.getcwd()}
+    req = json.dumps(payload, ensure_ascii=False) + "\n"
+    with socket.create_connection(("127.0.0.1", port), timeout=120) as conn:
         conn.sendall(req.encode("utf-8"))
         data = b""
         while True:
@@ -58,7 +69,7 @@ def main():
         out = resp.get("out") or ""
         if out:
             sys.stdout.write(out if out.endswith("\n") else out + "\n")
-        return 0
+        return int(resp.get("code") or 0)
     sys.stderr.write((resp.get("error") or "occtl: error") + "\n")
     return 1
 

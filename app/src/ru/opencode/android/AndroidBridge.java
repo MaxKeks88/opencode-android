@@ -159,6 +159,89 @@ public class AndroidBridge {
     }
 
     @JavascriptInterface
+    public String shizukuStatus() {
+        try {
+            JSONObject jSONObject = new JSONObject();
+            jSONObject.put("installed", ShizukuBridge.installed(this.act));
+            jSONObject.put("running", ShizukuBridge.running());
+            jSONObject.put("granted", ShizukuBridge.granted());
+            jSONObject.put("uid", ShizukuBridge.uid());
+            jSONObject.put("version", ShizukuBridge.version());
+            return jSONObject.toString();
+        } catch (Throwable th) {
+            return "{}";
+        }
+    }
+
+    @JavascriptInterface
+    public void shizukuRequest() {
+        this.act.runOnUiThread(new Runnable() {
+            @Override // java.lang.Runnable
+            public void run() {
+                ShizukuBridge.requestPermission();
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void openShizuku() {
+        this.act.runOnUiThread(new Runnable() {
+            @Override // java.lang.Runnable
+            public void run() {
+                try {
+                    Intent intent = AndroidBridge.this.act.getPackageManager().getLaunchIntentForPackage("moe.shizuku.privileged.api");
+                    if (intent != null) {
+                        AndroidBridge.this.act.startActivity(intent);
+                        return;
+                    }
+                } catch (Throwable th) {
+                }
+                try {
+                    AndroidBridge.this.act.startActivity(new Intent("android.intent.action.VIEW", Uri.parse("https://shizuku.rikka.app/download/")));
+                } catch (Throwable th2) {
+                    App.log("openShizuku: " + String.valueOf(th2));
+                }
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void openDeveloperOptions() {
+        this.act.runOnUiThread(new Runnable() {
+            @Override // java.lang.Runnable
+            public void run() {
+                try {
+                    AndroidBridge.this.act.startActivity(new Intent("android.settings.APPLICATION_DEVELOPMENT_SETTINGS"));
+                } catch (Throwable th) {
+                    try {
+                        AndroidBridge.this.act.startActivity(new Intent("android.settings.SETTINGS"));
+                    } catch (Throwable th2) {
+                        App.log("openDeveloperOptions: " + String.valueOf(th2));
+                    }
+                }
+            }
+        });
+    }
+
+    @JavascriptInterface
+    public void openWirelessDebugging() {
+        this.act.runOnUiThread(new Runnable() {
+            @Override // java.lang.Runnable
+            public void run() {
+                try {
+                    AndroidBridge.this.act.startActivity(new Intent("android.settings.WIRELESS_DEBUGGING"));
+                } catch (Throwable th) {
+                    try {
+                        AndroidBridge.this.act.startActivity(new Intent("android.settings.APPLICATION_DEVELOPMENT_SETTINGS"));
+                    } catch (Throwable th2) {
+                        App.log("openWirelessDebugging: " + String.valueOf(th2));
+                    }
+                }
+            }
+        });
+    }
+
+    @JavascriptInterface
     public void pickFile() {
         this.act.runOnUiThread(new Runnable() { // from class: ru.opencode.android.AndroidBridge.3
             @Override // java.lang.Runnable

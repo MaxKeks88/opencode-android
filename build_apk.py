@@ -7,6 +7,7 @@ BASE = Path(os.path.abspath(__file__)).parent
 APP = BASE / "app"
 BUILD = BASE / "build"
 ASSETS = BASE / "assets"
+LIBS = BASE / "libs"
 OUT = BASE / "OpenCodeAndroid.apk"
 
 SDK = Path(os.environ.get("ANDROID_SDK_ROOT") or os.environ.get("ANDROID_HOME") or
@@ -96,15 +97,17 @@ def main():
          "-A", ASSETS, "--java", BUILD / "gen", "--auto-add-overlay"])
 
     # 3. java
+    libs = sorted(LIBS.glob("*.jar")) if LIBS.exists() else []
+    classpath = [str(android_jar)] + [str(p) for p in libs]
     srcs = [str(p) for p in (APP / "src").rglob("*.java")]
     srcs += [str(p) for p in (BUILD / "gen").rglob("*.java")]
     run([JAVAC, "-encoding", "UTF-8", "-source", "11", "-target", "11",
-         "-classpath", android_jar, "-d", BUILD / "classes"] + srcs)
+         "-classpath", os.pathsep.join(classpath), "-d", BUILD / "classes"] + srcs)
 
     # 4. dex
     run([JAR, "cf", BUILD / "classes.jar", "-C", BUILD / "classes", "."])
     run([d8, "--lib", android_jar, "--min-api", "26", "--output", BUILD / "dex",
-         BUILD / "classes.jar"])
+         BUILD / "classes.jar"] + [str(p) for p in libs])
 
     # 5. собрать APK
     out = BUILD / "unsigned.apk"

@@ -302,6 +302,7 @@ details>summary::-webkit-details-marker{display:none}
 #sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg2);border-top:1px solid var(--line);
   border-radius:18px 18px 0 0;z-index:50;transform:translateY(102%);transition:transform .24s cubic-bezier(.2,.8,.2,1);
   max-height:82dvh;display:flex;flex-direction:column}
+#sheet.full{top:0;height:100dvh;max-height:100dvh;border-radius:0}
 #sheet.on{transform:none}
 .shead{display:flex;align-items:center;padding:13px 14px;border-bottom:1px solid var(--line);font-weight:600}
 .shead .t{flex:1}
@@ -350,6 +351,21 @@ details>summary::-webkit-details-marker{display:none}
 .permwarn{color:#fbbf24}
 .pcode{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;
   font-size:11.5px;line-height:1.5;color:var(--txt);overflow-x:auto;white-space:pre;margin:8px 0}
+.warnbox{background:#2a2413;border:1px solid #b8860b;border-radius:12px;padding:12px 14px;
+  color:#ffd479;font-size:13px;line-height:1.5;margin:4px 4px 12px}
+.powerstat{display:flex;align-items:center;gap:10px;padding:12px;margin:0 4px 10px;
+  background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.powerstat .a{font-size:14px;color:var(--txt)}
+.powerstat .b{font-size:12px;color:var(--dim);margin-top:3px}
+.step{display:flex;gap:10px;padding:11px 4px;border-bottom:1px solid var(--line)}
+.step .num{flex:0 0 26px;height:26px;border-radius:50%;background:var(--panel2);border:1px solid var(--line);
+  color:var(--txt);font-size:12.5px;display:flex;align-items:center;justify-content:center}
+.step .txt{flex:1;min-width:0}
+.step .a{font-size:14px;color:var(--txt)}
+.step .b{font-size:12px;color:var(--dim);line-height:1.5;margin-top:3px}
+.step .btn{margin-top:8px;padding:7px 12px;font-size:12.5px;display:inline-block}
+.pathhead{font-size:14px;color:var(--txt);font-weight:600;padding:14px 4px 2px}
+.pathsub{font-size:11.5px;color:var(--dim2);padding:0 4px 6px}
 .nfwrap{padding:12px}
 .nflab{font-size:11.5px;color:var(--dim);margin:0 2px 9px;word-break:break-all}
 .nfin{width:100%;box-sizing:border-box;background:var(--panel);border:1px solid var(--line);border-radius:10px;
@@ -1323,6 +1339,7 @@ function openDrawer(on){
 function openSheet(mode, title){
   sheetMode = mode;
   $("sheettitle").textContent = title || "";
+  $("sheet").classList.toggle("full", mode === "power");
   $("fsbar").style.display =
     (mode === "workdir" || mode === "attach-file" || mode === "attach-folder" ||
      mode === "attach-phone") ? "block" : "none";
@@ -1334,6 +1351,7 @@ function openSheet(mode, title){
 function closeSheet(){
   sheetMode = null; armed = null;
   $("settabs").classList.remove("on");
+  $("sheet").classList.remove("full");
   $("sheet").classList.remove("on");
   $("scrim").classList.toggle("on", drawerOpen);
 }
@@ -2214,15 +2232,18 @@ function renderPermissions(){
             " · usage " + (s.usage ? "✓" : "✗"),
             s.dev ? "настройки телефона разрешены" : "только через ADB",
             s.dev ? "permok" : "permno",
-            s.dev ? "Проверить" : "Инструкция", "power") +
+            s.dev ? "Проверить" : "Инструкция", "dev") +
     setRow("keep_screen_on", "💡", "Не выключать экран",
            "экран не гаснет, пока приложение открыто", !!s.keep_screen_on) +
-    '<div class="setnote">Автозапуск после перезагрузки включён. Интернет — всегда.</div>';
+    '<div class="setnote">Автозапуск после перезагрузки включён. Интернет — всегда.</div>' +
+    '<div class="btn" data-power="1" style="margin-top:14px">🔓 Полные разрешения (shell)</div>' +
+    '<div class="setnote">Удаление и отключение приложений, pm revoke, input, установка APK. ' +
+    'Требуется Shizuku и разовая настройка через ПК или Wi‑Fi.</div>';
   $("sbody").querySelectorAll("[data-perm]").forEach(el => {
     el.onclick = () => {
       const a = el.dataset.perm;
       try{
-        if(a === "power"){ powerHelp(); return; }
+        if(a === "dev"){ powerHelp(); return; }
         if(a === "notif" && BR.openNotifSettings) BR.openNotifSettings();
         else if(a === "battery" && BR.openBatterySettings) BR.openBatterySettings();
         else if(BR.requestStorage) BR.requestStorage();
@@ -2230,6 +2251,8 @@ function renderPermissions(){
       }catch(e){ toast("Не удалось открыть настройки", "err"); }
     };
   });
+  const pwr = $("sbody").querySelector("[data-power]");
+  if(pwr) pwr.onclick = () => openPower();
 }
 
 function powerHelp(){
@@ -2255,6 +2278,125 @@ function powerHelp(){
   if(cp) cp.onclick = () => { try{ BR.copyText(cmd); toast("Команды скопированы"); }catch(e){} };
   const rc = $("sbody").querySelector("[data-recheckpower]");
   if(rc) rc.onclick = () => renderSettings();
+}
+
+/* ---- полные разрешения (Shizuku, shell uid 2000) ---- */
+function shizukuInfo(){
+  try{ return JSON.parse(BR.shizukuStatus ? BR.shizukuStatus() : "{}") || {}; }catch(e){ return {}; }
+}
+
+function openPower(){
+  openDrawer(false);
+  openSheet("power", "🔓 Полные разрешения");
+  renderPower();
+}
+
+function pwrStep(n, title, textHtml, buttonHtml){
+  return '<div class="step"><div class="num">' + n + '</div><div class="txt">' +
+    '<div class="a">' + title + '</div><div class="b">' + textHtml + '</div>' +
+    (buttonHtml || '') + '</div></div>';
+}
+
+function powerSteps(s){
+  const installed = !!s.installed;
+  const running = !!s.running;
+  const granted = !!s.granted;
+  const instBtn = installed ? '' : '<div class="btn" data-pwr-install="1">Открыть страницу Shizuku</div>';
+  const devBtn = '<div class="btn" data-pwr-dev="1">Открыть настройки разработчика</div>';
+  const wifiBtn = '<div class="btn" data-pwr-wifi="1">Открыть отладку по Wi‑Fi</div>';
+  const shizukuBtn = '<div class="btn" data-pwr-shizuku="1">Открыть Shizuku</div>';
+  const copyBtn = '<div class="btn" data-pwr-copy="1">📋 Копировать ADB-команду</div>';
+  const checkBtn = '<div class="btn" data-pwr-check="1">🔄 Проверить снова</div>';
+  const reqBtn = running && !granted ? '<div class="btn pri" data-pwr-request="1">Разрешить Shizuku</div>' : '';
+
+  return '<div class="pathhead">Вариант 1 — с компьютером</div>' +
+    '<div class="pathsub">Проще и надёжнее: один раз подключить телефон к ПК по USB.</div>' +
+    pwrStep(1, "Установите Shizuku",
+      "Это отдельное приложение-посредник, оно даёт программам ADB-права. OpenCode не может " +
+      "установить его сам — откройте страницу и установите APK (или из магазина)." +
+      (installed ? " Уже установлен." : ""), instBtn) +
+    pwrStep(2, "Включите «Отладку по USB»",
+      "Настройки разработчика → «Отладка по USB». Если раздела нет: «О телефоне» → 7 раз нажать " +
+      "«Номер сборки».", devBtn) +
+    pwrStep(3, "Подключите телефон к ПК",
+      "Кабелем. На телефоне подтвердите «Разрешить отладку с этого компьютера».") +
+    pwrStep(4, "Запустите Shizuku с ПК",
+      "Для Shizuku 13.6+ используйте команду ниже: она берёт стартовый файл из APK Shizuku и " +
+      "запускает сервер. Для старых версий (11.2–13.5) подойдёт команда " +
+      "<code>adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh</code> — " +
+      "точную команду всегда показывает сам Shizuku в разделе «Запуск через соединение с ПК».",
+      shizukuBtn + copyBtn +
+      '<pre class="pcode">adb shell "APK=$(pm path moe.shizuku.privileged.api | sed \'s/package://\'); DIR=$(dirname $APK); cp $DIR/lib/arm64/libshizuku.so /data/local/tmp/shizuku; chmod 755 /data/local/tmp/shizuku; /data/local/tmp/shizuku"</pre>') +
+    pwrStep(5, "Разрешите и проверьте",
+      "Вернитесь сюда, нажмите «Разрешить Shizuku» — появится системный диалог Shizuku. " +
+      "Затем «Проверить снова».", reqBtn + checkBtn) +
+    '<div class="pathhead">Вариант 2 — без компьютера (Wi‑Fi)</div>' +
+    '<div class="pathsub">Нужны Shizuku и включённый Wi‑Fi; интернет не обязателен.</div>' +
+    pwrStep(1, "Включите Wi‑Fi",
+      "«Отладка по Wi‑Fi» работает при включённом Wi‑Fi (сеть может быть любой).") +
+    pwrStep(2, "Включите «Отладку по Wi‑Fi»",
+      "Настройки разработчика → «Отладка по Wi‑Fi».", wifiBtn) +
+    pwrStep(3, "Нажмите «Сопряжение устройства с помощью кода»",
+      "Телефон покажет 6-значный код. Не закрывайте этот экран.") +
+    pwrStep(4, "Введите код в Shizuku",
+      "Откройте Shizuku → «Сопряжение»/«Запуск по беспроводной отладке», введите код. " +
+      "Shizuku запустится сам.", shizukuBtn) +
+    pwrStep(5, "Разрешите и проверьте",
+      "Вернитесь сюда, нажмите «Разрешить Shizuku», затем «Проверить снова».",
+      reqBtn + checkBtn);
+}
+
+function renderPower(){
+  const s = shizukuInfo();
+  const ok = !!s.granted;
+  let state;
+  if(!s.installed) state = "Shizuku не установлен";
+  else if(!s.running) state = "Shizuku установлен, но не запущен";
+  else if(!s.granted) state = "Shizuku запущен, нужно разрешение";
+  else state = "Полный доступ включён (uid " + s.uid + ")";
+  $("sbody").innerHTML =
+    '<div class="warnbox">⚠️ <b>Перед началом.</b> После перезагрузки телефона полный доступ ' +
+    'сбрасывается: Shizuku нужно запустить заново (через ПК или Wi‑Fi). В новых версиях Shizuku ' +
+    'есть автозапуск на доверенном Wi‑Fi, но надёжнее рассчитывать на повторный запуск. ' +
+    'Все действия вы выполняете на свой страх и риск.</div>' +
+    '<div class="powerstat"><div class="n"><div class="a">Полный доступ (shell)</div>' +
+    '<div class="b"><span class="' + (ok ? "permok" : "permno") + '">' + esc(state) + '</span></div></div></div>' +
+    '<div class="btn pri" id="pwrHow">Что надо делать</div>' +
+    '<div id="pwrSteps" style="display:none">' + powerSteps(s) + '</div>' +
+    '<div class="setnote">Полный доступ даёт агенту права shell (uid 2000): удаление и отключение ' +
+    'приложений, pm revoke, input, установка APK. Без него агент может менять настройки и читать ' +
+    'dumpsys/logcat, но не удалять приложения.</div>';
+  $("pwrHow").onclick = () => {
+    const box = $("pwrSteps");
+    const show = box.style.display === "none";
+    box.style.display = show ? "block" : "none";
+    $("pwrHow").textContent = show ? "Скрыть инструкцию" : "Что надо делать";
+  };
+  bindPower();
+}
+
+function bindPower(){
+  const q = sel => $("sbody").querySelector(sel);
+  const on = (sel, fn) => { const el = q(sel); if(el) el.onclick = fn; };
+  on("[data-pwr-install]", () => BR.openShizuku && BR.openShizuku());
+  on("[data-pwr-dev]", () => BR.openDeveloperOptions && BR.openDeveloperOptions());
+  on("[data-pwr-wifi]", () => {
+    if(BR.openWirelessDebugging) BR.openWirelessDebugging();
+    else if(BR.openDeveloperOptions) BR.openDeveloperOptions();
+  });
+  on("[data-pwr-shizuku]", () => BR.openShizuku && BR.openShizuku());
+  on("[data-pwr-request]", () => {
+    if(BR.shizukuRequest) BR.shizukuRequest();
+    toast("Подтвердите запрос в диалоге Shizuku");
+    setTimeout(renderPower, 900);
+  });
+  on("[data-pwr-check]", () => renderPower());
+  on("[data-pwr-copy]", () => {
+    try{
+      BR.copyText('adb shell "APK=$(pm path moe.shizuku.privileged.api | sed \'s/package://\'); DIR=$(dirname $APK); cp $DIR/lib/arm64/libshizuku.so /data/local/tmp/shizuku; chmod 755 /data/local/tmp/shizuku; /data/local/tmp/shizuku"');
+      toast("Команда скопирована");
+    }catch(e){}
+  });
 }
 
 /* ---- статистика подписки OpenCode Go ---- */
@@ -3050,6 +3192,7 @@ $("pki").addEventListener("keydown", e => {
 document.addEventListener("visibilitychange", () => {
   if(document.hidden) return;
   if(sheetMode === "settings" && setTab === "perms") renderSettings();
+  if(sheetMode === "power") renderPower();
 });
 window.addEventListener("resize", () => { if(paneShown) paneApply(); });
 document.addEventListener("visibilitychange", () => {

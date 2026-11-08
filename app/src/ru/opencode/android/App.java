@@ -120,6 +120,7 @@ public class App extends Application {
             sharedPreferencesPrefs.edit().putString("local_token", localToken).apply();
         }
         log("=== OpenCode Android старт, sdk=" + Build.VERSION.SDK_INT + ", abi=" + Build.SUPPORTED_ABIS[0] + " ===");
+        ShizukuBridge.init();
         DeviceService.start(this);
         final Thread.UncaughtExceptionHandler prevHandler = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {

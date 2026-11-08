@@ -385,19 +385,46 @@ public final class Runtime {
     private static void syncOcctl(Context context) {
         try {
             copyIfExists(context.getAssets(), "runtime/occtl.py", new File(App.bin, "occtl.py"), false);
+            String bin = App.bin.getAbsolutePath();
             File occtl = new File(App.bin, "occtl");
-            writeText(occtl, "#!/system/bin/sh\nB=\"" + App.bin.getAbsolutePath() + "\"\nexec \"$B/python3\" \"$B/occtl.py\" \"$@\"\n");
+            writeText(occtl, "#!/system/bin/sh\nB=\"" + bin + "\"\nexec \"$B/python3\" \"$B/occtl.py\" \"$@\"\n");
             App.makeExecutable(occtl);
             File settings = new File(App.bin, "settings");
-            writeText(settings, "#!/system/bin/sh\nB=\"" + App.bin.getAbsolutePath() + "\"\nexec \"$B/occtl\" settings \"$@\"\n");
+            writeText(settings, "#!/system/bin/sh\nB=\"" + bin + "\"\nexec \"$B/occtl\" settings \"$@\"\n");
             App.makeExecutable(settings);
+            File ocsh = new File(App.bin, "ocsh");
+            writeText(ocsh, "#!/system/bin/sh\nB=\"" + bin + "\"\nexec \"$B/occtl\" sh \"$@\"\n");
+            App.makeExecutable(ocsh);
             File pm = new File(App.bin, "pm");
-            writeText(pm, "#!/system/bin/sh\nB=\"" + App.bin.getAbsolutePath() + "\"\ncase \"$1\" in\n" +
-                "  uninstall|delete) shift; exec \"$B/occtl\" app uninstall \"$@\" ;;\n" +
+            writeText(pm, "#!/system/bin/sh\nB=\"" + bin + "\"\n" +
+                "ready() { \"$B/occtl\" sh-ready >/dev/null 2>&1; }\n" +
+                "case \"$1\" in\n" +
+                "  uninstall|delete)\n" +
+                "    shift\n" +
+                "    if ready; then exec \"$B/ocsh\" pm uninstall \"$@\"; fi\n" +
+                "    exec \"$B/occtl\" app uninstall \"$@\" ;;\n" +
+                "  disable-user|disable|enable|revoke|grant|install|clear|force-stop|uninstall-system-updates)\n" +
+                "    if ready; then exec \"$B/ocsh\" pm \"$@\"; fi\n" +
+                "    echo \"pm $1: нужен полный доступ (Shizuku)\" >&2; exit 1 ;;\n" +
                 "  list) shift; [ \"$1\" = packages ] && shift; \"$B/occtl\" pkg list \"$@\" | sed 's/^/package:/' ;;\n" +
                 "  path) shift; exec \"$B/occtl\" pkg path \"$@\" ;;\n" +
                 "esac\nexec /system/bin/pm \"$@\"\n");
             App.makeExecutable(pm);
+            File input = new File(App.bin, "input");
+            writeText(input, "#!/system/bin/sh\nB=\"" + bin + "\"\n" +
+                "if \"$B/occtl\" sh-ready >/dev/null 2>&1; then exec \"$B/ocsh\" input \"$@\"; fi\n" +
+                "echo \"input: нужен полный доступ (Shizuku)\" >&2\nexit 1\n");
+            App.makeExecutable(input);
+            File am = new File(App.bin, "am");
+            writeText(am, "#!/system/bin/sh\nB=\"" + bin + "\"\n" +
+                "if \"$B/occtl\" sh-ready >/dev/null 2>&1; then exec \"$B/ocsh\" am \"$@\"; fi\n" +
+                "exec /system/bin/am \"$@\"\n");
+            App.makeExecutable(am);
+            File cmd = new File(App.bin, "cmd");
+            writeText(cmd, "#!/system/bin/sh\nB=\"" + bin + "\"\n" +
+                "if \"$B/occtl\" sh-ready >/dev/null 2>&1; then exec \"$B/ocsh\" cmd \"$@\"; fi\n" +
+                "exec /system/bin/cmd \"$@\"\n");
+            App.makeExecutable(cmd);
         } catch (Throwable th) {
             App.log("syncOcctl: " + String.valueOf(th));
         }
@@ -407,20 +434,22 @@ public final class Runtime {
     private static void writeDeviceGuide() {
         String text =
             "# Устройство Android (OpenCode app)\n\n" +
-            "Ты работаешь внутри приложения OpenCode на телефоне под uid приложения (не root, не shell).\n\n" +
-            "Доступно без дополнительных прав:\n" +
-            "- `settings get|put|delete system|secure|global KEY [VALUE]` — уже перенаправляется\n" +
-            "  в приложение (обёртка в PATH), поэтому просто используй обычную команду.\n" +
-            "- `occtl pkg list [-3]` — список пакетов; `occtl pkg path PACKAGE` — путь к APK.\n" +
-            "- `occtl app uninstall PACKAGE` — открыть системное подтверждение удаления.\n" +
-            "- `occtl app details PACKAGE` — открыть настройки приложения.\n" +
-            "- `occtl notify \"Заголовок\" \"Текст\"`, `occtl toast \"Текст\"`.\n" +
-            "- `occtl info` — версия, модель, порт OpenCode.\n\n" +
-            "Если в приложении выданы расширенные права (ADB): работают `dumpsys`, `logcat`,\n" +
-            "запись secure/global settings.\n\n" +
-            "Недоступно без root или Shizuku: `pm install`, `pm uninstall`, `pm disable-user`,\n" +
-            "`pm revoke`, `input`, чтение данных чужих приложений. Не утверждай, что выполнил\n" +
-            "такие действия: честно скажи, что нужен ADB/Shizuku/root.\n";
+            "Ты работаешь внутри приложения OpenCode на телефоне под uid приложения (не root).\n\n" +
+            "Доступно всегда:\n" +
+            "- `settings get|put|delete|list system|secure|global KEY [VALUE]` — через приложение\n" +
+            "  (обёртка в PATH), обычная команда `settings ...` уже работает.\n" +
+            "- `pm list packages [-3]`, `pm path PACKAGE` — список пакетов и путь к APK.\n" +
+            "- `pm uninstall PACKAGE` — если полный доступ не включён, откроется системный диалог.\n" +
+            "- `occtl pkg list`, `occtl app details|uninstall|notifications|usage`, `occtl toast`, `occtl info`.\n" +
+            "- `dumpsys`, `logcat` — если выданы расширенные права (ADB).\n\n" +
+            "Полный доступ (Shizuku, uid 2000):\n" +
+            "- `occtl sh-ready` — проверить (exit 0 = включён).\n" +
+            "- `ocsh КОМАНДА...` — выполнить shell-команду с правами shell.\n" +
+            "- `pm uninstall/disable-user/revoke/grant/install/force-stop`, `input`, `am`, `cmd`\n" +
+            "  автоматически уходят в `ocsh`, когда полный доступ включён.\n" +
+            "- Если `ocsh`/`pm` отвечает «нужен полный доступ (Shizuku)» — честно скажи, что нужно\n" +
+            "  включить «Полные разрешения» в настройках приложения (ПК или Wi-Fi + Shizuku).\n\n" +
+            "Недоступно даже с Shizuku: изменение system-раздела, обход SELinux, root-операции.\n";
         writeText(new File(App.home, ".config/opencode/AGENTS.md"), text);
     }
 

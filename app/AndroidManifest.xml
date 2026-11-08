@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ru.opencode.android"
-    android:versionCode="5"
-    android:versionName="1.4">
+    android:versionCode="6"
+    android:versionName="1.5">
 
     <!-- targetSdk 28: как у Termux — разрешает запуск своих исполняемых файлов
          из каталога приложения. Приложение ставится вручную, не из Play. -->
@@ -32,6 +32,9 @@
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"/>
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
 
+    <!-- Shizuku: посредник, дающий shell-права (uid 2000) после разового запуска через ADB -->
+    <uses-permission android:name="moe.shizuku.manager.permission.API_V23"/>
+
     <application
         android:name=".App"
         android:label="OpenCode"
@@ -44,6 +47,16 @@
         android:allowBackup="false"
         android:requestLegacyExternalStorage="true"
         android:debuggable="true">
+
+        <meta-data android:name="moe.shizuku.client.V3_SUPPORT" android:value="true"/>
+
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="ru.opencode.android.shizuku"
+            android:exported="true"
+            android:enabled="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL"/>
 
         <activity android:name=".MainActivity" android:exported="true"
             android:screenOrientation="unspecified"

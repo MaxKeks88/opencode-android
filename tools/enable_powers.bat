@@ -1,5 +1,6 @@
 @echo off
-rem Выдаёт приложению OpenCode Android расширенные development-права через ADB.
+rem Выдаёт приложению OpenCode Android расширенные development-права через ADB
+rem и, если установлен Shizuku, запускает его.
 rem Запускать ОДИН РАЗ с ПК, когда телефон подключён по USB и отладка включена.
 setlocal
 set "PKG=ru.opencode.android"
@@ -28,8 +29,19 @@ echo appops GET_USAGE_STATS:
 "%ADB%" shell appops set %PKG% GET_USAGE_STATS allow
 echo.
 
-echo Проверка (должны появиться строки granted=true):
-"%ADB%" shell dumpsys package %PKG% ^| findstr /C:"WRITE_SECURE_SETTINGS" /C:"DUMP" /C:"READ_LOGS" /C:"INTERACT_ACROSS_USERS"
+echo Проверка выданных разрешений:
+"%ADB%" shell dumpsys package %PKG% | findstr /C:"WRITE_SECURE_SETTINGS" /C:"READ_LOGS" /C:"INTERACT_ACROSS_USERS"
+echo.
+
+echo Shizuku:
+"%ADB%" shell pm list packages | findstr /C:"moe.shizuku.privileged.api" >nul
+if errorlevel 1 (
+  echo   Shizuku не установлен. Если нужен полный доступ — установите Shizuku и повторите.
+) else (
+  echo   Запускаю Shizuku...
+  "%ADB%" shell "APK=$(pm path moe.shizuku.privileged.api | sed 's/package://'); DIR=$(dirname $APK); cp $DIR/lib/arm64/libshizuku.so /data/local/tmp/shizuku 2>/dev/null; chmod 755 /data/local/tmp/shizuku 2>/dev/null; /data/local/tmp/shizuku 2>/dev/null || sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh"
+  echo   Готово. Вернитесь в приложение: Настройки - Разрешения - Полные разрешения.
+)
 echo.
 echo Готово. Перезапустите приложение OpenCode.
 pause

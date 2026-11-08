@@ -103,8 +103,18 @@ public final class DeviceService {
                 if (!App.localToken.equals(req.optString("token"))) {
                     throw new SecurityException("bad token");
                 }
-                response.put("ok", true);
-                response.put("out", execute(ctx, req.optString("cmd"), req.optJSONArray("args")));
+                String cmd = req.optString("cmd");
+                if ("sh".equals(cmd)) {
+                    JSONArray array = req.optJSONArray("args");
+                    String command = array == null || array.length() == 0 ? "" : array.optString(0);
+                    ShizukuBridge.Result result = ShizukuBridge.exec(command, req.optString("cwd", "/"));
+                    response.put("ok", true);
+                    response.put("out", result.out);
+                    response.put("code", result.code);
+                } else {
+                    response.put("ok", true);
+                    response.put("out", execute(ctx, cmd, req.optJSONArray("args")));
+                }
             } catch (Throwable th) {
                 response = new JSONObject();
                 response.put("ok", false);
@@ -139,6 +149,12 @@ public final class DeviceService {
         String[] a = args(array);
         if ("ping".equals(cmd)) {
             return "pong";
+        }
+        if ("sh-ready".equals(cmd)) {
+            if (!ShizukuBridge.granted()) {
+                throw new SecurityException("Полный доступ (Shizuku) не включён");
+            }
+            return "yes";
         }
         if ("settings".equals(cmd)) {
             return settings(ctx, a);

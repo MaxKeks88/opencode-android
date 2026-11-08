@@ -79,7 +79,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, ~192.4 МБ | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 5, versionName 1.4 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 6, versionName 1.5 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `C:\Users\WorkPC\AppData\Local\Temp\opencode-src`
@@ -128,12 +128,16 @@ C:\Users\WorkPC\Desktop\OpenCodeAPK\
 │       ├── Notifications.java    ← канал уведомлений и показ
 │       ├── Updater.java          ← проверка/скачивание обновлений OpenCode
 │       ├── DeviceService.java    ← occtl: settings/pkg/app для агента (localhost)
+│       ├── ShizukuBridge.java    ← полный доступ (shell uid 2000) через Shizuku
 │       └── BootReceiver.java     ← автозапуск после перезагрузки
 ├── tools\
 │   ├── dev_server.py             ← отладка страницы в браузере на ПК
 │   ├── cdp.py                    ← управление WebView телефона через CDP
 │   ├── clean_project.py          ← уборка build/ и дублей после рабочей сборки
 │   └── enable_powers.bat/.sh     ← разовая выдача расширенных прав через ADB
+├── libs\
+│   ├── shizuku-*.jar             ← Shizuku API 13.1.5 (MIT)
+│   └── README.md
 ```
 
 ## 5. Сборка и установка
@@ -429,8 +433,9 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
 11. **Расширенные права** — ✅ 1.4: одноразовый `tools/enable_powers.bat`,
     `occtl`, обёртки `settings`/`pm`; агент меняет системные настройки,
     читает `dumpsys`/`logcat`, открывает удаление приложений.
-12. **Shizuku** — следующий шаг для полного shell (uid 2000) без ПК:
-    тихое удаление/отключение приложений, `pm revoke`, `input`.
+12. **Shizuku** — ✅ 1.5: полный shell uid 2000, `ocsh`, автоподмена `pm/input/am/cmd`,
+    экран «Полные разрешения» с инструкциями. Осталось: проверить после
+    перезагрузки и, по желанию, автозапуск на доверенном Wi‑Fi.
 
 ## 11. Быстрый чек-лист после изменений
 
@@ -581,3 +586,60 @@ Android не даёт приложению shell-права (uid 2000) или ro
 План на будущее: интеграция **Shizuku** (пользователь один раз запускает его
 через ADB/беспроводную отладку) — тогда приложение получает настоящий shell
 uid 2000 и перечисленные операции становятся доступны без ПК.
+
+## 15. Полные разрешения: Shizuku (1.5)
+
+### Что это
+
+Кнопка **⚙ Настройки → Разрешения → «Полные разрешения (shell)»** в самом низу
+открывает полноэкранный экран. Сверху — жёлтое предупреждение: после
+перезагрузки доступ сбрасывается и всё делается на свой страх и риск. Ниже —
+статус, кнопка «Что надо делать» и пошаговая инструкция двумя путями:
+**с ПК** и **без ПК (Wi‑Fi + Shizuku)**. У каждого шага есть описание и
+кнопки (открыть настройки разработчика, Shizuku, скопировать ADB-команду).
+
+### Как устроено
+
+- `libs/shizuku-*.jar` — Shizuku API 13.1.5 (MIT), подключены к `javac`/`d8`.
+- В манифесте: `ShizukuProvider` с authority `ru.opencode.android.shizuku`
+  и `android:permission="android.permission.INTERACT_ACROSS_USERS_FULL"`,
+  meta-data `moe.shizuku.client.V3_SUPPORT=true`.
+- `ShizukuBridge`: `pingBinder`, `checkSelfPermission`, `requestPermission`,
+  `exec` (через `IShizukuService.newProcess` + `IRemoteProcess`).
+- `DeviceService` команды `sh-ready` и `sh`; клиент `occtl sh`.
+- В `files/usr/bin` появились `ocsh`, а `pm/input/am/cmd` при готовом Shizuku
+  автоматически уходят в `ocsh`; без него — fallback (для `pm uninstall` —
+  системный диалог).
+- Если `cwd` — `/data/...` (недоступно shell), выполнение идёт из `/sdcard`.
+
+### Запуск Shizuku (важно)
+
+- **Shizuku 13.6+**: стартовый файл — `lib/arm64-v8a/libshizuku.so` из APK
+  Shizuku. Команда (её показывает и сам Shizuku):
+  ```sh
+  APK=$(pm path moe.shizuku.privileged.api | sed 's/package://')
+  DIR=$(dirname $APK)
+  cp $DIR/lib/arm64/libshizuku.so /data/local/tmp/shizuku
+  chmod 755 /data/local/tmp/shizuku
+  /data/local/tmp/shizuku
+  ```
+  `tools/enable_powers.bat` делает это автоматически.
+- **Shizuku 11.2–13.5**: `adb shell sh /sdcard/Android/data/moe.shizuku.privileged.api/start.sh`.
+- **Без ПК**: «Отладка по Wi‑Fi» → «Сопряжение с помощью кода» → код в Shizuku
+  → «Запустить». Сопряжение нужно один раз; после перезагрузки запуск
+  повторяется (в 13.6+ есть автозапуск на доверенном Wi‑Fi).
+
+### Что даёт
+
+`uid=2000(shell)`: `pm uninstall/disable-user/revoke/grant/install`,
+`input`, `am`, `cmd`, `appops`, установка APK без диалога, чтение системных
+данных. Не даёт root-операций (system-раздел, SELinux, данные чужих
+приложений на уровне ядра).
+
+### Проверено на телефоне
+
+- Shizuku 13.6 установлен, сервер запущен (pid `shizuku_server`, uid shell).
+- `BR.shizukuStatus()` → `installed:true, running:true, granted:true, uid:2000`.
+- `ocsh id` → `uid=2000(shell)`.
+- Агент в приложении выполнил `ocsh id` и `ocsh pm list packages -3 | wc -l`
+  (56 пакетов).

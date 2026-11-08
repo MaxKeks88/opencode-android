@@ -1,15 +1,15 @@
 # Сборка и артефакты
-build/
-build (1)/
-build (2)/
-build (3)/
+/build/
+/build (1)/
+/build (2)/
+/build (3)/
 *.idsig
 OpenCodeAndroid*.apk
 __pycache__/
 *.pyc
 
 # Тяжёлый сторонний рантайм (opencode, git, python) — восстанавливается отдельно
-runtime/
+/runtime/
 
 # Секреты
 keystore.jks

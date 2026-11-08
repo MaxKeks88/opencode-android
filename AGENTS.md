@@ -79,7 +79,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, ~192.4 МБ | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 3, versionName 1.2 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 4, versionName 1.3 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `C:\Users\WorkPC\AppData\Local\Temp\opencode-src`
@@ -409,13 +409,15 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
 4. **Python, Node/Bun и MCP** — ✅ сделано: статический CPython 3.12 (musl),
    pip, `mcp`, `python-lsp-server`; обёртки `node`/`bun`/`npx`; локальный и
    remote MCP работают.
-5. **Иконка/брендинг**: сейчас иконка от старого OpenCode Remote.
-6. **Экспорт логов/краш-репорт** и нормальный onboarding (первый запуск, права).
+5. **Иконка/брендинг** — ✅ иконка `>_` уже стоит; версия показывается в splash.
+6. **Логи/краш-репорт** — ✅ сделано (1.3): ZIP с `app.log`, `opencode.log`,
+   `device.txt` в `/sdcard/Download`; `App` пишет краши в лог.
 7. **Фоновая работа**: нативный watcher уже есть; проверить, что WebView не мешает
    двойными уведомлениями.
-8. **Резервная копия** `files/home/.local/share/opencode` (сессии/ключи).
-9. **Обновление OpenCode**: `opencode upgrade` внутри APK не работает; обновление —
-   замена `runtime/opencode.gz` + пересборка + bump маркера.
+8. **Резервная копия** сессий/ключей — ✅ экспорт/импорт ZIP в настройках.
+9. **Обновление OpenCode** — ✅ есть `Updater` (проверка/скачивание с бэкапом);
+   `opencode upgrade` внутри APK не работает — обновление через APK.
+10. **Git исходников** — ✅ репозиторий вне Drive, см. раздел 13.
 
 ## 11. Быстрый чек-лист после изменений
 
@@ -473,3 +475,33 @@ python tools\clean_project.py --yes    # удалить
 
 Правило для агента: **собрал → установил → проверил → запустил уборку**.
 Не оставляй в папке больше одного APK и промежуточные `build*`.
+
+## 13. Git исходников (вне Google Drive)
+
+Чтобы исходники снова не пропали при синхронизации Drive, в проекте есть
+локальный репозиторий, **git-каталог вынесен за пределы Drive**:
+
+```
+worktree: C:\Users\WorkPC\Мой диск\OpenCodeAPK
+git-dir:  C:\Users\WorkPC\OpenCodeAPK-src.git   (файл .git в проекте — ссылка)
+```
+
+- Отслеживаются: `app/`, `assets/`, `tools/`, скрипты сборки, документация,
+  `.gitignore`.
+- **Не** отслеживаются: `runtime/` (300 МБ сторонних бинарников),
+  `OpenCodeAndroid.apk`, `build*`, `*.idsig`, `keystore.jks`,
+  `keystore.properties`, `__pycache__/`.
+- Секреты (keystore) намеренно не в git.
+
+Команды:
+
+```powershell
+cd "C:\Users\WorkPC\Мой диск\OpenCodeAPK"
+git status
+git add -A
+git commit -m "что изменили"
+git log --oneline -5
+```
+
+При переносе проекта на другой ПК git-dir нужно скопировать отдельно
+(он лежит рядом с папкой проекта, не внутри неё).

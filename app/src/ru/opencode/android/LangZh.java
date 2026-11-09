@@ -222,11 +222,11 @@ public final class LangZh {
 
     /** Подстановки для склеенных строк; точные значения уже в MAP. */
     public static String apply(String text) {
-        for (Map.Entry<String, String> p : LONG) {
-            if (text.contains(p.getKey())) text = text.replace(p.getKey(), p.getValue());
-        }
         for (String[] p : SUBS) {
             if (text.contains(p[0])) text = text.replace(p[0], p[1]);
+        }
+        for (Map.Entry<String, String> p : LONG) {
+            if (text.contains(p.getKey())) text = text.replace(p.getKey(), p.getValue());
         }
         return text.replaceAll("(\\d+)\\s+МБ", "$1 MB")
                 .replaceAll("(\\d+)\\s+КБ", "$1 KB")

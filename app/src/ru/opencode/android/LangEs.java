@@ -199,6 +199,12 @@ public final class LangEs {
         sub("Ошибка обновления: ", "Error de actualización: ");
         sub("Скачивание: ", "Descargando: ");
         sub("Порт: ", "Puerto: ");
+        sub("OpenCode: работает", "OpenCode: en ejecución");
+        sub("OpenCode: не запущен", "OpenCode: detenido");
+        sub("Сервер: работает", "Servidor: en ejecución");
+        sub("Сервер: не запущен", "Servidor: detenido");
+        sub("Доступ к файлам: есть", "Acceso a archivos: concedido");
+        sub("Доступ к файлам: нет", "Acceso a archivos: no");
         put("Настроить", "Configurar");
         put("Фоновая работа", "Trabajo en segundo plano");
         put("Доступ к /sdcard", "Acceso a /sdcard");
@@ -221,11 +227,11 @@ public final class LangEs {
     private static void sub(String ru, String es) { SUBS.add(new String[] { ru, es }); }
 
     public static String apply(String text) {
-        for (Map.Entry<String, String> p : LONG) {
-            if (text.contains(p.getKey())) text = text.replace(p.getKey(), p.getValue());
-        }
         for (String[] p : SUBS) {
             if (text.contains(p[0])) text = text.replace(p[0], p[1]);
+        }
+        for (Map.Entry<String, String> p : LONG) {
+            if (text.contains(p.getKey())) text = text.replace(p.getKey(), p.getValue());
         }
         return text.replaceAll("(\\d+)\\s+МБ", "$1 MB")
                 .replaceAll("(\\d+)\\s+КБ", "$1 KB")

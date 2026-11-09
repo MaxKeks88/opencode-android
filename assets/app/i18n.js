@@ -764,7 +764,7 @@
     [/^(\d+)\s+модел(ей|ь|и)$/i, function (m, n) { return n + (n === "1" ? " modelo" : " modelos"); }],
     [/^(\d+)\s+бесплатн(ых|ые)$/i, function (m, n) { return n + " gratis"; }],
     [/^(\d+)\s+скрыт(ых|ые)$/i, function (m, n) { return n + " ocultos"; }],
-    [/^(\d+)\s+симв\.$/i, function (m, n) { return n + " caracteres"; }],
+    [/^(\d+)\s+симв\.$/i, function (m, n) { return n + (n === "1" ? " carácter" : " caracteres"); }],
     [/^(\d+)\s+файл(ов|а)?$/i, function (m, n) { return n + (n === "1" ? " archivo" : " archivos"); }],
     [/^(\d+)\s+из\s+(\d+)$/i, function (m, a, b) { return a + " de " + b; }],
     [/^(\d+)\s+запросов за 5 часов$/i, function (m, n) { return n + " solicitudes cada 5 horas"; }],
@@ -870,6 +870,9 @@
   function setLang(code) {
     LANG = code || "ru";
     if (window.OCLang) window.OCLang.code = LANG;
+    /* сообщения в #msgs не проходят авто-перевод: перерисуем их сразу */
+    try { if (window.renderAll) window.renderAll(); } catch (e) {}
+    try { run(); } catch (e) {}
   }
 
   window.OCLang = { code: LANG, tr: tr, run: run, setLang: setLang, dict: EN };

@@ -936,13 +936,15 @@ def build_python(ctx):
         % human(len(loader)))
 
     # sitecustomize.py — файл проекта (не из архива): правит sys.executable и
-    # musllinux-тег pip. Если он есть в текущем дереве назначения, сохраняем.
+    # musllinux-тег pip. Берём из репозитория (assets/runtime), иначе из старого дерева.
     old_side = ctx.dest / "runtime" / "python" / "lib" / "python3.12" / "sitecustomize.py"
-    if old_side.is_file():
+    repo_side = PROJECT_ROOT / "tools" / "sitecustomize.py"
+    side_src = old_side if old_side.is_file() else repo_side
+    if side_src.is_file():
         new_side = target / "lib" / "python3.12" / "sitecustomize.py"
         new_side.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(str(old_side), str(new_side))
-        log("  sitecustomize.py: сохранён из текущего дерева")
+        shutil.copyfile(str(side_src), str(new_side))
+        log("  sitecustomize.py: %s" % side_src)
     return target
 
 

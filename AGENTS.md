@@ -89,7 +89,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, 199 787 043 байт (~190.5 МБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 28, versionName 1.16.0 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 29, versionName 1.16.1 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `<temp>\opencode-src`
@@ -353,10 +353,10 @@ URL внутри `` ` `` не превращается в ссылку.
   по `OCLang.code`.
 - Новый язык = код в `LANGUAGES` (`page.html`), словарь `i18n-xx.js`, ветка в
   `Lang`/`LangXx`; остальная логика не меняется.
-- **Статус 1.16: английский проверен на всех основных экранах; добавлены
-  упрощённый китайский и испанский (страница проверена статически, нативные
-  экраны — после подключения телефона).** Остались zh-Hant, PT-BR/DE/FR,
-  скриншоты и мёртвый код панели ПК —
+- **Статус 1.16.1: английский проверен на всех основных экранах; добавлены
+  упрощённый китайский и испанский, онбординг и нативные настройки проверены
+  на телефоне.** Остались zh-Hant, PT-BR/DE/FR, скриншоты и мёртвый код
+  панели ПК —
   [`docs/LOCALIZATION.md`](docs/LOCALIZATION.md).
 
 ### Обновление приложения (GitHub Releases, 1.12)

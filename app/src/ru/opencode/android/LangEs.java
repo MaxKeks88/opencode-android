@@ -23,7 +23,7 @@ public final class LangEs {
         put("Чтобы OpenCode не засыпал в фоне.", "Para evitar que OpenCode se quede dormido en segundo plano.");
         put("По умолчанию — ", "Por defecto - ");
         put(". Папку можно сменить в настройках.", ". La carpeta se puede cambiar en la configuración.");
-        put("Войдите в OpenCode, чтобы получить платные модели Go. Это можно сделать позже: шестерёнка → Провайдеры.", "Inicie sesión en OpenCode para recibir modelos Go pagos. Esto se puede hacer más tarde: equipo → Proveedores.");
+        put("Войдите в OpenCode, чтобы получить платные модели Go. Это можно сделать позже: шестерёнка → Провайдеры.", "Inicia sesión en OpenCode para obtener modelos Go de pago. Puedes hacerlo más tarde: ajustes → Proveedores.");
         put("Разрешить доступ ко всем файлам", "Permitir el acceso a todos los archivos");
         put("Отключить оптимизацию батареи", "Desactivar la optimización de la batería");
         put("Начать работу", "Empezar");

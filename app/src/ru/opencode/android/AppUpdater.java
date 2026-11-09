@@ -198,7 +198,15 @@ public final class AppUpdater {
             public void run() {
                 String text;
                 try {
-                    JSONObject data = checkSync(context);
+                    JSONObject data;
+                    try {
+                        data = checkSync(context);
+                    } catch (Throwable first) {
+                        // мобильная сеть/DNS иногда просыпается с задержкой — одна повторная попытка
+                        App.log("app-update: повтор после " + first);
+                        Thread.sleep(2500L);
+                        data = checkSync(context);
+                    }
                     text = Updater.isNewer(data.optString("tag"), currentVersion(context))
                             ? "Доступно обновление " + data.optString("version")
                             : "Установлена последняя версия " + currentVersion(context);

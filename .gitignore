@@ -21,3 +21,6 @@ keystore.properties
 
 # РіРµРЅРµСЂРёСЂСѓРµС‚СЃСЏ build_apk.py (С…РµС€Рё СЂР°РЅС‚Р°Р№РјР°)
 assets/runtime/manifest.txt
+
+# артефакты релиза
+/SHA256SUMS.txt

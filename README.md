@@ -26,8 +26,8 @@ commands, clone repositories and talk to any model provider.
 - Optional full shell access through [Shizuku](https://shizuku.rikka.app/)
   (`uid=2000`): silent package operations, `input`, `am`, `cmd`.
 - Web search provider picker (Exa, Firecrawl, Parallel, Tavily, TinyFish).
-- Interface languages: English (default on first launch), Russian and
-  Simplified Chinese; switch in **⚙ → Languages**.
+- Interface languages: English (default on first launch), Russian,
+  Simplified Chinese and Spanish; switch in **⚙ → Languages**.
 - In-app updates from GitHub Releases.
 
 ### Install

@@ -717,9 +717,11 @@
     ["Показать ещё", "Show more"]
   ].sort(function (a, b) { return b[0].length - a[0].length; });
 
-  /* Второй словарь: упрощённый китайский. Подключается из i18n-zh.js. */
+  /* Второй и третий словари: китайский и испанский. */
   var ZH = window.OC_ZH || {};
   var ZH_SUBS = window.OC_ZH_SUBS || [];
+  var ES = window.OC_ES || {};
+  var ES_SUBS = window.OC_ES_SUBS || [];
 
   var RULES_ZH = [
     [/^Показать всех \((\d+)\)$/, function (m, n) { return "显示全部（" + n + "）"; }],
@@ -745,6 +747,30 @@
     [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return "每月 " + n + " 百万输出 token"; }]
   ];
 
+  var RULES_ES = [
+    [/^Показать всех \((\d+)\)$/, function (m, n) { return "Mostrar todos (" + n + ")"; }],
+    [/^Показать ещё \((\d+)\)$/, function (m, n) { return "Mostrar más (" + n + ")"; }],
+    [/^· (\d+)\s+ч$/, function (m, n) { return "· " + n + " h"; }],
+    [/^· (\d+)\s+дн$/, function (m, n) { return "· " + n + " d"; }],
+    [/^Бесплатные · (\d+)$/, function (m, n) { return "Gratis · " + n; }],
+    [/^Платные · (\d+)$/, function (m, n) { return "De pago · " + n; }],
+    [/^Чаты · (\d+)$/, function (m, n) { return "Chats · " + n; }],
+    [/^Модели · (\d+)$/, function (m, n) { return "Modelos · " + n; }],
+    [/^Избранные · (\d+)$/, function (m, n) { return "Favoritos · " + n; }],
+    [/^(\d+(?:[.,]\d+)?)\s+Б$/, function (m, n) { return n + " B"; }],
+    [/^(\d+)\s+ч$/, function (m, n) { return n + " h"; }],
+    [/^(\d+)\s+дн$/, function (m, n) { return n + " d"; }],
+    [/^(\d+)\s+мин$/, function (m, n) { return n + " min"; }],
+    [/^(\d+)\s+модел(ей|ь|и)$/i, function (m, n) { return n + (n === "1" ? " modelo" : " modelos"); }],
+    [/^(\d+)\s+бесплатн(ых|ые)$/i, function (m, n) { return n + " gratis"; }],
+    [/^(\d+)\s+скрыт(ых|ые)$/i, function (m, n) { return n + " ocultos"; }],
+    [/^(\d+)\s+симв\.$/i, function (m, n) { return n + " caracteres"; }],
+    [/^(\d+)\s+файл(ов|а)?$/i, function (m, n) { return n + (n === "1" ? " archivo" : " archivos"); }],
+    [/^(\d+)\s+из\s+(\d+)$/i, function (m, a, b) { return a + " de " + b; }],
+    [/^(\d+)\s+запросов за 5 часов$/i, function (m, n) { return n + " solicitudes cada 5 horas"; }],
+    [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return n + " M tokens de salida al mes"; }]
+  ];
+
   function buildLong(dict) {
     var list = [];
     for (var k in dict) {
@@ -757,13 +783,14 @@
 
   var SUBS_EN = SUBS.concat(buildLong(EN)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_ZH = ZH_SUBS.concat(buildLong(ZH)).sort(function (a, b) { return b[0].length - a[0].length; });
+  var SUBS_ES = ES_SUBS.concat(buildLong(ES)).sort(function (a, b) { return b[0].length - a[0].length; });
 
   function tr(s) {
     if (s == null) return s;
-    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : null);
+    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : (LANG === "es" ? ES : null));
     if (!dict) return s;
-    var rules = LANG === "zh" ? RULES_ZH : RULES;
-    var subs = LANG === "zh" ? SUBS_ZH : SUBS_EN;
+    var rules = LANG === "zh" ? RULES_ZH : (LANG === "es" ? RULES_ES : RULES);
+    var subs = LANG === "zh" ? SUBS_ZH : (LANG === "es" ? SUBS_ES : SUBS_EN);
     var str = String(s);
     if (dict[str] != null) return dict[str];
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);

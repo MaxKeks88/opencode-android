@@ -36,7 +36,9 @@
    (без `android:debuggable` и WebView-отладки).
 3. **Проверить:** установить на телефон, `python tools/smoke_test.py`,
    пройти основные экраны.
-4. **Коммит и push:** `git add -A && git commit -m "1.14: ..." && git push`.
+   > `smoke_test.py` читает токен через `run-as` → работает только на
+   > **debuggable** сборке. Публичную `--no-debug` проверяйте вручную или
+   > держите отдельную debug-сборку для автотестов.4. **Коммит и push:** `git add -A && git commit -m "1.14: ..." && git push`.
 5. **Релиз:**
    ```bash
    sha256sum OpenCodeAndroid.apk   # или Get-FileHash на Windows

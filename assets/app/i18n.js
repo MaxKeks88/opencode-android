@@ -722,6 +722,8 @@
   var ZH_SUBS = window.OC_ZH_SUBS || [];
   var ES = window.OC_ES || {};
   var ES_SUBS = window.OC_ES_SUBS || [];
+  var ZH_HANT = window.OC_ZH_HANT || {};
+  var ZH_HANT_SUBS = window.OC_ZH_HANT_SUBS || [];
 
   var RULES_ZH = [
     [/^Показать всех \((\d+)\)$/, function (m, n) { return "显示全部（" + n + "）"; }],
@@ -771,6 +773,30 @@
     [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return n + " M tokens de salida al mes"; }]
   ];
 
+  var RULES_ZH_HANT = [
+    [/^Показать всех \((\d+)\)$/, function (m, n) { return "顯示全部（" + n + "）"; }],
+    [/^Показать ещё \((\d+)\)$/, function (m, n) { return "顯示更多（" + n + "）"; }],
+    [/^· (\d+)\s+ч$/, function (m, n) { return "· " + n + " 小時"; }],
+    [/^· (\d+)\s+дн$/, function (m, n) { return "· " + n + " 天"; }],
+    [/^Бесплатные · (\d+)$/, function (m, n) { return "免費 · " + n; }],
+    [/^Платные · (\d+)$/, function (m, n) { return "付費 · " + n; }],
+    [/^Чаты · (\d+)$/, function (m, n) { return "聊天 · " + n; }],
+    [/^Модели · (\d+)$/, function (m, n) { return "模型 · " + n; }],
+    [/^Избранные · (\d+)$/, function (m, n) { return "收藏 · " + n; }],
+    [/^(\d+(?:[.,]\d+)?)\s+Б$/, function (m, n) { return n + " B"; }],
+    [/^(\d+)\s+ч$/, function (m, n) { return n + " 小時"; }],
+    [/^(\d+)\s+дн$/, function (m, n) { return n + " 天"; }],
+    [/^(\d+)\s+мин$/, function (m, n) { return n + " 分鐘"; }],
+    [/^(\d+)\s+модел(ей|ь|и)$/i, function (m, n) { return n + " 個模型"; }],
+    [/^(\d+)\s+бесплатн(ых|ые)$/i, function (m, n) { return n + " 個免費"; }],
+    [/^(\d+)\s+скрыт(ых|ые)$/i, function (m, n) { return n + " 個隱藏"; }],
+    [/^(\d+)\s+симв\.$/i, function (m, n) { return n + " 字元"; }],
+    [/^(\d+)\s+файл(ов|а)?$/i, function (m, n) { return n + " 個檔案"; }],
+    [/^(\d+)\s+из\s+(\d+)$/i, function (m, a, b) { return a + " / " + b; }],
+    [/^(\d+)\s+запросов за 5 часов$/i, function (m, n) { return "5 小時 " + n + " 次請求"; }],
+    [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return "每月 " + n + " 百萬輸出 token"; }]
+  ];
+
   function buildLong(dict) {
     var list = [];
     for (var k in dict) {
@@ -784,13 +810,14 @@
   var SUBS_EN = SUBS.concat(buildLong(EN)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_ZH = ZH_SUBS.concat(buildLong(ZH)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_ES = ES_SUBS.concat(buildLong(ES)).sort(function (a, b) { return b[0].length - a[0].length; });
+  var SUBS_ZH_HANT = ZH_HANT_SUBS.concat(buildLong(ZH_HANT)).sort(function (a, b) { return b[0].length - a[0].length; });
 
   function tr(s) {
     if (s == null) return s;
-    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : (LANG === "es" ? ES : null));
+    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : (LANG === "es" ? ES : (LANG === "zh-Hant" ? ZH_HANT : null)));
     if (!dict) return s;
-    var rules = LANG === "zh" ? RULES_ZH : (LANG === "es" ? RULES_ES : RULES);
-    var subs = LANG === "zh" ? SUBS_ZH : (LANG === "es" ? SUBS_ES : SUBS_EN);
+    var rules = LANG === "zh" ? RULES_ZH : (LANG === "es" ? RULES_ES : (LANG === "zh-Hant" ? RULES_ZH_HANT : RULES));
+    var subs = LANG === "zh" ? SUBS_ZH : (LANG === "es" ? SUBS_ES : (LANG === "zh-Hant" ? SUBS_ZH_HANT : SUBS_EN));
     var str = String(s);
     if (dict[str] != null) return dict[str];
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);

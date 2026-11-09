@@ -643,6 +643,7 @@ img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
 <script src="app/i18n-zh.js"></script>
+<script src="app/i18n-zh-hant.js"></script>
 <script src="app/i18n-es.js"></script>
 <script src="app/i18n.js"></script>
 <script src="app/bridge.js"></script>
@@ -2566,7 +2567,8 @@ function usageWhen(ms){
   if(!n) return "";
   try{
     const c = window.OCLang && OCLang.code;
-    const loc = c === "en" ? "en-US" : (c === "zh" ? "zh-CN" : (c === "es" ? "es-ES" : "ru-RU"));
+    const loc = c === "en" ? "en-US" : (c === "zh" ? "zh-CN" :
+                (c === "zh-Hant" ? "zh-TW" : (c === "es" ? "es-ES" : "ru-RU")));
     return new Date(n).toLocaleString(loc,
       {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
   }catch(e){ return ""; }
@@ -3009,10 +3011,11 @@ function renderProviders(){
 
 /* ---- языки интерфейса ---- */
 const LANGUAGES = [
-  { code: "en", name: "English" },
-  { code: "ru", name: "Русский" },
-  { code: "zh", name: "中文（简体）" },
-  { code: "es", name: "Español" }
+  { code: "en", name: "English 🇬🇧" },
+  { code: "ru", name: "Русский 🇷🇺" },
+  { code: "zh", name: "中文（简体） 🇨🇳" },
+  { code: "zh-Hant", name: "中文（繁體） 🇹🇼" },
+  { code: "es", name: "Español 🇪🇸" }
 ];
 
 function renderLanguages(){
@@ -3036,7 +3039,8 @@ function renderLanguages(){
       if(window.OCLang) OCLang.setLang(code);
       toast(code === "en" ? "Switching to English…" :
             (code === "zh" ? "正在切换到中文…" :
-             (code === "es" ? "Cambiando a español…" : "Переключаю на русский…")));
+             (code === "zh-Hant" ? "正在切換到繁體中文…" :
+              (code === "es" ? "Cambiando a español…" : "Переключаю на русский…"))));
       setTimeout(() => location.reload(), 250);
     };
   });

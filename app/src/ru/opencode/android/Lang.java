@@ -17,6 +17,7 @@ public final class Lang {
     public static final String EN = "en";
     public static final String RU = "ru";
     public static final String ZH = "zh";
+    public static final String ZH_HANT = "zh-Hant";
     public static final String ES = "es";
 
     private static final Map<String, String> EN_MAP = new HashMap<String, String>();
@@ -219,6 +220,10 @@ public final class Lang {
         return ES.equals(get());
     }
 
+    public static boolean isZhHant() {
+        return ZH_HANT.equals(get());
+    }
+
     public static void set(String code) {
         try {
             App.prefs().edit().putString(PREF, code).apply();
@@ -235,6 +240,10 @@ public final class Lang {
             String es = LangEs.MAP.get(ru);
             return es != null ? es : ru;
         }
+        if (isZhHant()) {
+            String zht = LangZhHant.MAP.get(ru);
+            return zht != null ? zht : ru;
+        }
         return isEn() ? en : ru;
     }
 
@@ -250,6 +259,10 @@ public final class Lang {
         if (isEs()) {
             String es = LangEs.MAP.get(source);
             return es != null ? es : LangEs.apply(source);
+        }
+        if (isZhHant()) {
+            String zht = LangZhHant.MAP.get(source);
+            return zht != null ? zht : LangZhHant.apply(source);
         }
         if (!isEn()) {
             return source;
@@ -342,6 +355,9 @@ public final class Lang {
         }
         if (ZH.equals(code)) {
             return "中文（简体）";
+        }
+        if (ZH_HANT.equals(code)) {
+            return "中文（繁體）";
         }
         if (ES.equals(code)) {
             return "Español";

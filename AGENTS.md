@@ -88,8 +88,8 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | ripgrep | 15.1.0, 3 152 312 байт + `libpcre2-8.so.0` | Alpine v3.24 community/main aarch64 |
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
-| APK | `OpenCodeAndroid.apk`, 199 787 043 байт (~190.5 МБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 29, versionName 1.16.1 | `app/AndroidManifest.xml` |
+| APK | `OpenCodeAndroid.apk`, 199 803 499 байт (~190.5 МБ) | `python build_apk.py` |
+| Пакет | `ru.opencode.android`, versionCode 30, versionName 1.17.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `<temp>\opencode-src`
@@ -322,23 +322,24 @@ URL внутри `` ` `` не превращается в ссылку.
   Команды моста: `websearch`, `setwebsearch`, `wskey`, `wscheck`;
   событие `websearch.updated` обновляет список.
 
-### Языки интерфейса (1.16)
+### Языки интерфейса (1.17)
 
-- Преф `lang`: `en` (по умолчанию для новых установок), `ru`, `zh` или `es`.
-  `Lang.get()` для старых установок без префа возвращает `ru`, чтобы не менять
-  язык внезапно.
+- Преф `lang`: `en` (по умолчанию для новых установок), `ru`, `zh`,
+  `zh-Hant` или `es`. `Lang.get()` для старых установок без префа возвращает
+  `ru`, чтобы не менять язык внезапно.
 - Первый запуск: `MainActivity` при `!onboarded` и пустом `lang` открывает
-  `LanguageActivity` (English выбран по умолчанию, Русский, 中文（简体） и
-  Español следом), затем `OnboardingActivity`. Если `lang` уже выбран — сразу
-  онбординг.
+  `LanguageActivity` (English 🇬🇧 выбран по умолчанию, затем Русский 🇷🇺,
+  中文（简体） 🇨🇳, 中文（繁體） 🇹🇼, Español 🇪🇸), затем
+  `OnboardingActivity`. Если `lang` уже выбран — сразу онбординг.
 - Страница: `assets/app/i18n.js` — словарь RU→EN и правила; `i18n-zh.js` —
-  RU→ZH (≈600 строк); `i18n-es.js` — RU→ES (≈600 строк) и подстановки.
+  RU→ZH; `i18n-zh-hant.js` — RU→ZH-Hant (конвертация OpenCC s2twp);
+  `i18n-es.js` — RU→ES. У каждого языка свои `RULES`/`SUBS`.
   Автоматический перевод текстовых узлов и атрибутов (`title`, `placeholder`,
   `aria-label`) через MutationObserver; `#msgs`, код, ввод и `[data-noi18n]`
   не трогаются. `window.__t(s)` — перевод строк; `OCLang.code/tr/run`.
-- **`tr()` выбирает словарь по `LANG`:** `en` → EN, `zh` → ZH, `es` → ES,
-  `ru` и всё остальное → исходная строка. Это важно: `T()` внутри `#msgs` и
-  тосты вызывают `__t` даже при русском.
+- **`tr()` выбирает словарь по `LANG`:** `en` → EN, `zh` → ZH,
+  `zh-Hant` → ZH_HANT, `es` → ES, `ru` и всё остальное → исходная строка.
+  Это важно: `T()` внутри `#msgs` и тосты вызывают `__t` даже при русском.
 - Динамические подписи чата (`#msgs`) оборачиваются в `T("...")` — авто-перевод
   туда не применяется. Пользовательские данные (названия чатов, имена файлов,
   пути, названия моделей) помечаются `data-noi18n`.
@@ -347,16 +348,16 @@ URL внутри `` ` `` не превращается в ссылку.
 - Вкладка «Языки» — первая в ⚙; выбор вызывает `BR.setLang(code)` и
   `location.reload()` (страница перечитывает преф). Нативные экраны
   локализуются `Lang.localizeView(root)` (TextView/Button/EditText hint);
-  карты строк — `Lang.EN_MAP`, `LangZh.MAP`, `LangEs.MAP`, плюс шаблоны и
-  подстановки. Тосты/диалоги оборачиваются в `Lang.tr(...)`.
-- Даты использования: `usageWhen()` выбирает `en-US`/`ru-RU`/`zh-CN`/`es-ES`
-  по `OCLang.code`.
+  карты строк — `Lang.EN_MAP`, `LangZh.MAP`, `LangZhHant.MAP`, `LangEs.MAP`,
+  плюс шаблоны и подстановки. Тосты/диалоги оборачиваются в `Lang.tr(...)`.
+- Даты использования: `usageWhen()` выбирает
+  `en-US`/`ru-RU`/`zh-CN`/`zh-TW`/`es-ES` по `OCLang.code`.
 - Новый язык = код в `LANGUAGES` (`page.html`), словарь `i18n-xx.js`, ветка в
   `Lang`/`LangXx`; остальная логика не меняется.
-- **Статус 1.16.1: английский проверен на всех основных экранах; добавлены
-  упрощённый китайский и испанский, онбординг и нативные настройки проверены
-  на телефоне.** Остались zh-Hant, PT-BR/DE/FR, скриншоты и мёртвый код
-  панели ПК —
+- **Статус 1.17: английский, упрощённый и традиционный китайский, испанский
+  проверены на телефоне (страница, онбординг, нативные настройки). Флаги
+  стран показываются в списке языков.** Остались PT-BR/DE/FR, скриншоты и
+  мёртвый код панели ПК —
   [`docs/LOCALIZATION.md`](docs/LOCALIZATION.md).
 
 ### Обновление приложения (GitHub Releases, 1.12)

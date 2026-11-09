@@ -128,8 +128,8 @@ public class SettingsActivity extends Activity {
                     sec = 86400;
                 }
                 App.prefs().edit().putInt("ocsh_timeout", sec).apply();
-                Toast.makeText(SettingsActivity.this,
-                        sec == 0 ? "Лимит shell выключен" : ("Лимит shell: " + sec + " с"), 0).show();
+                Toast.makeText(SettingsActivity.this, Lang.tr(
+                        sec == 0 ? "Лимит shell выключен" : ("Лимит shell: " + sec + " с")), 0).show();
             }
         });
         linearLayout.addView(btnSh);
@@ -162,8 +162,8 @@ public class SettingsActivity extends Activity {
                     mb = 1024;
                 }
                 App.prefs().edit().putInt("ocsh_max_out", mb).apply();
-                Toast.makeText(SettingsActivity.this,
-                        mb == 0 ? "Лимит вывода shell выключен" : ("Лимит вывода shell: " + mb + " МБ"), 0).show();
+                Toast.makeText(SettingsActivity.this, Lang.tr(
+                        mb == 0 ? "Лимит вывода shell выключен" : ("Лимит вывода shell: " + mb + " МБ")), 0).show();
             }
         });
         linearLayout.addView(btnOut);
@@ -229,10 +229,10 @@ public class SettingsActivity extends Activity {
             public void onClick(View view) {
                 boolean preview = !Updater.previewChannel();
                 Updater.setPreviewChannel(preview);
-                btnChannel.setText(preview ? "Канал: предрелизы (нажмите для стабильного)"
-                                           : "Канал: стабильный (нажмите для предрелизов)");
+                btnChannel.setText(Lang.tr(preview ? "Канал: предрелизы (нажмите для стабильного)"
+                                           : "Канал: стабильный (нажмите для предрелизов)"));
                 Toast.makeText(SettingsActivity.this,
-                        preview ? "Канал: предрелизы" : "Канал: стабильный", 0).show();
+                        Lang.tr(preview ? "Канал: предрелизы" : "Канал: стабильный"), 0).show();
             }
         });
         linearLayout.addView(btnChannel);
@@ -248,7 +248,7 @@ public class SettingsActivity extends Activity {
         btnAppUpdate.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public void onClick(View view) {
-                Toast.makeText(SettingsActivity.this, "Проверяю обновления приложения…", 0).show();
+                Toast.makeText(SettingsActivity.this, Lang.tr("Проверяю обновления приложения…"), 0).show();
                 AppUpdater.checkAsync(SettingsActivity.this, true, new AppUpdater.Callback() {
                     @Override // ru.opencode.android.AppUpdater.Callback
                     public void done(final String text) {
@@ -258,11 +258,11 @@ public class SettingsActivity extends Activity {
                                 JSONObject st = AppUpdater.state(SettingsActivity.this);
                                 if (st.optBoolean("available")) {
                                     new AlertDialog.Builder(SettingsActivity.this)
-                                        .setTitle("Обновление приложения")
-                                        .setMessage("Доступно " + st.optString("version") +
-                                            " (установлено " + st.optString("current") +
-                                            ").\n\nСкачать и установить?")
-                                        .setPositiveButton("Скачать", new DialogInterface.OnClickListener() {
+                                        .setTitle(Lang.tr("Обновление приложения"))
+                                        .setMessage(Lang.tr("Доступно ") + st.optString("version") +
+                                            Lang.tr(" (установлено ") + st.optString("current") +
+                                            Lang.tr(").\n\nСкачать и установить?"))
+                                        .setPositiveButton(Lang.tr("Скачать"), new DialogInterface.OnClickListener() {
                                             @Override // android.content.DialogInterface.OnClickListener
                                             public void onClick(DialogInterface dialogInterface, int i) {
                                                 AppUpdater.installAsync(SettingsActivity.this, new AppUpdater.Callback() {
@@ -278,10 +278,10 @@ public class SettingsActivity extends Activity {
                                                 });
                                             }
                                         })
-                                        .setNegativeButton("Позже", (DialogInterface.OnClickListener) null)
+                                        .setNegativeButton(Lang.tr("Позже"), (DialogInterface.OnClickListener) null)
                                         .show();
                                 } else {
-                                    Toast.makeText(SettingsActivity.this, text, 1).show();
+                                    Toast.makeText(SettingsActivity.this, Lang.tr(text), 1).show();
                                 }
                             }
                         });
@@ -291,14 +291,14 @@ public class SettingsActivity extends Activity {
         });
         linearLayout.addView(btnAppUpdate);
         final Button btnAppAuto = btn("");
-        btnAppAuto.setText("Автопроверка обновлений приложения: " +
-                (AppUpdater.autoEnabled() ? "вкл" : "выкл"));
+        btnAppAuto.setText(Lang.tr("Автопроверка обновлений приложения: " +
+                (AppUpdater.autoEnabled() ? "вкл" : "выкл")));
         btnAppAuto.setOnClickListener(new View.OnClickListener() {
             @Override // android.view.View.OnClickListener
             public void onClick(View view) {
                 boolean on = !AppUpdater.autoEnabled();
                 AppUpdater.setAutoEnabled(on);
-                btnAppAuto.setText("Автопроверка обновлений приложения: " + (on ? "вкл" : "выкл"));
+                btnAppAuto.setText(Lang.tr("Автопроверка обновлений приложения: " + (on ? "вкл" : "выкл")));
             }
         });
         linearLayout.addView(btnAppAuto);
@@ -323,12 +323,12 @@ public class SettingsActivity extends Activity {
             file.mkdirs();
         }
         App.setDefaultDirectory(trim);
-        Toast.makeText(this, "Сохранено: " + trim, 0).show();
+        Toast.makeText(this, Lang.tr("Сохранено: " + trim), 0).show();
     }
 
     /* renamed from: lambda$onCreate$8$ru-opencode-android-SettingsActivity, reason: not valid java name */
     /* synthetic */ void m43lambda$onCreate$8$ruopencodeandroidSettingsActivity(View view) {
-        Notifications.show(this, App.TAG, "Уведомления работают");
+        Notifications.show(this, App.TAG, Lang.tr("Уведомления работают"));
     }
 
     /* renamed from: lambda$onCreate$10$ru-opencode-android-SettingsActivity, reason: not valid java name */
@@ -340,7 +340,7 @@ public class SettingsActivity extends Activity {
                 SettingsActivity.this.m44lambda$onCreate$9$ruopencodeandroidSettingsActivity();
             }
         }, 900L);
-        Toast.makeText(this, "Перезапуск…", 0).show();
+        Toast.makeText(this, Lang.tr("Перезапуск…"), 0).show();
     }
 
     /* renamed from: lambda$onCreate$9$ru-opencode-android-SettingsActivity, reason: not valid java name */
@@ -387,7 +387,7 @@ public class SettingsActivity extends Activity {
     }
 
     private void checkStatus() {
-        this.info.setText("OpenCode: " + (App.ocRunning ? "работает" : "не запущен") + "\nСервер: " + (App.serverRunning ? "работает" : "не запущен") + "\nДоступ к файлам: " + (App.allFilesGranted() ? "есть" : "нет") + "\nПорт: " + App.ocPort);
+        this.info.setText(Lang.tr("OpenCode: " + (App.ocRunning ? "работает" : "не запущен") + "\nСервер: " + (App.serverRunning ? "работает" : "не запущен") + "\nДоступ к файлам: " + (App.allFilesGranted() ? "есть" : "нет") + "\nПорт: " + App.ocPort));
     }
 
     private JSONObject req(String str, String str2, JSONObject jSONObject, int i) throws Exception {
@@ -449,7 +449,7 @@ public class SettingsActivity extends Activity {
         runOnUiThread(new Runnable() {
             @Override // java.lang.Runnable
             public void run() {
-                Toast.makeText(SettingsActivity.this, result.startsWith("Ошибка") ? result : "Логи: " + result, 1).show();
+                Toast.makeText(SettingsActivity.this, Lang.tr(result.startsWith("Ошибка") ? result : "Логи: " + result), 1).show();
             }
         });
     }
@@ -504,7 +504,7 @@ public class SettingsActivity extends Activity {
 
     /* renamed from: lambda$exportBackup$15$ru-opencode-android-SettingsActivity, reason: not valid java name */
     /* synthetic */ void m27lambda$exportBackup$15$ruopencodeandroidSettingsActivity(String str) {
-        Toast.makeText(this, str, 1).show();
+        Toast.makeText(this, Lang.tr(str), 1).show();
     }
 
     private static void addToZip(ZipOutputStream zipOutputStream, File file, File file2, byte[] bArr) throws Exception {
@@ -538,7 +538,7 @@ public class SettingsActivity extends Activity {
             intent.setType("*/*");
             startActivityForResult(intent, REQ_IMPORT);
         } catch (Throwable th) {
-            Toast.makeText(this, "Не удалось открыть выбор файла: " + String.valueOf(th), 1).show();
+            Toast.makeText(this, Lang.tr("Не удалось открыть выбор файла: " + String.valueOf(th)), 1).show();
         }
     }
 
@@ -635,11 +635,11 @@ public class SettingsActivity extends Activity {
 
     /* renamed from: lambda$onActivityResult$17$ru-opencode-android-SettingsActivity, reason: not valid java name */
     /* synthetic */ void m29lambda$onActivityResult$17$ruopencodeandroidSettingsActivity(String str) {
-        Toast.makeText(this, str, 1).show();
+        Toast.makeText(this, Lang.tr(str), 1).show();
     }
 
     private void checkUpdates() {
-        Toast.makeText(this, "Проверяю обновления…", 0).show();
+        Toast.makeText(this, Lang.tr("Проверяю обновления…"), 0).show();
         new Thread(new Runnable() { // from class: ru.opencode.android.SettingsActivity$$ExternalSyntheticLambda3
             @Override // java.lang.Runnable
             public final void run() {
@@ -672,12 +672,12 @@ public class SettingsActivity extends Activity {
 
     /* renamed from: lambda$checkUpdates$20$ru-opencode-android-SettingsActivity, reason: not valid java name */
     /* synthetic */ void m25lambda$checkUpdates$20$ruopencodeandroidSettingsActivity(String str, String str2, final JSONObject jSONObject) {
-        new AlertDialog.Builder(this).setTitle("Обновление OpenCode").setMessage("Установлено " + str + ", доступно " + str2 + ". Скачать и установить?").setPositiveButton("Обновить", new DialogInterface.OnClickListener() { // from class: ru.opencode.android.SettingsActivity$$ExternalSyntheticLambda7
+        new AlertDialog.Builder(this).setTitle(Lang.tr("Обновление OpenCode")).setMessage(Lang.tr("Установлено ") + str + Lang.tr(", доступно ") + str2 + Lang.tr(". Скачать и установить?")).setPositiveButton(Lang.tr("Обновить"), new DialogInterface.OnClickListener() { // from class: ru.opencode.android.SettingsActivity$$ExternalSyntheticLambda7
             @Override // android.content.DialogInterface.OnClickListener
             public final void onClick(DialogInterface dialogInterface, int i) {
                 SettingsActivity.this.m24lambda$checkUpdates$19$ruopencodeandroidSettingsActivity(jSONObject, dialogInterface, i);
             }
-        }).setNegativeButton("Отмена", (DialogInterface.OnClickListener) null).show();
+        }).setNegativeButton(Lang.tr("Отмена"), (DialogInterface.OnClickListener) null).show();
     }
 
     /* renamed from: lambda$checkUpdates$19$ru-opencode-android-SettingsActivity, reason: not valid java name */
@@ -686,7 +686,7 @@ public class SettingsActivity extends Activity {
     }
 
     private void startUpdate(JSONObject jSONObject) {
-        Toast.makeText(this, "Скачивание обновления…", 1).show();
+        Toast.makeText(this, Lang.tr("Скачивание обновления…"), 1).show();
         Updater.downloadAndInstall(this, jSONObject, new Updater.Callback() { // from class: ru.opencode.android.SettingsActivity$$ExternalSyntheticLambda6
             @Override // ru.opencode.android.Updater.Callback
             public final void done(String str) {
@@ -709,7 +709,7 @@ public class SettingsActivity extends Activity {
 
     /* renamed from: lambda$ui$23$ru-opencode-android-SettingsActivity, reason: not valid java name */
     /* synthetic */ void m46lambda$ui$23$ruopencodeandroidSettingsActivity(String str) {
-        Toast.makeText(this, str, 1).show();
+        Toast.makeText(this, Lang.tr(str), 1).show();
     }
 
     private void showLogs() {
@@ -725,12 +725,12 @@ public class SettingsActivity extends Activity {
         textView.setPadding(16, 16, 16, 16);
         ScrollView scrollView = new ScrollView(this);
         scrollView.addView(textView);
-        new AlertDialog.Builder(this).setTitle("Журнал").setView(scrollView).setPositiveButton("Закрыть", (DialogInterface.OnClickListener) null).show();
+        new AlertDialog.Builder(this).setTitle(Lang.tr("Журнал")).setView(scrollView).setPositiveButton(Lang.tr("Закрыть"), (DialogInterface.OnClickListener) null).show();
     }
 
     private void append(StringBuilder sb, File file, int i) {
         if (!file.isFile()) {
-            sb.append("(нет файла ").append(file.getName()).append(")\n");
+            sb.append(Lang.tr("(нет файла ")).append(file.getName()).append(")\n");
             return;
         }
         try {
@@ -752,7 +752,7 @@ public class SettingsActivity extends Activity {
                 sb.append((String) it.next()).append('\n');
             }
         } catch (Throwable th) {
-            sb.append("(ошибка чтения: ").append(th).append(")\n");
+            sb.append(Lang.tr("(ошибка чтения: ")).append(th).append(")\n");
         }
     }
 }

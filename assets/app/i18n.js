@@ -132,12 +132,16 @@
     "если доступ уже включили — нажмите здесь": "if you already granted it — tap here",
     "Включите «Доступ ко всем файлам» и вернитесь": "Enable “All files access” and come back",
     "Доступ ещё не выдан: включите «Доступ ко всем файлам» в настройках Android": "Access not granted yet: enable “All files access” in Android settings",
-    "Настройки → Приложения → OpenCode Remote → «Доступ ко всем файлам»": "Settings → Apps → OpenCode Remote → “All files access”",
+    "Настройки → Приложения → OpenCode → «Доступ ко всем файлам»": "Settings → Apps → OpenCode → “All files access”",
     "«Доступ ко всем файлам» — отдельный переключатель. В обычном списке разрешений приложения его нет: ": "“All files access” is a separate switch, not in the normal permission list: ",
-    "Чтобы фото показывались с превью, обновите приложение до 1.5: ☰ → ⬇️ Установить приложение.": "To see photo previews, update the app: ☰ → ⬇️ Install app.",
+    "Превью для фото недоступны.": "Photo previews are unavailable.",
+    "Память": "Storage",
+    "Загрузки": "Downloads",
+    "Документы": "Documents",
+    "Фото": "Photos",
     "Установить приложение (APK)": "Install app (APK)",
     "«📎 несколько» — взять сразу несколько.": "“📎 several” — pick several at once.",
-    "Нажмите файл — он загрузится на компьютер и прикрепится к сообщению. ": "Tap a file — it uploads and attaches to the message. ",
+    "Нажмите файл — он прикрепится к сообщению. ": "Tap a file — it will be attached to the message. ",
 
     /* сообщения и вложения */
     "Файл прикреплён": "File attached",
@@ -237,7 +241,7 @@
     "Платные модели доступны в списке моделей.": "Paid models are available in the model list.",
     "Модели провайдера уже доступны в выборе модели.": "Provider models are now available in the model picker.",
     "Модели этого провайдера исчезнут из списка.": "This provider's models will disappear from the list.",
-    "Сохранённый ключ/аккаунт удалится с компьютера. ": "The saved key/account will be removed. ",
+    "Сохранённый ключ/аккаунт удалится с телефона. ": "The saved key/account will be removed from the phone. ",
     "Чтобы вернуть, понадобится подключить провайдера заново": "To restore it, connect the provider again",
     "Можно задать ключ переменной окружения: ": "You can also use an environment variable: ",
     "У этого провайдера нет способа входа через приложение.": "This provider has no sign-in method in the app.",
@@ -493,7 +497,132 @@
     "Код": "Code",
     "Чат": "Chat",
     "Выберите": "Choose",
-    "Добавить": "Add"
+    "Добавить": "Add",
+
+    /* 1.14: заголовки, статусы, диалоги */
+    "подключение…": "connecting…",
+    "OpenCode ждёт ответа": "OpenCode is waiting for an answer",
+    "Выбор модели": "Choose a model",
+    "➕ Новая папка": "➕ New folder",
+    "Хорошо": "OK",
+    "← В чат": "← Back to chat",
+    "сброс": "reset",
+    "Введите пин-код": "Enter PIN",
+    "отменено": "cancelled",
+    "работает…": "working…",
+    "OpenCodeAndroid.apk — с телефона": "OpenCodeAndroid.apk — from phone",
+    "Рабочую папку чата можно выбрать в 💽 Диски.": "You can choose the chat working folder in 💽 Disks.",
+    "Файлы с телефона недоступны": "Phone files are unavailable",
+    "Отключить «": "Disconnect “",
+    "»?\n\nСохранённый ключ или вход удалятся с телефона. Модели этого провайдера исчезнут из списка.": "”?\n\nThe saved key or sign-in will be removed from the phone. This provider's models will disappear from the list.",
+    "Отключить провайдера «": "Disconnect provider “",
+    "»?\n\nСохранённый ключ/аккаунт удалится с телефона. Чтобы вернуть, понадобится подключить провайдера заново в настройках OpenCode.": "”?\n\nThe saved key/account will be removed from the phone. To restore it, connect the provider again in OpenCode settings.",
+    "Подключено, но моделей нет — проверьте подписку или ключ": "Connected, but no models — check your subscription or key",
+    "снимки, загрузки, документы, любые папки.": "photos, downloads, documents, any folders.",
+    "Настройки → Приложения → OpenCode → «Доступ ко всем файлам» (на Honor ещё «Особые разрешения»).": "Settings → Apps → OpenCode → “All files access” (on Honor also “Special access”).",
+    "«Доступ ко всем файлам» — отдельный переключатель. В обычном списке разрешений приложения его нет: ": "“All files access” is a separate switch, not in the normal permission list: ",
+    "«Номер сборки».": "“Build number”.",
+    "Затем «Проверить снова».": "Then “Check again”.",
+    "Shizuku запустится сам.": "Shizuku will start by itself.",
+    "в настройках OpenCode.": "in OpenCode settings.",
+
+    /* 1.14: мост (bridge.js) */
+    "запуск…": "starting…",
+    "файл": "file",
+    "сейчас": "now",
+    "мин": "min",
+    "ч": "h",
+    "дн": "d",
+    "Вопрос": "Question",
+    "Не удалось загрузить чат: ": "Could not load chat: ",
+    "нет id сессии": "no session id",
+    "Новый чат: ": "New chat: ",
+    "Не удалось создать чат: ": "Could not create chat: ",
+    "неизвестная команда: ": "unknown command: ",
+    "Остановил работу": "Stopped the work",
+    "Пустое название": "Empty name",
+    "Название: «": "Name: “",
+    "Чат удалён": "Chat deleted",
+    "Рабочая папка: ": "Working folder: ",
+    "Модель: ": "Model: ",
+    "нет доступа": "no access",
+    "Не удалось создать папку: ": "Could not create folder: ",
+    "Папка создана": "Folder created",
+    "Ключ OpenCode Zen сохранён": "OpenCode Zen key saved",
+    "нет attemptID": "no attemptID",
+    "Сервер не выдал код входа": "Server did not return a login code",
+    "Откройте ссылку: ": "Open the link: ",
+    "Откройте ссылку из уведомления на сайте OpenCode": "Open the link from the notification on the OpenCode site",
+    "Сначала начните вход": "Start sign-in first",
+    "Провайдер подключён": "Provider connected",
+    "Не удалось подключить: ": "Could not connect: ",
+    "Подключение уже выполняется…": "Connection already in progress…",
+    "Провайдер отключён": "Provider disconnected",
+    "Не удалось отключить: ": "Could not disconnect: ",
+    "Веб-поиск: ": "Web search: ",
+    "Провайдер не закреплён — сервер выбирает сам": "Provider not pinned — the server chooses",
+    "Не удалось сохранить выбор: ": "Could not save the choice: ",
+    "Скачивание обновления началось": "Update download started",
+    "готов": "ready",
+    "нет связи с OpenCode": "no connection to OpenCode",
+    "Ошибка выполнения: ": "Execution error: ",
+    "OpenCode ещё не запустился": "OpenCode has not started yet",
+    "Ошибка запуска: ": "Start error: ",
+
+    /* 1.14: страница — остатки */
+    "ресурсы:": "resources:",
+    "Да": "Yes",
+    "Нет": "No",
+    "платно": "paid",
+    "DeepSeek · свой ключ": "DeepSeek · own key",
+    "Google · свой ключ": "Google · own key",
+    "OpenRouter · свой ключ": "OpenRouter · own key",
+    "Mercury · свой ключ": "Mercury · own key",
+    "✏️ Переименовать чат": "✏️ Rename chat",
+    "OpenCode сам называет чат по первому сообщению. Здесь можно задать своё название — так чат проще найти в списке.": "OpenCode names the chat from the first message. You can set your own name here — it is easier to find in the list.",
+    "Здесь можно задать своё название — так чат проще найти в списке.": "You can set your own name here — it is easier to find in the list.",
+    "Каталог провайдеров: ": "Provider catalog: ",
+    "ГБ": "GB",
+    "МБ": "MB",
+    "КБ": "KB",
+    "📄 Выберите файл": "📄 Choose a file",
+    "системная галерея — разрешение не нужно": "system gallery — no permission needed",
+    "системное окно выбора, работает без разрешения": "system picker — works without permission",
+    "Ничего не выбрано": "Nothing selected",
+    "Загружаю: ": "Uploading: ",
+    ", с ошибкой: ": ", with error: ",
+    ". Файлы прикреплены к сообщению.": ". Files are attached to the message.",
+    "Сортировка: бесплатные → самые дешёвые (больше токенов в месяц) → самые дорогие.": "Sorted: free → cheapest (more tokens per month) → most expensive.",
+    "вход $ ": "input $ ",
+    "млн токенов выхода в месяц": "M output tokens per month",
+    "запросов за 5 часов": "requests per 5 hours",
+    "🌐 Тарифы и лимиты на сайте": "🌐 Plans and limits on the website",
+    "Уведомление приходит, когда OpenCode закончил отвечать на сообщение.": "A notification arrives when OpenCode finishes answering a message.",
+    "Уведомления о завершении": "Completion notifications",
+    "тихое сообщение, когда ответ готов": "silent message when the answer is ready",
+    "Звуковой сигнал": "Sound",
+    "когда чат открыт на экране": "when the chat is open on screen",
+    "Вибрация": "Vibration",
+    "работает и когда приложение свёрнуто": "works even when the app is in the background",
+    "Эти настройки сохраняются сразу.": "These settings are saved immediately.",
+    "📄 Экспорт логов (ZIP)": "📄 Export logs (ZIP)",
+    "Логи приложения и OpenCode сохранятся в /sdcard/Download вместе с моделью устройства — удобно приложить к отчёту об ошибке.": "App and OpenCode logs are saved to /sdcard/Download together with the device model — handy to attach to a bug report.",
+    "Логи приложения и OpenCode сохранятся в /sdcard/Download": "App and OpenCode logs are saved to /sdcard/Download",
+    "вместе с моделью устройства — удобно приложить к отчёту об ошибке.": "together with the device model — handy to attach to a bug report.",
+    "Сохраняю…": "Saving…",
+    "Не удалось сохранить логи": "Could not save logs",
+    "Логи: ": "Logs: ",
+    "Инструкция": "Instructions",
+    "🔓 Полные разрешения": "🔓 Full permissions",
+    "Разрешите и проверьте": "Allow and check",
+    "Вставьте ключ OpenCode Zen. Он хранится только на телефоне.": "Paste the OpenCode Zen key. It is stored only on the phone.",
+    "← К списку провайдеров": "← Back to providers",
+    "Откроется браузер — войдите и вернитесь в приложение.": "A browser opens — sign in and return to the app.",
+    "Переключаю на русский…": "Switching to Russian…",
+    "нажмите ещё раз, чтобы скачать": "tap again to download",
+    "📁 Где работать": "📁 Where to work",
+    "Что сделать с папкой?": "What to do with the folder?",
+    ". Введи часть названия в поиск выше.": ". Type part of the name in the search above."
   };
 
   var RULES = [
@@ -557,6 +686,46 @@
     [" · переменная окружения", " · env var"],
     [" · нет способа входа", " · no sign-in"],
     [" · скрыт в списке моделей", " · hidden from model list"],
+    [" · свой ключ", " · own key"],
+    ["· выход $", "· output $"],
+    ["· кэш $", "· cache $"],
+    [" за 1M", " per 1M"],
+    ["цены вне пик", "off-peak pricing"],
+    [" млн токенов выхода в месяц", "M output tokens per month"],
+    [" запросов за 5 часов", " requests per 5 hours"],
+    ["сброс ", "resets "],
+    ["Загружаю: ", "Uploading: "],
+    ["Загружаю ", "Uploading "],
+    [" из ", " of "],
+    ["действие: ", "action: "],
+    ["ресурсы:", "resources:"],
+    ["Логи: ", "Logs: "],
+    ["Обновить каталог", "Refresh catalog"],
+    ["Показаны первые ", "Showing first "],
+    ["Загружено: ", "Loaded: "],
+    ["С телефона: ", "From phone: "],
+    ["Не загрузилось: ", "Failed to load: "],
+    ["Не получилось: ", "Failed: "],
+    ["Код скопирован: ", "Code copied: "],
+    ["вход $", "input $"],
+    [", с ошибкой: ", ", with error: "],
+    ["Ошибка входа: ", "Sign-in error: "],
+    ["Ошибка: ", "Error: "],
+    ["Код: ", "Code: "],
+    ["Модель: ", "Model: "],
+    ["Рабочая папка: ", "Working folder: "],
+    ["Новый чат: ", "New chat: "],
+    ["Веб-поиск: ", "Web search: "],
+    ["Ошибка запуска: ", "Start error: "],
+    ["Не удалось выйти: ", "Could not sign out: "],
+    ["Код не принят: ", "Code not accepted: "],
+    ["Вход не выполнен: ", "Sign-in failed: "],
+    ["API-ключ ", "API key "],
+    ["Ответ через ", "Response via "],
+    ["На ПК это делает ", "On a PC this is done by "],
+    ["«Номер сборки».", "“Build number”."],
+    ["Shizuku запустится сам.", "Shizuku will start by itself."],
+    ["Затем «Проверить снова».", "Then “Check again”."],
     ["Обновление скачивается с GitHub (~", "The update downloads from GitHub (~"],
     ["После загрузки Android попросит подтвердить установку;", "After download Android will ask to confirm;"],
     ["чаты, настройки и ключи сохраняются.", "chats, settings and keys are preserved."],
@@ -568,25 +737,38 @@
     ["Показать ещё", "Show more"]
   ].sort(function (a, b) { return b[0].length - a[0].length; });
 
+  /* Длинные готовые фразы тоже работают как подстроки: в разметке соседние
+     куски часто склеиваются в один текстовый узел, и точного совпадения нет. */
+  var LONG = [];
+  for (var ek in EN) {
+    if (Object.prototype.hasOwnProperty.call(EN, ek) && ek.length >= 18 && ek.indexOf(" ") >= 0) {
+      LONG.push([ek, EN[ek]]);
+    }
+  }
+  LONG.sort(function (a, b) { return b[0].length - a[0].length; });
+  SUBS = SUBS.concat(LONG).sort(function (a, b) { return b[0].length - a[0].length; });
+
   function tr(s) {
     if (s == null) return s;
+    if (LANG !== "en") return s;
     var str = String(s);
+    if (EN[str] != null) return EN[str];
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);
     var lead = m[1], core = m[2], trail = m[3];
     if (!core) return str;
     if (EN[core] != null) return lead + EN[core] + trail;
-    var subbed = core;
+    var subbed = str;
     for (var j = 0; j < SUBS.length; j++) {
       if (subbed.indexOf(SUBS[j][0]) >= 0) {
         subbed = subbed.split(SUBS[j][0]).join(SUBS[j][1]);
       }
     }
-    if (subbed !== core) {
+    if (subbed !== str) {
       subbed = subbed.replace(/(\d+(?:[.,]\d+)?)\s+МБ/g, "$1 MB")
                      .replace(/(\d+(?:[.,]\d+)?)\s+КБ/g, "$1 KB")
                      .replace(/(\d+(?:[.,]\d+)?)\s+ГБ/g, "$1 GB")
                      .replace(/(\d+(?:[.,]\d+)?)\s+Б\b/g, "$1 B");
-      return lead + subbed + trail;
+      return subbed;
     }
     for (var i = 0; i < RULES.length; i++) {
       var rule = RULES[i];

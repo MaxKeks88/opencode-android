@@ -21,7 +21,7 @@ public final class Notifications {
                 return;
             }
             NotificationManager notificationManager = (NotificationManager) context.getSystemService("notification");
-            NotificationChannel notificationChannel = new NotificationChannel(CHANNEL, "Сообщения OpenCode", 3);
+            NotificationChannel notificationChannel = new NotificationChannel(CHANNEL, Lang.tr("Сообщения OpenCode"), 3);
             notificationChannel.setShowBadge(true);
             notificationManager.createNotificationChannel(notificationChannel);
             Intent intent = new Intent(context, (Class<?>) MainActivity.class);

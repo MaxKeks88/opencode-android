@@ -73,7 +73,7 @@ public class OnboardingActivity extends Activity {
         });
         linearLayout.addView(btn2);
         linearLayout.addView(head("3. Рабочая папка"));
-        linearLayout.addView(note("По умолчанию — " + App.defaultDirectory() + ". Папку можно сменить в настройках."));
+        linearLayout.addView(note(Lang.tr("По умолчанию — " + App.defaultDirectory() + ". Папку можно сменить в настройках.")));
         linearLayout.addView(head("4. Аккаунт (необязательно)"));
         linearLayout.addView(note("Войдите в OpenCode, чтобы получить платные модели Go. Это можно сделать позже: шестерёнка → Провайдеры."));
         Button btn3 = btn("Начать работу");
@@ -132,12 +132,12 @@ public class OnboardingActivity extends Activity {
 
     private void updateStatus() {
         if (this.filesStatus != null) {
-            this.filesStatus.setText(App.allFilesGranted() ? "✓ доступ есть" : "✗ доступа нет");
+            this.filesStatus.setText(Lang.tr(App.allFilesGranted() ? "✓ доступ есть" : "✗ доступа нет"));
             this.filesStatus.setTextColor(App.allFilesGranted() ? -13315175 : -495247);
         }
         if (this.battStatus != null) {
             boolean isBatteryOk = isBatteryOk();
-            this.battStatus.setText(isBatteryOk ? "✓ оптимизация отключена" : "• оптимизация включена (не критично)");
+            this.battStatus.setText(Lang.tr(isBatteryOk ? "✓ оптимизация отключена" : "• оптимизация включена (не критично)"));
             this.battStatus.setTextColor(isBatteryOk ? -13315175 : -7626568);
         }
     }

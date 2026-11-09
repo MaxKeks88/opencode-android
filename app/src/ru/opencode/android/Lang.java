@@ -5,7 +5,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /** Язык интерфейса: en (по умолчанию для новых установок) и ru. */
@@ -15,6 +18,8 @@ public final class Lang {
     public static final String RU = "ru";
 
     private static final Map<String, String> EN_MAP = new HashMap<String, String>();
+    private static final List<Map.Entry<String, String>> LONG =
+            new ArrayList<Map.Entry<String, String>>();
 
     static {
         put("OpenCode на телефоне", "OpenCode on your phone");
@@ -108,6 +113,77 @@ public final class Lang {
         put("OpenCode нужно читать и изменять файлы на телефоне. Разрешите «Доступ ко всем файлам» для этого приложения.",
             "OpenCode needs to read and modify files on your phone. Allow “All files access” for this app.");
         put("Открываю чат…", "Opening chat…");
+
+        put("Проверка уже идёт", "Check already in progress");
+        put("Доступно обновление ", "Update available ");
+        put("Обновлений нет", "No updates available");
+        put("Установлена последняя версия ", "You have the latest version ");
+        put("Не удалось проверить обновления: ", "Failed to check for updates: ");
+        put("Уже идёт проверка или загрузка", "A check or download is already in progress");
+        put("Разрешите установку из этого источника и нажмите «Скачать» ещё раз",
+                "Allow installing from this source and tap Download again");
+        put("Ошибка обновления: ", "Update error: ");
+        put("Скачано. Подтвердите установку в системном окне.",
+                "Downloaded. Confirm installation in the system window.");
+        put("Обновления приложения", "App updates");
+        put("Скачивание: ", "Downloading: ");
+        put("Обновить", "Update");
+        put("Скачать и установить?", "Download and install?");
+        put(").\n\nСкачать и установить?", ").\n\nDownload and install?");
+        put(". Скачать и установить?", ". Download and install?");
+        put("OpenCode ждёт вашего ответа", "OpenCode is waiting for your answer");
+        put("OpenCode перезапускается…", "OpenCode is restarting…");
+        put("OpenCode не ответил за 90 секунд", "OpenCode did not respond within 90 seconds");
+        put("Ошибка: ", "Error: ");
+        put("Сохранено: ", "Saved: ");
+        put("Логи: ", "Logs: ");
+        put("Доступно ", "Available ");
+        put(" (установлено ", " (installed ");
+        put("Обновлено. OpenCode перезапускается.", "Updated. OpenCode is restarting.");
+        put("Обновление прервано", "Update interrupted");
+        put("Ошибка экспорта логов: ", "Log export error: ");
+        put("нет релизов v2.x", "no v2.x releases");
+        put("нет ассета opencode-linux-arm64-musl.tar.gz", "no opencode-linux-arm64-musl.tar.gz asset");
+        put("нет ссылки на ассет", "no asset link");
+        put("контрольная сумма не совпала", "checksum mismatch");
+        put("скачанный файл не ELF", "downloaded file is not ELF");
+        put("бинарник слишком мал", "binary is too small");
+        put("не удалось сделать бэкап", "could not create a backup");
+        put("не удалось заменить бинарник", "could not replace the binary");
+        put("opencode не найден в архиве", "opencode not found in the archive");
+        put("последний релиз помечен как черновик/предрелиз", "latest release is a draft/prerelease");
+        put("у релиза нет тега", "release has no tag");
+        put("в релизе нет APK-ассета", "release has no APK asset");
+        put("у ассета нет ссылки", "asset has no link");
+        put("нет ссылки на APK", "no APK link");
+        put("не удалось создать ", "could not create ");
+        put("не удалось заменить старый APK", "could not replace the old APK");
+        put("не удалось переименовать APK", "could not rename the APK");
+        put("скачанный файл не APK", "downloaded file is not an APK");
+        put("чужой пакет: ", "different package: ");
+        put("версия в APK не новее установленной", "APK version is not newer than installed");
+        put("APK подписан другим ключом — установка поверх невозможна",
+                "APK is signed with a different key — in-place update is impossible");
+        put("файл слишком мал: ", "file is too small: ");
+        put("Shizuku не запущен", "Shizuku is not running");
+        put("[команда остановлена: лимит ", "[command stopped: limit ");
+        put(" с. Изменить: ⚙ Настройки → «Лимит shell»]", " s. Change it: ⚙ Settings → “Shell limit”]");
+        put("… (вывод обрезан, лимит ", "… (output truncated, limit ");
+        put(" МБ: ⚙ Настройки → «Лимит вывода shell»)", " MB: ⚙ Settings → “Shell output limit”)");
+
+        /* Длинные фразы можно заменять внутри склеенных строк. */
+        for (Map.Entry<String, String> e : EN_MAP.entrySet()) {
+            String key = e.getKey();
+            if (key.length() >= 14 && key.indexOf(' ') >= 0) {
+                LONG.add(e);
+            }
+        }
+        LONG.sort(new Comparator<Map.Entry<String, String>>() {
+            @Override
+            public int compare(Map.Entry<String, String> a, Map.Entry<String, String> b) {
+                return b.getKey().length() - a.getKey().length();
+            }
+        });
     }
 
     private Lang() {
@@ -181,7 +257,15 @@ public final class Lang {
             .replace("Сервер: не запущен", "Server: not running")
             .replace("Доступ к файлам: есть", "File access: granted")
             .replace("Доступ к файлам: нет", "File access: no")
-            .replace("Порт: ", "Port: ");
+            .replace("Порт: ", "Port: ")
+            .replace("Ошибка: ", "Error: ")
+            .replace("Ошибка обновления: ", "Update error: ")
+            .replace("Скачивание: ", "Downloading: ");
+        for (Map.Entry<String, String> e : LONG) {
+            if (text.contains(e.getKey())) {
+                text = text.replace(e.getKey(), e.getValue());
+            }
+        }
         text = text.replaceAll("(\\d+)\\s+файлов", "$1 files");
         text = text.replaceAll("(\\d+)\\s+МБ", "$1 MB");
         text = text.replaceAll("(\\d+)\\s+с\\b", "$1 s");

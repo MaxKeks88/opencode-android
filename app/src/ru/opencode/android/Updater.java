@@ -209,7 +209,7 @@ public final class Updater {
             }
             App.makeExecutable(fileOpencode);
             RuntimeService.start(context);
-            str = "Обновлено. OpenCode перезапускается.";
+            str = Lang.tr("Обновлено. OpenCode перезапускается.");
             try {
                 file2.delete();
             } catch (Throwable th) {
@@ -217,7 +217,7 @@ public final class Updater {
             callback.done(str);
         } catch (Throwable th2) {
             try {
-                str = "Ошибка обновления: " + String.valueOf(th2);
+                str = Lang.tr("Ошибка обновления: " + String.valueOf(th2));
                 try {
                     RuntimeService.start(context);
                 } catch (Throwable th3) {
@@ -231,7 +231,7 @@ public final class Updater {
                     file2.delete();
                 } catch (Throwable th6) {
                 }
-                callback.done("Обновление прервано");
+                callback.done(Lang.tr("Обновление прервано"));
                 throw th5;
             }
         }

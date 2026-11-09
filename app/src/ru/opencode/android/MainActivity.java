@@ -118,7 +118,7 @@ public class MainActivity extends Activity {
                 }
                 MainActivity.this.fileCallback = valueCallback;
                 try {
-                    MainActivity.this.startActivityForResult(Intent.createChooser(fileChooserParams.createIntent(), "Выбрать файл"), MainActivity.REQ_FILE_CHOOSER);
+                    MainActivity.this.startActivityForResult(Intent.createChooser(fileChooserParams.createIntent(), Lang.tr("Выбрать файл")), MainActivity.REQ_FILE_CHOOSER);
                     return true;
                 } catch (Throwable th2) {
                     App.log("file chooser: " + String.valueOf(th2));
@@ -226,7 +226,7 @@ public class MainActivity extends Activity {
                     @Override // java.lang.Runnable
                     public void run() {
                         MainActivity.this.status.setText(Lang.tr("OpenCode не запустился"));
-                        MainActivity.this.detail.setText(App.lastError.isEmpty() ? Lang.tr("Откройте настройки и посмотрите журнал") : App.lastError);
+                        MainActivity.this.detail.setText(App.lastError.isEmpty() ? Lang.tr("Откройте настройки и посмотрите журнал") : Lang.tr(App.lastError));
                     }
                 });
             }
@@ -274,12 +274,12 @@ public class MainActivity extends Activity {
         }
         if (Build.VERSION.SDK_INT >= 30 && !Environment.isExternalStorageManager() && !App.prefs().getBoolean("asked_all_files", false)) {
             App.prefs().edit().putBoolean("asked_all_files", true).apply();
-            new AlertDialog.Builder(this).setTitle("Доступ к файлам").setMessage("OpenCode нужно читать и изменять файлы на телефоне. Разрешите «Доступ ко всем файлам» для этого приложения.").setPositiveButton("Открыть настройки", new DialogInterface.OnClickListener() { // from class: ru.opencode.android.MainActivity$$ExternalSyntheticLambda0
+            new AlertDialog.Builder(this).setTitle(Lang.tr("Доступ к файлам")).setMessage(Lang.tr("OpenCode нужно читать и изменять файлы на телефоне. Разрешите «Доступ ко всем файлам» для этого приложения.")).setPositiveButton(Lang.tr("Открыть настройки"), new DialogInterface.OnClickListener() { // from class: ru.opencode.android.MainActivity$$ExternalSyntheticLambda0
                 @Override // android.content.DialogInterface.OnClickListener
                 public final void onClick(DialogInterface dialogInterface, int i) {
                     MainActivity.this.m14xc6b51846(dialogInterface, i);
                 }
-            }).setNegativeButton("Позже", (DialogInterface.OnClickListener) null).show();
+            }).setNegativeButton(Lang.tr("Позже"), (DialogInterface.OnClickListener) null).show();
         }
     }
 

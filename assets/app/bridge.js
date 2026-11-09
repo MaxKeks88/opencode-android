@@ -106,8 +106,8 @@
 
   function renderMessage(m) {
     if (!m || typeof m !== "object") return null;
-    const t = m.type, mid = m.id, ts = (m.time || {}).created;
-    if (t === "user") {
+    const typ = m.type, mid = m.id, ts = (m.time || {}).created;
+    if (typ === "user") {
       const files = [];
       for (const f of (m.files || [])) {
         if (f && typeof f === "object") files.push({ name: f.name || f.uri || t("файл"), uri: f.uri || "" });
@@ -115,7 +115,7 @@
       }
       return { id: mid, role: "user", text: m.text || (m.metadata || {}).displayText || "", files, ts };
     }
-    if (t === "assistant") {
+    if (typ === "assistant") {
       const blocks = [];
       for (const p of (m.content || [])) {
         if (!p || typeof p !== "object") continue;
@@ -150,7 +150,7 @@
         error: err ? String(err) : ""
       };
     }
-    if (t === "shell") {
+    if (typ === "shell") {
       return { id: mid, role: "info", text: "$ " + String(m.command || m.text || ""), ts };
     }
     const labels = {
@@ -158,9 +158,9 @@
       skill: "Навык", "agent-switched": "Смена агента", "model-switched": "Смена модели",
       "location-switched": "Смена папки"
     };
-    if (labels[t]) {
+    if (labels[typ]) {
       const txt = m.text || m.title || "";
-      return { id: mid, role: "info", text: t(labels[t]) + (txt ? ": " + txt : ""), ts };
+      return { id: mid, role: "info", text: t(labels[typ]) + (txt ? ": " + txt : ""), ts };
     }
     return null;
   }

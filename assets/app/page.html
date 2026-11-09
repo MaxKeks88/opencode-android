@@ -566,7 +566,7 @@ img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top
   <div class="dtools">
     <div class="tool" id="tapk">
       <div class="ic">⬇️</div>
-      <div class="tx"><div class="a">Установить приложение (APK)</div><div class="b">OpenCodeRemote.apk — с телефона</div></div>
+      <div class="tx"><div class="a">Установить приложение (APK)</div><div class="b">OpenCodeAndroid.apk — с телефона</div></div>
       <div class="ic" style="color:var(--dim2)">›</div>
     </div>
   </div>
@@ -581,7 +581,7 @@ img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top
   <div class="stabs" id="settabs"></div>
   <div class="fsbar" id="fsbar" style="display:none">
     <div class="fsquick" id="fsquick"></div>
-    <div class="fsrow">      <div class="iconbtn" id="fsup" style="width:32px;height:32px;flex:0 0 32px;font-size:15px">⬆</div>      <div class="p" id="fspath">—</div>
+    <div class="fsrow">      <div class="iconbtn" id="fsup" style="width:32px;height:32px;flex:0 0 32px;font-size:15px">⬆</div>      <div class="p" id="fspath" data-noi18n>—</div>
     </div>
     <div class="fsnew" id="fsnew" style="display:none">
       <div class="btn pri" id="nfmain">➕ Новая папка</div>
@@ -1005,7 +1005,7 @@ function renderMsg(m){
       const done = st==="completed" || st==="success" || st==="ended";
       const bad = st==="error" || st==="failed" || st==="cancelled" || st==="canceled";
       const cls = done ? "ok" : (bad ? "err" : "run");
-      const lbl = done ? "готово" : (bad ? (st==="cancelled"||st==="canceled" ? "отменено" : "ошибка") : "работает…");
+      const lbl = T(done ? "готово" : (bad ? (st==="cancelled"||st==="canceled" ? "отменено" : "ошибка") : "работает…"));
       let inp = "";
       try{ inp = typeof b.input === "string" ? b.input : JSON.stringify(b.input, null, 1); }catch(e){ inp = ""; }
       const hint = (b.hint || "").trim();
@@ -1046,13 +1046,13 @@ function renderAll(){
     const ob = document.createElement("div");
     ob.id = "older";
     ob.style.display = "block";
-    ob.innerHTML = '<button id="olderbtn">Показать раньше</button>';
+    ob.innerHTML = '<button id="olderbtn">' + T("Показать раньше") + '</button>';
     msgsEl.appendChild(ob);
   }
   if(!S.messages.length){
     const e = document.createElement("div");
     e.className = "empty";
-    e.textContent = (S.chat && S.chat.id) ? "В этом чате пока нет сообщений" : "Выберите чат в меню ☰ или создайте новый";
+    e.textContent = T((S.chat && S.chat.id) ? "В этом чате пока нет сообщений" : "Выберите чат в меню ☰ или создайте новый");
     msgsEl.appendChild(e);
   } else {
     const frag = document.createDocumentFragment();
@@ -1101,7 +1101,7 @@ function upsert(list){
 function renderAtt(){
   const box = $("att");
   box.innerHTML = (S.attachments || []).map((a, i) =>
-    '<div class="att">' + (a.kind==="folder" ? "📁" : "📎") + ' <span>' + esc(a.name) + '</span><b data-det="' + i + '">✕</b></div>').join("");
+    '<div class="att">' + (a.kind==="folder" ? "📁" : "📎") + ' <span data-noi18n>' + esc(a.name) + '</span><b data-det="' + i + '">✕</b></div>').join("");
 }
 
 /* Крестик у прикреплённого файла — убрать его из списка (сервер: t:"detach") */
@@ -1147,7 +1147,7 @@ function applyState(st){
 
 function renderHead(){
   const t = $("htitle"), s = $("hsub"), d = $("dot");
-  const title = (S.chat && S.chat.title) || (S.chat && S.chat.id ? "Чат" : "OpenCode Remote");
+  const title = (S.chat && S.chat.title) || (S.chat && S.chat.id ? T("Чат") : "OpenCode");
   t.textContent = title;
   const ask = (S.asks || []).length > 0;
   let sub = S.online ? "OpenCode подключён" : (S.status || "нет связи");
@@ -1423,8 +1423,8 @@ function renderDrawer(){
     const st = c.busy ? " run" : (fresh ? " fin" : "");
     h += '<div class="chat' + (cur ? " cur" : "") + (fresh ? " fin" : "") + '" data-open="' + esc(c.id) + '">' +
          '<div class="cic' + st + (cur ? " cu" : "") + '"><i></i></div>' +
-         '<div class="ct"><div class="a">' + esc(c.title) + '</div>' +
-         '<div class="b">' + esc((c.directory||"").split("\\").pop() || c.directory) + (c.ago ? " · " + esc(c.ago) : "") + '</div></div>' +
+         '<div class="ct"><div class="a" data-noi18n>' + esc(c.title) + '</div>' +
+         '<div class="b"><span data-noi18n>' + esc((c.directory||"").split("\\").pop() || c.directory) + '</span>' + (c.ago ? " · " + esc(c.ago) : "") + '</div></div>' +
          '<div class="ren" data-ren="' + esc(c.id) + '" data-title="' + esc(c.title) + '">✏️</div>' +
          '<div class="del" data-del="' + esc(c.id) + '">🗑</div></div>';
   });
@@ -1498,7 +1498,7 @@ function renderModelSheet(q){
     const star = '<span class="fav' + (isFav(mm) ? " on" : "") + '" data-fav="' + esc(favKeyOf(mm)) + '" title="В избранное">★</span>';
     return '<div class="mi' + (isCur ? " cur" : "") + '" data-model="' + esc(mm.modelID || "") +
          '" data-prov="' + esc(mm.providerID || "") + '">' + star +
-         '<div class="n"><div class="a">' + (isCur ? "● " : "") + esc(mm.name) + '</div>' +
+         '<div class="n"><div class="a" data-noi18n>' + (isCur ? "● " : "") + esc(mm.name) + '</div>' +
          '<div class="b">' + esc(mm.providerID) + (mm.family ? " · " + esc(mm.family) : "") +
          '</div></div>' + badge(mm) + '</div>';
   };
@@ -1727,7 +1727,7 @@ function renderFs(m){
   if(!entries.length) h += '<div class="empty">' + (m.drives ? "Диски не найдены" : "Пусто") + '</div>';
   const row = e => '<div class="fe" data-fs="' + esc(e.path) + '" data-dir="' + (e.dir?1:0) + '">' +
        '<span>' + (e.dir ? (m.drives ? "💽" : "📁") : "📄") + '</span>' +
-       '<div class="b">' + esc(e.name) + (e.label ? '<div class="s2">' + esc(e.label) + '</div>' : "") + '</div>' +
+       '<div class="b" data-noi18n>' + esc(e.name) + (e.label ? '<div class="s2">' + esc(e.label) + '</div>' : "") + '</div>' +
        '<div class="s">' + esc(e.size || "") + '</div></div>';
   const isImg = e => !e.dir && (e.img || IMG_RE.test(e.name || ""));
   // папки — списком (по ним ходим)
@@ -1740,7 +1740,7 @@ function renderFs(m){
       h += '<div class="ftile" data-fs="' + esc(e.path) + '" data-dir="0">' +
            '<img loading="lazy" decoding="async" src="/thumb?path=' + encodeURIComponent(e.path) + '&w=320&token=' + encodeURIComponent(BRIDGE_TOKEN) + '" alt="">' +
            (e.size ? '<div class="fts">' + esc(e.size) + '</div>' : '') +
-           '<div class="fn">' + esc(e.name) + '</div></div>';
+           '<div class="fn" data-noi18n>' + esc(e.name) + '</div></div>';
     });
     h += '</div>';
   }
@@ -1851,18 +1851,18 @@ function phonePanel(){
         '<div class="phinfo">📱 <b>Нужен доступ к файлам телефона</b><br>' +
           'Разрешите приложению доступ — появится список папок и файлов телефона: ' +
           'снимки, загрузки, документы, любые папки.' +
-          (workdir ? '<br>Рабочую папку чата выбирайте на компьютере: 💽 Диски.' : '') +
+          (workdir ? '<br>Рабочую папку чата можно выбрать в 💽 Диски.' : '') +
         '</div>' +
         '<div class="phbtn" data-ph="image"><span class="ic">🖼</span><span class="tx">Фото и видео с телефона' +
           '<div class="b">системная галерея — разрешение не нужно</div></span></div>' +
         '<div class="phbtn" data-phallow="1"><span class="ic">🔓</span><span class="tx">Разрешить доступ к файлам' +
-          '<div class="b">Настройки → Приложения → OpenCode Remote → «Доступ ко всем файлам»</div></span></div>' +
+          '<div class="b">Настройки → Приложения → OpenCode → «Доступ ко всем файлам»</div></span></div>' +
         '<div class="phbtn" data-phrecheck="1"><span class="ic">🔄</span><span class="tx">Проверить снова' +
           '<div class="b">если доступ уже включили — нажмите здесь</div></span></div>' +
         '<div class="phbtn" data-ph="any"><span class="ic">📂</span><span class="tx">Любой файл' +
           '<div class="b">системное окно выбора, работает без разрешения</div></span></div>' +
         '<div class="phnote">«Доступ ко всем файлам» — отдельный переключатель. В обычном списке разрешений приложения его нет: ' +
-          'Настройки → Приложения → OpenCode Remote → «Доступ ко всем файлам» (на Honor ещё «Особые разрешения»).</div>' +
+          'Настройки → Приложения → OpenCode → «Доступ ко всем файлам» (на Honor ещё «Особые разрешения»).</div>' +
         '<div class="phnote" id="phstat"></div>' +
         '<input id="phfile" class="pnone" type="file" multiple>' +
       '</div>';
@@ -1919,7 +1919,7 @@ function phRender(j){
   const row = (e, on) =>
     '<div class="fe" data-phf="' + esc(e.path) + '" data-dir="' + (e.dir ? 1 : 0) + '">' +
     '<span>' + (e.dir ? "📁" : (phMulti ? (on ? "☑️" : "⬜️") : "📄")) + '</span>' +
-    '<div class="b">' + esc(e.name) +
+    '<div class="b" data-noi18n>' + esc(e.name) +
       (e.dir ? '' : '<div class="s2">' + fmtSize(e.size || 0) + '</div>') + '</div>' +
     '<div class="s">' + (e.dir ? "" : "＋") + '</div></div>';
 
@@ -1936,7 +1936,7 @@ function phRender(j){
            '<img alt="" data-phcb="p' + (++phThumbSeq) + '">' +
            (e.size ? '<div class="fts">' + fmtSize(e.size) + '</div>' : '') +
            (phMulti ? '<div class="fchk">' + (on ? "✓" : "") + '</div>' : '') +
-           '<div class="fn">' + esc(e.name) + '</div></div>';
+           '<div class="fn" data-noi18n>' + esc(e.name) + '</div></div>';
     });
     h += '</div>';
   }
@@ -1944,9 +1944,9 @@ function phRender(j){
   es.filter(e => !e.dir && !isImg(e)).forEach(e => { h += row(e, phSel.indexOf(e.path) >= 0); });
   if(j.more) h += '<div class="phnote" style="margin:10px 13px">Показаны не все файлы — откройте нужную папку.</div>';
   if(!canThumb && es.some(e => !e.dir && IMG_RE.test(e.name || "")))
-    h += '<div class="phnote" style="margin:0 13px 12px">Чтобы фото показывались с превью, обновите приложение до 1.5: ☰ → ⬇️ Установить приложение.</div>';
+    h += '<div class="phnote" style="margin:0 13px 12px">Превью для фото недоступны.</div>';
   h += '<div class="phnote" id="phstat" style="margin:12px 13px 16px">' +
-       'Нажмите файл — он загрузится на компьютер и прикрепится к сообщению. ' +
+       'Нажмите файл — он прикрепится к сообщению. ' +
        '«📎 несколько» — взять сразу несколько.</div>';
   $("sbody").innerHTML = h;
   if(imgs.length) phWatchThumbs();
@@ -1996,7 +1996,7 @@ function phToggle(path){
 
 function phSend(list){
   if(!list || !list.length){ toast("Ничего не выбрано", "err"); return; }
-  if(!phHas()){ toast("Нужно приложение 1.4", "err"); return; }
+  if(!phHas()){ toast("Файлы с телефона недоступны", "err"); return; }
   phQueue = list.slice();
   phOkCnt = 0; phBadCnt = 0;
   phNext();
@@ -2236,7 +2236,7 @@ function renderPricing(){
     const reqs = plus ? m.r2 : m.r;
     const tok = (!m.free && m.o > 0) ? Math.round(lim / m.o) : 0;
     h += '<div class="price">' +
-      '<div class="prow"><div class="pn">' + esc(m.n) + '</div>' +
+      '<div class="prow"><div class="pn" data-noi18n>' + esc(m.n) + '</div>' +
       '<div class="plim">' + (m.free ? "∞" : "$" + lim) + '</div></div>' +
       '<div class="pmeta">' + (m.free ? "бесплатно, без лимита" :
         'вход $' + m.i + ' · выход $' + m.o +
@@ -2563,7 +2563,8 @@ function usageWhen(ms){
   const n = Number(ms);
   if(!n) return "";
   try{
-    return new Date(n).toLocaleString("ru-RU",
+    const loc = (window.OCLang && OCLang.code === "en") ? "en-US" : "ru-RU";
+    return new Date(n).toLocaleString(loc,
       {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
   }catch(e){ return ""; }
 }
@@ -3250,8 +3251,7 @@ $("sbody").addEventListener("click", e => {
   const pd = cl("[data-provdel]");
   if(pd){
     const name = (catFind(S.provOpen) || {}).name || S.provOpen;
-    if(confirm("Отключить «" + name + "»?\n\nСохранённый ключ или вход удалятся с телефона. " +
-               "Модели этого провайдера исчезнут из списка.")){
+    if(confirm(T("Отключить «") + name + T("»?\n\nСохранённый ключ или вход удалятся с телефона. Модели этого провайдера исчезнут из списка."))){
       send({t: "disconnectprov", integration: S.provOpen, credential: pd.dataset.provdel || ""});
     }
     return;
@@ -3285,10 +3285,7 @@ $("sbody").addEventListener("click", e => {
   if(d){
     const id = d.dataset.delprov;
     const name = d.dataset.name || id;
-    if(confirm("Отключить провайдера «" + name + "»?\n\n" +
-               "Сохранённый ключ/аккаунт удалится с компьютера. " +
-               "Чтобы вернуть, понадобится подключить провайдера заново " +
-               "в настройках OpenCode на ПК.")){
+    if(confirm(T("Отключить провайдера «") + name + T("»?\n\nСохранённый ключ/аккаунт удалится с телефона. Чтобы вернуть, понадобится подключить провайдера заново в настройках OpenCode."))){
       send({t: "delprovider", provider: id});
     }
     return;

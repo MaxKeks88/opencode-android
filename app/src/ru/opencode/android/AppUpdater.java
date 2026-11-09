@@ -174,7 +174,7 @@ public final class AppUpdater {
         synchronized (LOCK) {
             if (busy) {
                 if (callback != null) {
-                    callback.done("Проверка уже идёт");
+                    callback.done(Lang.tr("Проверка уже идёт"));
                 }
                 return;
             }
@@ -183,8 +183,8 @@ public final class AppUpdater {
                 long checkedAt = cached.optLong("checkedAt", 0);
                 if (checkedAt > 0 && System.currentTimeMillis() - checkedAt < AUTO_INTERVAL_MS) {
                     if (callback != null) {
-                        callback.done(state(context).optBoolean("available")
-                                ? "Доступно обновление " + cached.optString("version") : "Обновлений нет");
+                        callback.done(Lang.tr(state(context).optBoolean("available")
+                                ? "Доступно обновление " + cached.optString("version") : "Обновлений нет"));
                     }
                     return;
                 }
@@ -206,11 +206,11 @@ public final class AppUpdater {
                         Thread.sleep(2500L);
                         data = checkSync(context);
                     }
-                    text = Updater.isNewer(data.optString("tag"), currentVersion(context))
+                    text = Lang.tr(Updater.isNewer(data.optString("tag"), currentVersion(context))
                             ? "Доступно обновление " + data.optString("version")
-                            : "Установлена последняя версия " + currentVersion(context);
+                            : "Установлена последняя версия " + currentVersion(context));
                 } catch (Throwable th) {
-                    lastError = "Не удалось проверить обновления: " + th.getMessage();
+                    lastError = Lang.tr("Не удалось проверить обновления: " + th.getMessage());
                     App.log("app-update: " + th);
                     text = lastError;
                 } finally {
@@ -219,7 +219,7 @@ public final class AppUpdater {
                     }
                 }
                 if (callback != null) {
-                    callback.done(text);
+                    callback.done(Lang.tr(text));
                 }
             }
         }, "app-update-check").start();
@@ -233,7 +233,7 @@ public final class AppUpdater {
         synchronized (LOCK) {
             if (busy) {
                 if (callback != null) {
-                    callback.done("Уже идёт проверка или загрузка");
+                    callback.done(Lang.tr("Уже идёт проверка или загрузка"));
                 }
                 return;
             }
@@ -247,19 +247,19 @@ public final class AppUpdater {
                 try {
                     if (!allowedToInstall(context)) {
                         openInstallSettings(context);
-                        text = "Разрешите установку из этого источника и нажмите «Скачать» ещё раз";
+                        text = Lang.tr("Разрешите установку из этого источника и нажмите «Скачать» ещё раз");
                         lastError = text;
                     } else {
                         JSONObject data = readCache();
                         if (!Updater.isNewer(data.optString("tag"), currentVersion(context))) {
-                            text = "Обновлений нет";
+                            text = Lang.tr("Обновлений нет");
                         } else {
                             File apk = downloadApk(context, data);
                             text = installApk(context, apk);
                         }
                     }
                 } catch (Throwable th) {
-                    text = "Ошибка обновления: " + th.getMessage();
+                    text = Lang.tr("Ошибка обновления: " + th.getMessage());
                     lastError = text;
                     App.log("app-update: " + th);
                 } finally {
@@ -269,7 +269,7 @@ public final class AppUpdater {
                     }
                 }
                 if (callback != null) {
-                    callback.done(text);
+                    callback.done(Lang.tr(text));
                 }
             }
         }, "app-update-download").start();
@@ -379,7 +379,7 @@ public final class AppUpdater {
             }
         });
         App.log("app-update: установка " + apk.getName() + " передана системе");
-        return "Скачано. Подтвердите установку в системном окне.";
+        return Lang.tr("Скачано. Подтвердите установку в системном окне.");
     }
 
     public static boolean allowedToInstall(Context context) {
@@ -486,14 +486,14 @@ public final class AppUpdater {
             if (nm == null) {
                 return;
             }
-            nm.createNotificationChannel(new NotificationChannel(CHANNEL, "Обновления приложения", 2));
+            nm.createNotificationChannel(new NotificationChannel(CHANNEL, Lang.tr("Обновления приложения"), 2));
             Intent intent = new Intent(context, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
             PendingIntent pending = PendingIntent.getActivity(context, 20, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
             Notification.Builder builder = new Notification.Builder(context, CHANNEL)
-                    .setContentTitle("Обновление OpenCode" + (version.isEmpty() ? "" : " " + version))
-                    .setContentText("Скачивание: " + percent + "%")
+                    .setContentTitle(Lang.tr("Обновление OpenCode") + (version.isEmpty() ? "" : " " + version))
+                    .setContentText(Lang.tr("Скачивание: " + percent + "%"))
                     .setSmallIcon(android.R.drawable.stat_sys_download)
                     .setProgress(100, percent, false)
                     .setOngoing(true)

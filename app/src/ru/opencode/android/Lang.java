@@ -16,6 +16,7 @@ public final class Lang {
     public static final String PREF = "lang";
     public static final String EN = "en";
     public static final String RU = "ru";
+    public static final String ZH = "zh";
 
     private static final Map<String, String> EN_MAP = new HashMap<String, String>();
     private static final List<Map.Entry<String, String>> LONG =
@@ -209,6 +210,10 @@ public final class Lang {
         return EN.equals(get());
     }
 
+    public static boolean isZh() {
+        return ZH.equals(get());
+    }
+
     public static void set(String code) {
         try {
             App.prefs().edit().putString(PREF, code).apply();
@@ -217,12 +222,23 @@ public final class Lang {
     }
 
     public static String t(String ru, String en) {
+        if (isZh()) {
+            String zh = LangZh.MAP.get(ru);
+            return zh != null ? zh : ru;
+        }
         return isEn() ? en : ru;
     }
 
     /** Перевод готовой строки: точное совпадение или частые шаблоны. */
     public static String tr(String source) {
-        if (source == null || source.isEmpty() || !isEn()) {
+        if (source == null || source.isEmpty()) {
+            return source;
+        }
+        if (isZh()) {
+            String zh = LangZh.MAP.get(source);
+            return zh != null ? zh : LangZh.apply(source);
+        }
+        if (!isEn()) {
             return source;
         }
         String exact = EN_MAP.get(source);
@@ -310,6 +326,9 @@ public final class Lang {
         }
         if (RU.equals(code)) {
             return "Русский";
+        }
+        if (ZH.equals(code)) {
+            return "中文（简体）";
         }
         return code;
     }

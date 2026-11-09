@@ -17,6 +17,7 @@ public class LanguageActivity extends Activity {
     private RadioGroup group;
     private RadioButton en;
     private RadioButton ru;
+    private RadioButton zh;
 
     @Override
     protected void onCreate(Bundle bundle) {
@@ -55,12 +56,16 @@ public class LanguageActivity extends Activity {
         this.group.setOrientation(1);
         this.en = option("English", "English interface");
         this.ru = option("Русский", "Русский интерфейс");
+        this.zh = option("中文（简体）", "简体中文界面");
         this.en.setId(1001);
         this.ru.setId(1002);
+        this.zh.setId(1003);
         this.group.addView(this.en);
         this.group.addView(this.ru);
+        this.group.addView(this.zh);
         String current = Lang.get();
-        this.group.check(Lang.RU.equals(current) ? this.ru.getId() : this.en.getId());
+        this.group.check(Lang.RU.equals(current) ? this.ru.getId()
+                : (Lang.ZH.equals(current) ? this.zh.getId() : this.en.getId()));
         root.addView(this.group);
 
         TextView more = new TextView(this);
@@ -82,7 +87,8 @@ public class LanguageActivity extends Activity {
             @Override
             public void onClick(android.view.View view) {
                 int checked = group.getCheckedRadioButtonId();
-                Lang.set(checked == ru.getId() ? Lang.RU : Lang.EN);
+                Lang.set(checked == ru.getId() ? Lang.RU
+                        : (checked == zh.getId() ? Lang.ZH : Lang.EN));
                 Class<?> nextClass = App.prefs().getBoolean("onboarded", false)
                         ? MainActivity.class : OnboardingActivity.class;
                 startActivity(new Intent(LanguageActivity.this, nextClass));

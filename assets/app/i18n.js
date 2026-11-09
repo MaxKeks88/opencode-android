@@ -717,30 +717,67 @@
     ["Показать ещё", "Show more"]
   ].sort(function (a, b) { return b[0].length - a[0].length; });
 
-  /* Длинные готовые фразы тоже работают как подстроки: в разметке соседние
-     куски часто склеиваются в один текстовый узел, и точного совпадения нет. */
-  var LONG = [];
-  for (var ek in EN) {
-    if (Object.prototype.hasOwnProperty.call(EN, ek) && ek.length >= 18 && ek.indexOf(" ") >= 0) {
-      LONG.push([ek, EN[ek]]);
+  /* Второй словарь: упрощённый китайский. Подключается из i18n-zh.js. */
+  var ZH = window.OC_ZH || {};
+  var ZH_SUBS = window.OC_ZH_SUBS || [];
+
+  var RULES_ZH = [
+    [/^Показать всех \((\d+)\)$/, function (m, n) { return "显示全部（" + n + "）"; }],
+    [/^Показать ещё \((\d+)\)$/, function (m, n) { return "显示更多（" + n + "）"; }],
+    [/^· (\d+)\s+ч$/, function (m, n) { return "· " + n + " 小时"; }],
+    [/^· (\d+)\s+дн$/, function (m, n) { return "· " + n + " 天"; }],
+    [/^Бесплатные · (\d+)$/, function (m, n) { return "免费 · " + n; }],
+    [/^Платные · (\d+)$/, function (m, n) { return "付费 · " + n; }],
+    [/^Чаты · (\d+)$/, function (m, n) { return "聊天 · " + n; }],
+    [/^Модели · (\d+)$/, function (m, n) { return "模型 · " + n; }],
+    [/^Избранные · (\d+)$/, function (m, n) { return "收藏 · " + n; }],
+    [/^(\d+(?:[.,]\d+)?)\s+Б$/, function (m, n) { return n + " B"; }],
+    [/^(\d+)\s+ч$/, function (m, n) { return n + " 小时"; }],
+    [/^(\d+)\s+дн$/, function (m, n) { return n + " 天"; }],
+    [/^(\d+)\s+мин$/, function (m, n) { return n + " 分钟"; }],
+    [/^(\d+)\s+модел(ей|ь|и)$/i, function (m, n) { return n + " 个模型"; }],
+    [/^(\d+)\s+бесплатн(ых|ые)$/i, function (m, n) { return n + " 个免费"; }],
+    [/^(\d+)\s+скрыт(ых|ые)$/i, function (m, n) { return n + " 个隐藏"; }],
+    [/^(\d+)\s+симв\.$/i, function (m, n) { return n + " 字符"; }],
+    [/^(\d+)\s+файл(ов|а)?$/i, function (m, n) { return n + " 个文件"; }],
+    [/^(\d+)\s+из\s+(\d+)$/i, function (m, a, b) { return a + " / " + b; }],
+    [/^(\d+)\s+запросов за 5 часов$/i, function (m, n) { return "5 小时 " + n + " 次请求"; }],
+    [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return "每月 " + n + " 百万输出 token"; }]
+  ];
+
+  function buildLong(dict) {
+    var list = [];
+    for (var k in dict) {
+      if (Object.prototype.hasOwnProperty.call(dict, k) && k.length >= 18 && k.indexOf(" ") >= 0) {
+        list.push([k, dict[k]]);
+      }
     }
+    return list.sort(function (a, b) { return b[0].length - a[0].length; });
   }
-  LONG.sort(function (a, b) { return b[0].length - a[0].length; });
-  SUBS = SUBS.concat(LONG).sort(function (a, b) { return b[0].length - a[0].length; });
+
+  var SUBS_EN = SUBS.concat(buildLong(EN)).sort(function (a, b) { return b[0].length - a[0].length; });
+  var SUBS_ZH = ZH_SUBS.concat(buildLong(ZH)).sort(function (a, b) { return b[0].length - a[0].length; });
 
   function tr(s) {
     if (s == null) return s;
-    if (LANG !== "en") return s;
+    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : null);
+    if (!dict) return s;
+    var rules = LANG === "zh" ? RULES_ZH : RULES;
+    var subs = LANG === "zh" ? SUBS_ZH : SUBS_EN;
     var str = String(s);
-    if (EN[str] != null) return EN[str];
+    if (dict[str] != null) return dict[str];
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);
     var lead = m[1], core = m[2], trail = m[3];
     if (!core) return str;
-    if (EN[core] != null) return lead + EN[core] + trail;
+    if (dict[core] != null) return lead + dict[core] + trail;
+    for (var i = 0; i < rules.length; i++) {
+      var hit = core.match(rules[i][0]);
+      if (hit && rules[i][1]) return lead + rules[i][1].apply(null, hit) + trail;
+    }
     var subbed = str;
-    for (var j = 0; j < SUBS.length; j++) {
-      if (subbed.indexOf(SUBS[j][0]) >= 0) {
-        subbed = subbed.split(SUBS[j][0]).join(SUBS[j][1]);
+    for (var j = 0; j < subs.length; j++) {
+      if (subbed.indexOf(subs[j][0]) >= 0) {
+        subbed = subbed.split(subs[j][0]).join(subs[j][1]);
       }
     }
     if (subbed !== str) {
@@ -749,11 +786,6 @@
                      .replace(/(\d+(?:[.,]\d+)?)\s+ГБ/g, "$1 GB")
                      .replace(/(\d+(?:[.,]\d+)?)\s+Б\b/g, "$1 B");
       return subbed;
-    }
-    for (var i = 0; i < RULES.length; i++) {
-      var rule = RULES[i];
-      var hit = core.match(rule[0]);
-      if (hit && rule[1]) return lead + rule[1].apply(null, hit) + trail;
     }
     return str;
   }
@@ -810,6 +842,7 @@
 
   function setLang(code) {
     LANG = code || "ru";
+    if (window.OCLang) window.OCLang.code = LANG;
   }
 
   window.OCLang = { code: LANG, tr: tr, run: run, setLang: setLang, dict: EN };

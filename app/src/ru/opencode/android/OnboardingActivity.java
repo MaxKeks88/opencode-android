@@ -100,6 +100,7 @@ public class OnboardingActivity extends Activity {
         });
         linearLayout.addView(textView3);
         setContentView(scrollView);
+        Lang.localizeView(scrollView);
         updateStatus();
     }
 
@@ -179,6 +180,7 @@ public class OnboardingActivity extends Activity {
     protected void onResume() {
         super.onResume();
         updateStatus();
+        Lang.localizeView(getWindow().getDecorView());
         try {
             if (App.prefs().getBoolean("keep_screen_on", false)) {
                 getWindow().addFlags(128);

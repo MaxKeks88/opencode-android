@@ -309,6 +309,7 @@ public class SettingsActivity extends Activity {
         linearLayout.addView(this.info);
         setContentView(scrollView);
         checkStatus();
+        Lang.localizeView(scrollView);
     }
 
     /* renamed from: lambda$onCreate$5$ru-opencode-android-SettingsActivity, reason: not valid java name */
@@ -382,6 +383,7 @@ public class SettingsActivity extends Activity {
     protected void onResume() {
         super.onResume();
         checkStatus();
+        Lang.localizeView(getWindow().getDecorView());
     }
 
     private void checkStatus() {

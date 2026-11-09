@@ -1,0 +1,671 @@
+/* Локализация интерфейса страницы. Русский — исходный язык, английский — словарь. */
+(function () {
+  var LANG = "ru";
+  try {
+    if (window.Android && window.Android.getLang) LANG = window.Android.getLang() || "ru";
+  } catch (e) {}
+
+  var EN = {
+    /* вкладки и настройки */
+    "Разрешения": "Permissions",
+    "Уведомления": "Notifications",
+    "Провайдеры": "Providers",
+    "Веб-поиск": "Web search",
+    "Использование": "Usage",
+    "Тарифы": "Pricing",
+    "Языки": "Languages",
+    "Язык": "Language",
+    "Выберите язык интерфейса. После переключения страница перезагрузится.": "Choose the interface language. The page will reload after switching.",
+    "Новые языки будут добавляться в обновлениях.": "More languages will be added in updates.",
+    "📁 Новый чат в папке…": "📁 New chat in folder…",
+    "Новый чат в папке…": "New chat in folder…",
+    "Настройки": "Settings",
+    "⚙ Настройки": "⚙ Settings",
+    "Готово": "Done",
+    "Закрыть": "Close",
+    "Отмена": "Cancel",
+    "Сохранить": "Save",
+    "Удалить": "Delete",
+    "Удалить?": "Delete?",
+    "Добавить": "Add",
+    "Создать": "Create",
+    "Создаю…": "Creating…",
+    "Открыть": "Open",
+    "Выбрать": "Select",
+    "Выбран": "Selected",
+    "Выбрать все": "Select all",
+    "Проверить": "Test",
+    "Проверить снова": "Check again",
+    "Обновить": "Refresh",
+    "Обновить каталог": "Refresh catalog",
+    "Обновляю каталог…": "Refreshing catalog…",
+    "Загрузка…": "Loading…",
+    "Загрузка": "Loading",
+    "Загружаю ": "Loading ",
+    "Загружено: ": "Loaded: ",
+    "Загрузка моделей…": "Loading models…",
+    "Загрузка провайдеров…": "Loading providers…",
+    "Загрузка провайдера…": "Loading provider…",
+    "Загрузка статистики…": "Loading usage…",
+    "Загрузка провайдеров веб-поиска…": "Loading web search providers…",
+    "Загрузка каталога провайдеров…": "Loading provider catalog…",
+    "Показаны первые ": "Showing first ",
+    "Показать ещё (": "Show more (",
+    "Показать всех (": "Show all (",
+    "Показать раньше": "Show earlier",
+    "Ничего не найдено": "Nothing found",
+    "Пусто": "Empty",
+    "Нет чатов": "No chats",
+    "Модели не найдены": "No models found",
+    "Не удалось получить список: ": "Failed to load list: ",
+    "Не удалось получить статистику: ": "Failed to load usage: ",
+    "Ошибка: ": "Error: ",
+    "Ошибка": "Error",
+    "Всё окно ПК": "Full PC window",
+    "Свернуть/развернуть вопросы": "Collapse/expand questions",
+    "Правая панель ПК": "PC side panel",
+    "Вниз, к концу чата": "Jump to latest",
+    "Открыть настройки": "Open settings",
+    "Не удалось открыть настройки": "Could not open settings",
+
+    /* шапка, меню, чаты */
+    "Чат": "Chat",
+    "Новый чат": "New chat",
+    "Название чата": "Chat name",
+    "Переименовать чат": "Rename chat",
+    "Сохранить название": "Save name",
+    "Введите название": "Enter a name",
+    "Создать новый чат здесь": "Create a new chat here",
+    "Переместить текущий чат сюда": "Move current chat here",
+    "Работать в этой папке": "Work in this folder",
+    "Где работать": "Where to work",
+    "Рабочая папка": "Working folder",
+    "Модель": "Model",
+    "🧠 Модель": "🧠 Model",
+    "по умолчанию": "default",
+    "OpenCode подключён": "OpenCode connected",
+    "OpenCode на связи": "OpenCode connected",
+    "нет связи": "offline",
+    "думает… · ": "thinking… · ",
+    "НУЖЕН ВАШ ОТВЕТ — выберите вариант ниже": "YOUR ANSWER IS NEEDED — choose an option below",
+    "OpenCode спрашивает — выберите вариант": "OpenCode is asking — choose an option",
+    "OpenCode спрашивает": "OpenCode asks",
+    "Требуется разрешение": "Permission required",
+    "Подтвердите действие на компьютере.": "Confirm the action on your computer.",
+    "Остановить?": "Stop?",
+    "Остановить работу в этом чате? Нажмите кнопку ещё раз": "Stop work in this chat? Press the button again",
+    "В этом чате пока нет сообщений": "No messages in this chat yet",
+    "Выберите чат в меню ☰ или создайте новый": "Pick a chat in ☰ or create a new one",
+    "Сначала откройте или создайте чат": "Open or create a chat first",
+    "Сначала откройте папку, где создать": "Open the folder where to create it first",
+    "Поиск: gemini, claude, qwen, mercury…": "Search: gemini, claude, qwen, mercury…",
+    "Поиск: anthropic, openai, copilot…": "Search: anthropic, openai, copilot…",
+    "Введите имя папки": "Enter folder name",
+    "имя папки": "folder name",
+    "Новая папка": "New folder",
+    "Создать папку в: ": "Create folder in: ",
+    "📁 Выберите папку": "📁 Choose a folder",
+    "Выберите папку": "Choose a folder",
+    "Файл": "File",
+    "Файлы": "Files",
+    "Папка": "Folder",
+    "Телефон": "Phone",
+    "📱 Телефон": "📱 Phone",
+    "📱 Файл с телефона": "📱 File from phone",
+    "Любой файл": "Any file",
+    "Фото и видео с телефона": "Photos and videos",
+    "Не удалось прочитать файлы телефона": "Could not read phone files",
+    "Доступ есть — вот файлы телефона": "Access granted — phone files",
+    "Показаны не все файлы — откройте нужную папку.": "Not all files are shown — open the needed folder.",
+    "Системная галерея — разрешение не нужно": "System gallery — no permission needed",
+    "Прикрепить файл к сообщению": "Attach a file to the message",
+    "Прикрепить папку к сообщению": "Attach a folder to the message",
+    "выбрать рабочую папку, создать новый чат": "choose a working folder, create a chat",
+    "снимки, загрузки, документы из памяти телефона": "photos, downloads, documents from phone storage",
+    "Диски компьютера": "Computer drives",
+    "Диски не найдены": "No drives found",
+    "Нет доступа к папке": "No access to the folder",
+    "Разрешите приложению доступ — появится список папок и файлов телефона: ": "Grant access to see phone folders and files: ",
+    "Нужен доступ к файлам телефона": "Phone file access needed",
+    "Разрешить доступ к файлам": "Allow file access",
+    "Открыть настройки": "Open settings",
+    "если доступ уже включили — нажмите здесь": "if you already granted it — tap here",
+    "Включите «Доступ ко всем файлам» и вернитесь": "Enable “All files access” and come back",
+    "Доступ ещё не выдан: включите «Доступ ко всем файлам» в настройках Android": "Access not granted yet: enable “All files access” in Android settings",
+    "Настройки → Приложения → OpenCode Remote → «Доступ ко всем файлам»": "Settings → Apps → OpenCode Remote → “All files access”",
+    "«Доступ ко всем файлам» — отдельный переключатель. В обычном списке разрешений приложения его нет: ": "“All files access” is a separate switch, not in the normal permission list: ",
+    "Чтобы фото показывались с превью, обновите приложение до 1.5: ☰ → ⬇️ Установить приложение.": "To see photo previews, update the app: ☰ → ⬇️ Install app.",
+    "Установить приложение (APK)": "Install app (APK)",
+    "«📎 несколько» — взять сразу несколько.": "“📎 several” — pick several at once.",
+    "Нажмите файл — он загрузится на компьютер и прикрепится к сообщению. ": "Tap a file — it uploads and attaches to the message. ",
+
+    /* сообщения и вложения */
+    "Файл прикреплён": "File attached",
+    "Папка прикреплена": "Folder attached",
+    "— прикреплён к сообщению": "— attached to the message",
+    "— прикреплено к сообщению": "— attached to the message",
+    "Файлы прикреплены к сообщению.": "Files are attached to the message.",
+    "📎 С телефона добавлено: ": "📎 Added from phone: ",
+    "Ответ отправлен": "Answer sent",
+    "Разрешение отправлено": "Permission sent",
+    "Отклонено": "Denied",
+    "Разрешить": "Allow",
+    "✅ Один раз": "✅ Once",
+    "♾ Всегда": "♾ Always",
+    "✕ Отклонить": "✕ Deny",
+    "Чат ждёт вашего ответа": "Chat is waiting for your answer",
+    "OpenCode просит разрешение": "OpenCode requests permission",
+    "Ответить": "Reply",
+    "свой вариант…": "custom answer…",
+    "Заполните: ": "Fill in: ",
+    "Заполните «": "Fill in “",
+    "Не удалось отправить: ": "Could not send: ",
+    "Код": "Code",
+    "Код: ": "Code: ",
+    "Код входа": "Login code",
+    "Введите код": "Enter the code",
+    "Введите код со страницы входа": "Enter the code from the login page",
+    "Код скопирован: ": "Code copied: ",
+    "Введите код, который показан на странице входа.": "Enter the code shown on the login page.",
+    "Подтвердить код": "Confirm code",
+    "Отправить код": "Send code",
+    "Скопировано": "Copied",
+    "✓ скопировано": "✓ copied",
+    "Нечего копировать": "Nothing to copy",
+    "Команда скопирована": "Command copied",
+    "Команды скопированы": "Commands copied",
+    "Ссылка скопирована": "Link copied",
+    "⧉ копировать": "⧉ copy",
+    "копировать": "copy",
+    "🧠 Размышления": "🧠 Reasoning",
+    "Сжатие контекста": "Context compaction",
+    "Система": "System",
+    "Служебное": "Service",
+    "Навык": "Skill",
+    "Смена агента": "Agent switched",
+    "Смена модели": "Model switched",
+    "Смена папки": "Folder switched",
+    "… (обрезано)": "… (truncated)",
+    "результат": "result",
+    "запрос": "request",
+    "симв.": "chars",
+    "симв.</span></summary>": "chars.</span></summary>",
+    "· выход $": "· output $",
+    "· кэш $": "· cache $",
+    "за 1M": "per 1M",
+    "из ": "of ",
+    "В избранное": "Add to favorites",
+    "Избранные · ": "Favorites · ",
+    "Чаты · ": "Chats · ",
+    "Модели · ": "Models · ",
+    "Не загрузилось: ": "Failed to load: ",
+    "С телефона: ": "From phone: ",
+    "⚠️ файл не открылся: ": "⚠️ could not open file: ",
+    "ошибка загрузки": "upload error",
+
+    /* провайдеры */
+    "Популярные": "Popular",
+    "API-ключ": "API key",
+    "API-ключ ": "API key ",
+    "Ключ": "Key",
+    "🔑 Ключ": "🔑 Key",
+    "Ключ OpenCode Zen": "OpenCode Zen key",
+    "🔑 Ключ OpenCode Zen": "🔑 OpenCode Zen key",
+    "Сохранить ключ": "Save key",
+    "Вставьте ключ ": "Paste the key for ",
+    "Введите ключ": "Enter the key",
+    "Ключ сохранён": "Key saved",
+    "Не удалось сохранить ключ: ": "Could not save the key: ",
+    "Ключ сохраняется только в OpenCode на этом телефоне.": "The key is stored only in OpenCode on this phone.",
+    "Вход по аккаунту": "Account login",
+    "вход по аккаунту": "account login",
+    "вход или ключ": "login or key",
+    "по API-ключу": "API key",
+    "переменная окружения": "environment variable",
+    "нет способа входа": "no sign-in method",
+    "подключён": "connected",
+    "включён": "enabled",
+    "авто": "auto",
+    "✓ подключён": "✓ connected",
+    "Уже установлен.": "Already installed.",
+    "Отключить": "Disconnect",
+    "Отключить провайдера": "Disconnect provider",
+    "Отключить провайдера «": "Disconnect provider “",
+    "Удалить?": "Delete?",
+    "Платные": "Paid",
+    "Бесплатные": "Free",
+    "Платные модели доступны в списке моделей.": "Paid models are available in the model list.",
+    "Модели провайдера уже доступны в выборе модели.": "Provider models are now available in the model picker.",
+    "Модели этого провайдера исчезнут из списка.": "This provider's models will disappear from the list.",
+    "Сохранённый ключ/аккаунт удалится с компьютера. ": "The saved key/account will be removed. ",
+    "Чтобы вернуть, понадобится подключить провайдера заново": "To restore it, connect the provider again",
+    "Можно задать ключ переменной окружения: ": "You can also use an environment variable: ",
+    "У этого провайдера нет способа входа через приложение.": "This provider has no sign-in method in the app.",
+    "Модели не появились. Обычно так бывает, ": "Models did not appear. This usually means ",
+    "если у аккаунта нет доступа к провайдеру (нет подписки) или ключ не подошёл. ": "the account has no provider access (no subscription) or the key is wrong. ",
+    "Можно отключить провайдера и попробовать другой способ входа.": "You can disconnect the provider and try another sign-in method.",
+    "Подключаю…": "Connecting…",
+    "Подключаюсь…": "Connecting…",
+    "Подключить по ключу": "Connect with key",
+    "Войти": "Sign in",
+    "Выйти из аккаунта": "Sign out",
+    "Аккаунт подключён.": "Account connected.",
+    "Вход выполнен. Платные модели доступны.": "Signed in. Paid models are available.",
+    "Включите Wi‑Fi": "Turn on Wi‑Fi",
+    "Несколько": "Several",
+    "несколько": "several",
+    "В избранное": "Add to favorites",
+    "Скрыть из списка моделей": "Hide from model list",
+    "Показать в списке моделей": "Show in model list",
+    "скрыт в списке моделей": "hidden from model list",
+    "Подключён": "Connected",
+    "Ключ есть": "Key available",
+    "ключ есть": "key available",
+    "активен": "active",
+    "Автоматически": "Automatic",
+    "🎲 Случайный": "🎲 Random",
+    "случайный выбор": "random selection",
+    "не закреплён — сервер выбирает сам": "not pinned — server chooses automatically",
+    "Активный провайдер: ": "Active provider: ",
+    "Активный провайдер:": "Active provider:",
+
+    /* веб-поиск */
+    "Модель ищет в интернете через выбранного провайдера. ": "The model searches the web through the selected provider. ",
+    "Выбор хранится в конфиге OpenCode; ключи — в его хранилище, не в приложении.": "The choice is stored in the OpenCode config; keys live in its credential store, not in the app.",
+    "Проверяю запрос…": "Testing the request…",
+    "Ответ через ": "Response via ",
+    "Провайдер ответил без результатов.": "The provider returned no results.",
+    "У TinyFish ключ не нужен. Остальным нужен свой ключ: ": "TinyFish needs no key. Others require their own key: ",
+    "без него «Проверить» покажет ошибку.": "without it “Test” will show an error.",
+    "Сохранить ключ": "Save key",
+
+    /* обновления */
+    "Обновление приложения": "App update",
+    "Проверяю релизы на GitHub…": "Checking GitHub releases…",
+    "Установлено ": "Installed ",
+    ", доступно ": ", available ",
+    "Проверить снова": "Check again",
+    "Открыть релизы на GitHub": "Open GitHub releases",
+    "Установлено": "Installed",
+    "доступно": "available",
+    ". Обновлений нет.": ". No updates available.",
+    "⟳ Проверить снова": "⟳ Check again",
+    "Автопроверка": "Auto-check",
+    "Автопроверка:": "Auto-check:",
+    "вкл": "on",
+    "выкл": "off",
+    "Автопроверка: вкл": "Auto-check: on",
+    "📋 Скопировать код": "📋 Copy code",
+    "Скопировать код": "Copy code",
+    "Автопроверка: выкл": "Auto-check: off",
+    "Обновление скачивается с GitHub (~": "The update downloads from GitHub (~",
+    "После загрузки Android попросит подтвердить установку; ": "After download Android will ask to confirm; ",
+    "чаты, настройки и ключи сохраняются.": "chats, settings and keys are preserved.",
+    "Скачать и установить": "Download and install",
+    "⬇ Скачать и установить": "⬇ Download and install",
+    "Скачивание…": "Downloading…",
+    "Сначала разрешите установку из этого источника": "Allow installing from this source first",
+    "Сначала разрешите установку из этого источника и нажмите «Скачать» ещё раз": "Allow installing from this source and tap Download again",
+    "Обновлений нет.": "No updates available.",
+    "Проверка ещё не выполнялась.": "Not checked yet.",
+    "Доступно обновление ": "Update available ",
+    "Доступно обновление": "Update available",
+    "Доступно обновление 1.12.1": "Update available 1.12.1",
+    "Установлена последняя версия ": "You have the latest version ",
+
+    /* использование / тарифы */
+    "Скользящее окно": "Rolling window",
+    "За неделю": "This week",
+    "За месяц": "This month",
+    "Бюджет": "Budget",
+    "лимит": "limit",
+    "сброс ": "resets ",
+    "Подписка OpenCode Go — те же проценты, что на ": "OpenCode Go subscription — same percentages as on ",
+    "сайте в личном кабинете. Цифра — сколько использовано.": "the account page. The number is how much is used.",
+    "В этом аккаунте нет лимитов OpenCode Go.": "This account has no OpenCode Go limits.",
+    "🌐 Открыть статистику на сайте": "🌐 Open usage on the website",
+    "Ссылка ведёт в личный кабинет OpenCode.": "The link opens your OpenCode account.",
+    "💳 Продлить подписку": "💳 Extend subscription",
+    "Откроется страница оплаты OpenCode Go в браузере телефона. ": "The OpenCode Go payment page opens in your phone browser. ",
+    "Там же можно посмотреть и отменить подписку.": "There you can also view and cancel the subscription.",
+    "OpenCode Go — $10/мес, Go Plus — $40/мес. Лимит модели ": "OpenCode Go — $10/month, Go Plus — $40/month. The model limit ",
+    "указан в долларах на месяц: за 5 часов доступно 20% этого лимита, за неделю — 50%, ": "is in dollars per month: 20% is available per 5 hours, 50% per week, ",
+    "за месяц — 100%. Бесплатные модели — без лимита.": "100% per month. Free models have no limit.",
+    "Токены посчитаны по цене выхода — это верхняя оценка: ": "Tokens are priced at the output rate — an upper bound: ",
+    "при большом кэше и коротких ответах реальный объём заметно больше. ": "with a large cache and short replies the real volume is noticeably larger. ",
+    "Данные с сайта OpenCode, ": "Data from the OpenCode website, ",
+    "цены вне пик": "off-peak pricing",
+    "бесплатно, без лимита": "free, no limit",
+    "запросы без ограничения": "unlimited requests",
+    "скидка 50% до 30.11.2026": "50% off until 30.11.2026",
+    "📱 С телефона: ": "📱 From phone: ",
+
+    /* вход */
+    "Готовим вход в аккаунт…": "Preparing account login…",
+    "Открыли браузер. Войдите в аккаунт OpenCode — ": "Browser opened. Sign in to OpenCode — ",
+    "приложение подхватит вход автоматически.": "the app will pick it up automatically.",
+    "🌐 Открыть страницу входа ещё раз": "🌐 Open the login page again",
+    "Открыть ссылку ещё раз": "Open link again",
+    "Ждём подтверждения в браузере…": "Waiting for confirmation in the browser…",
+    "Телефон покажет 6-значный код. Не закрывайте этот экран.": "The phone will show a 6-digit code. Keep this screen open.",
+    "Откроется браузер: войдите через GitHub/Google. ": "A browser opens: sign in with GitHub/Google. ",
+    "После входа в приложении появятся платные модели OpenCode Go.": "After signing in, paid OpenCode Go models will appear.",
+    "🔑 Войти в аккаунт OpenCode": "🔑 Sign in to OpenCode",
+    "Повторить вход": "Retry sign-in",
+    "Вход не выполнен: ": "Sign-in failed: ",
+    "Ошибка входа: ": "Sign-in error: ",
+    "Время входа истекло": "Login timed out",
+    "Код не принят: ": "Code not accepted: ",
+    "Вход уже выполняется…": "Sign-in already in progress…",
+    "Не удалось начать вход: ": "Could not start sign-in: ",
+    "Не удалось выйти: ": "Could not sign out: ",
+    "Аккаунт отключён": "Account disconnected",
+
+    /* разрешения и Shizuku */
+    "Файлы": "Files",
+    "Доступ ко всем файлам": "All files access",
+    "Батарея": "Battery",
+    "Хранилище": "Storage",
+    "Не выключать экран": "Keep screen on",
+    "Расширенные права": "Advanced permissions",
+    "только через ADB": "ADB only",
+    "настройки телефона разрешены": "system settings allowed",
+    "разрешено": "allowed",
+    "не разрешено": "not allowed",
+    "Доступ к /sdcard": "Access to /sdcard",
+    "оптимизация включена": "optimization on",
+    "оптимизация отключена": "optimization off",
+    "Фоновая работа": "Background work",
+    "Сообщение, когда ответ готов": "Message when the answer is ready",
+    "Разрешения приложения. Откройте системный экран и вернитесь — ": "App permissions. Open the system screen and return — ",
+    "статус обновится автоматически.": "the status updates automatically.",
+    "экран не гаснет, пока приложение открыто": "screen stays on while the app is open",
+    "Автозапуск после перезагрузки включён. Интернет — всегда.": "Autostart after reboot is on. Internet — always.",
+    "Полные разрешения (shell)": "Full access (shell)",
+    "🔓 Полные разрешения (shell)": "🔓 Full access (shell)",
+    "Полный доступ (shell)": "Full access (shell)",
+    "Удаление и отключение приложений, pm revoke, input, установка APK. ": "Uninstall/disable apps, pm revoke, input, install APK. ",
+    "Требуется Shizuku и разовая настройка через ПК или Wi‑Fi.": "Requires Shizuku and a one-time setup via PC or Wi-Fi.",
+    "Shizuku не установлен": "Shizuku is not installed",
+    "Shizuku установлен, но не запущен": "Shizuku installed but not running",
+    "Shizuku запущен, нужно разрешение": "Shizuku running, permission needed",
+    "Установите Shizuku": "Install Shizuku",
+    "Запустите Shizuku с ПК": "Start Shizuku from a PC",
+    "Открыть Shizuku": "Open Shizuku",
+    "Разрешить Shizuku": "Allow Shizuku",
+    "🔄 Проверить снова": "🔄 Check again",
+    "Что надо делать": "What to do",
+    "Скрыть инструкцию": "Hide instructions",
+    "Подключите телефон к ПК": "Connect the phone to a PC",
+    "Включите «Отладку по USB»": "Enable “USB debugging”",
+    "Включите «Отладку по Wi‑Fi»": "Enable “Wireless debugging”",
+    "📋 Копировать ADB-команду": "📋 Copy ADB command",
+    "📋 Копировать команды": "📋 Copy commands",
+    "Открыть страницу Shizuku": "Open Shizuku page",
+    "Открыть настройки разработчика": "Open developer settings",
+    "Открыть отладку по Wi‑Fi": "Open wireless debugging",
+    "Вариант 1 — с компьютером": "Option 1 — with a computer",
+    "Вариант 2 — без компьютера (Wi‑Fi)": "Option 2 — without a computer (Wi-Fi)",
+    "Проще и надёжнее: один раз подключить телефон к ПК по USB.": "Easier and more reliable: connect the phone to a PC via USB once.",
+    "Настройки разработчика → «Отладка по USB». Если раздела нет: «О телефоне» → 7 раз нажать ": "Developer options → “USB debugging”. If missing: “About phone” → tap 7 times ",
+    "Кабелем. На телефоне подтвердите «Разрешить отладку с этого компьютера».": "With a cable. Confirm “Allow USB debugging” on the phone.",
+    "«Отладка по Wi‑Fi» работает при включённом Wi‑Fi (сеть может быть любой).": "“Wireless debugging” works with Wi-Fi on (any network).",
+    "Настройки разработчика → «Отладка по Wi‑Fi».": "Developer options → “Wireless debugging”.",
+    "Нажмите «Сопряжение устройства с помощью кода»": "Tap “Pair device with pairing code”",
+    "Откройте Shizuku → «Сопряжение»/«Запуск по беспроводной отладке», введите код. ": "Open Shizuku → Pair/Start via wireless debugging, enter the code. ",
+    "Введите код в Shizuku": "Enter the code in Shizuku",
+    "Подтвердите запрос в диалоге Shizuku": "Confirm the request in the Shizuku dialog",
+    "Вернитесь сюда, нажмите «Разрешить Shizuku», затем «Проверить снова».": "Return here, tap “Allow Shizuku”, then “Check again”.",
+    "Вернитесь сюда, нажмите «Разрешить Shizuku» — появится системный диалог Shizuku. ": "Return here and tap “Allow Shizuku” — the Shizuku dialog appears. ",
+    "Полный доступ включён (uid ": "Full access enabled (uid ",
+    "Полный доступ (Shizuku) не включён": "Full access (Shizuku) is not enabled",
+    "Перед началом.": "Before you start.",
+    "После перезагрузки телефона полный доступ ": "After a phone reboot, full access ",
+    "сбрасывается: Shizuku нужно запустить заново (через ПК или Wi‑Fi). В новых версиях Shizuku ": "resets: start Shizuku again (via PC or Wi-Fi). In newer Shizuku versions ",
+    "есть автозапуск на доверенном Wi‑Fi, но надёжнее рассчитывать на повторный запуск. ": "there is autostart on trusted Wi-Fi, but expect to start it again. ",
+    "Все действия вы выполняете на свой страх и риск.": "You do everything at your own risk.",
+    "Это отдельное приложение-посредник, оно даёт программам ADB-права. OpenCode не может ": "A separate helper app that gives ADB permissions. OpenCode cannot ",
+    "установить его сам — откройте страницу и установите APK (или из магазина).": "install it by itself — open the page and install the APK (or from a store).",
+    "Android не разрешает ему удалять чужие приложения и менять системные настройки.": "Android does not allow it to uninstall other apps or change system settings.",
+    "Без этих прав (и без Shizuku/root) приложение — обычный untrusted_app: ": "Without these permissions (and Shizuku/root) the app is a normal untrusted_app: ",
+    "читать dumpsys/logcat и писать в secure settings.": "read dumpsys/logcat and write secure settings.",
+    "dumpsys/logcat, но не удалять приложения.": "dumpsys/logcat, but not uninstall apps.",
+    "На ПК это делает ": "On a PC this is done by ",
+    "После этого агент сможет менять системные настройки, ": "After that the agent can change system settings, ",
+    "Один раз подключите телефон к ПК по USB (отладка включена) и выполните команды. ": "Connect the phone to a PC via USB once (debugging on) and run the commands. ",
+    "точную команду всегда показывает сам Shizuku в разделе «Запуск через соединение с ПК».": "Shizuku always shows the exact command under “Start via PC connection”.",
+    "Для Shizuku 13.6+ используйте команду ниже: она берёт стартовый файл из APK Shizuku и ": "For Shizuku 13.6+ use the command below: it takes the start file from the Shizuku APK and ",
+    "запускает сервер. Для старых версий (11.2–13.5) подойдёт команда ": "starts the server. For older versions (11.2–13.5) use ",
+    "Нужны Shizuku и включённый Wi‑Fi; интернет не обязателен.": "Requires Shizuku and Wi-Fi; internet is optional.",
+    "Полный доступ даёт агенту права shell (uid 2000): удаление и отключение ": "Full access gives the agent shell rights (uid 2000): uninstalling and disabling ",
+    "приложений, pm revoke, input, установка APK. Без него агент может менять настройки и читать ": "apps, pm revoke, input, installing APK. Without it the agent can change settings and read ",
+    "Окно OpenCode на компьютере не найдено.\\nОткройте приложение OpenCode на ПК — панель подключится сама.": "OpenCode window not found on the computer.\\nOpen OpenCode on the PC — the panel connects automatically.",
+    "Смотрю панель просмотра на компьютере.": "Watching the computer preview panel.",
+    "Печать в окно ПК…": "Printing to the PC window…",
+    "Панель / всё окно": "Panel / full window",
+    "Панель просмотра": "Preview panel",
+    "С телефона": "From phone",
+    "Нет кадра": "No frame",
+    "Обновить кадр": "Refresh frame",
+    "Клавиатура": "Keyboard",
+    "Страница не обновилась сама — перезапустите приложение": "The page did not reload — restart the app",
+    "Откройте приложение через поиск компьютера": "Open the app via computer discovery",
+    "Неверный пин-код": "Wrong PIN",
+    "Сообщение OpenCode…": "Message OpenCode…",
+    "Ошибка загрузки": "Load error",
+    "Ошибка: ": "Error: ",
+    "Проверяю обновления…": "Checking for updates…",
+    "Проверяю обновления приложения…": "Checking app updates…",
+    "Скачивание обновления…": "Downloading update…",
+    "Показать всех (": "Show all (",
+    "Показать ещё (": "Show more (",
+    "Заполните «": "Fill in “",
+    "Введите название": "Enter a name",
+    "Создать новый чат здесь": "Create a new chat here",
+    "Переместить текущий чат сюда": "Move current chat here",
+    "прикрепить файл к сообщению": "attach a file to the message",
+    "прикрепить папку к сообщению": "attach a folder to the message",
+    "Бесплатные модели": "Free models",
+    "Платные модели": "Paid models",
+    "Моделей: ": "Models: ",
+    "моделей": "models",
+    "модель": "model",
+    "модели": "models",
+    "бесплатных": "free",
+    "скрытых": "hidden",
+    "и ещё ": "and ",
+    "файлов": "files",
+    "Файл с телефона": "File from phone",
+    "Избранное": "Favorites",
+    "Всё окно ПК": "Full PC window",
+    "Остановить": "Stop",
+    "Стоп": "Stop",
+    "Отправить": "Send",
+    "Прикрепить": "Attach",
+    "Действие: ": "Action: ",
+    "действие: ": "action: ",
+    "Не получилось: ": "Failed: ",
+    "неизвестно": "unknown",
+    "готово": "ready",
+    "ошибка": "error",
+    "число": "number",
+    "модель": "model",
+    "Код": "Code",
+    "Чат": "Chat",
+    "Выберите": "Choose",
+    "Добавить": "Add"
+  };
+
+  var RULES = [
+    [/^Показать всех \((\d+)\)$/, function (m, n) { return "Show all (" + n + ")"; }],
+    [/^Показать ещё \((\d+)\)$/, function (m, n) { return "Show more (" + n + ")"; }],
+    [/^· (\d+)\s+ч$/, function (m, n) { return "· " + n + " h"; }],
+    [/^· (\d+)\s+дн$/, function (m, n) { return "· " + n + " d"; }],
+    [/^Бесплатные · (\d+)$/, function (m, n) { return "Free · " + n; }],
+    [/^Платные · (\d+)$/, function (m, n) { return "Paid · " + n; }],
+    [/^(\d+(?:[.,]\d+)?)\s+Б$/, function (m, n) { return n + " B"; }],
+    [/^Чаты · (\d+)$/, function (m, n) { return "Chats · " + n; }],
+    [/^Модели · (\d+)$/, function (m, n) { return "Models · " + n; }],
+    [/^Избранные · (\d+)$/, function (m, n) { return "Favorites · " + n; }],
+    [/^(\d+)\s+ч$/, function (m, n) { return n + " h"; }],
+    [/^(\d+)\s+дн$/, function (m, n) { return n + " d"; }],
+    [/^(\d+)\s+мин$/, function (m, n) { return n + " min"; }],
+    [/^(\d+)\s+модел(ей|ь|и)$/i, function (m, n) { return n + (n === "1" ? " model" : " models"); }],
+    [/^(\d+)\s+бесплатн(ых|ые)$/i, function (m, n) { return n + " free"; }],
+    [/^(\d+)\s+скрыт(ых|ые)$/i, function (m, n) { return n + " hidden"; }],
+    [/^(\d+)\s+симв\.$/i, function (m, n) { return n + " chars"; }],
+    [/^(\d+)\s+файл(ов|а)?$/i, function (m, n, tail) { return n + (n === "1" ? " file" : " files"); }],
+    [/^(\d+(?:[.,]\d+)?)\s+(МБ|КБ|ГБ)$/i, function (m, n, u) {
+      u = u === "МБ" ? "MB" : (u === "КБ" ? "KB" : "GB");
+      return n + " " + u;
+    }],
+    [/^(\d+)\s+из\s+(\d+)$/i, function (m, a, b) { return a + " of " + b; }],
+    [/^(\d+)\s+запросов за 5 часов$/i, function (m, n) { return n + " requests per 5 hours"; }],
+    [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return n + "M output tokens per month"; }],
+    [/^· (.+)$/, null]
+  ];
+
+  var SUBS = [
+    ["Разрешения приложения. Откройте системный экран и вернитесь —", "App permissions. Open the system screen and return —"],
+    ["Доступ ко всем файлам", "All files access"],
+    ["Сообщение, когда ответ готов", "Message when the answer is ready"],
+    ["Фоновая работа", "Background work"],
+    ["Доступ к /sdcard", "Access to /sdcard"],
+    ["экран не гаснет, пока приложение открыто", "screen stays on while the app is open"],
+    ["Автозапуск после перезагрузки включён. Интернет — всегда.", "Autostart after reboot is on. Internet — always."],
+    ["Удаление и отключение приложений, pm revoke, input, установка APK.", "Uninstall/disable apps, pm revoke, input, install APK."],
+    ["Требуется Shizuku и разовая настройка через ПК или Wi‑Fi.", "Requires Shizuku and a one-time setup via PC or Wi-Fi."],
+    ["Рабочая папка и системные настройки", "Working folder and system settings"],
+    ["Откроется браузер: войдите через GitHub/Google.", "A browser opens: sign in with GitHub/Google."],
+    ["После входа в приложении появятся платные модели OpenCode Go.", "After signing in, paid OpenCode Go models will appear."],
+    ["Необязательно: платный доступ по ключу, если не входите в аккаунт.", "Optional: paid access by key if you do not sign in."],
+    ["Системные настройки OpenCode", "OpenCode system settings"],
+    ["Настроить", "Configure"],
+    ["статус обновится автоматически.", "the status updates automatically."],
+    ["Платные модели доступны в списке моделей.", "Paid models are available in the model list."],
+    ["Откроется страница оплаты OpenCode Go в браузере телефона.", "The OpenCode Go payment page opens in your phone browser."],
+    ["Там же можно посмотреть и отменить подписку.", "There you can also view and cancel the subscription."],
+    ["Провайдеры OpenCode. Ключ OpenCode Zen и вход — выше.", "OpenCode providers. Zen key and account login are above."],
+    ["Модель ищет в интернете через выбранного провайдера.", "The model searches the web through the selected provider."],
+    ["Выбор хранится в конфиге OpenCode; ключи — в его хранилище, не в приложении.", "The choice is stored in the OpenCode config; keys live in its credential store, not in the app."],
+    ["У TinyFish ключ не нужен. Остальным нужен свой ключ:", "TinyFish needs no key. Others require their own key:"],
+    ["без него «Проверить» покажет ошибку.", "without it “Test” will show an error."],
+    [" · по API-ключу", " · API key"],
+    [" · подключён", " · connected"],
+    [" · вход по аккаунту", " · account login"],
+    [" · вход или ключ", " · login or key"],
+    [" · переменная окружения", " · env var"],
+    [" · нет способа входа", " · no sign-in"],
+    [" · скрыт в списке моделей", " · hidden from model list"],
+    ["Обновление скачивается с GitHub (~", "The update downloads from GitHub (~"],
+    ["После загрузки Android попросит подтвердить установку;", "After download Android will ask to confirm;"],
+    ["чаты, настройки и ключи сохраняются.", "chats, settings and keys are preserved."],
+    [" моделей", " models"],
+    [" бесплатных", " free"],
+    [" скрытых", " hidden"],
+    ["и ещё ", "and "],
+    ["Показать всех", "Show all"],
+    ["Показать ещё", "Show more"]
+  ].sort(function (a, b) { return b[0].length - a[0].length; });
+
+  function tr(s) {
+    if (s == null) return s;
+    var str = String(s);
+    var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    var lead = m[1], core = m[2], trail = m[3];
+    if (!core) return str;
+    if (EN[core] != null) return lead + EN[core] + trail;
+    var subbed = core;
+    for (var j = 0; j < SUBS.length; j++) {
+      if (subbed.indexOf(SUBS[j][0]) >= 0) {
+        subbed = subbed.split(SUBS[j][0]).join(SUBS[j][1]);
+      }
+    }
+    if (subbed !== core) {
+      subbed = subbed.replace(/(\d+(?:[.,]\d+)?)\s+МБ/g, "$1 MB")
+                     .replace(/(\d+(?:[.,]\d+)?)\s+КБ/g, "$1 KB")
+                     .replace(/(\d+(?:[.,]\d+)?)\s+ГБ/g, "$1 GB")
+                     .replace(/(\d+(?:[.,]\d+)?)\s+Б\b/g, "$1 B");
+      return lead + subbed + trail;
+    }
+    for (var i = 0; i < RULES.length; i++) {
+      var rule = RULES[i];
+      var hit = core.match(rule[0]);
+      if (hit && rule[1]) return lead + rule[1].apply(null, hit) + trail;
+    }
+    return str;
+  }
+
+  var running = false;
+  function skip(el) {
+    if (!el || !el.closest) return true;
+    return !!el.closest("#msgs, #txt, #pin, textarea, input, pre, code, script, style, [data-noi18n]");
+  }
+  function skipAttr(el) {
+    if (!el || !el.closest) return true;
+    return !!el.closest("#msgs, #pin, script, style, [data-noi18n]");
+  }
+  function translateAttrs(root) {
+    if (!root.querySelectorAll) return;
+    var nodes = root.querySelectorAll("[title], [placeholder], [aria-label]");
+    for (var i = 0; i < nodes.length; i++) {
+      var el = nodes[i];
+      if (skipAttr(el)) continue;
+      ["title", "placeholder", "aria-label"].forEach(function (attr) {
+        if (!el.hasAttribute(attr)) return;
+        var old = el.getAttribute(attr);
+        var v = tr(old);
+        if (v !== old) el.setAttribute(attr, v);
+      });
+    }
+  }
+  function translateText(root) {
+    if (!root) return;
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        var p = node.parentElement;
+        if (!p || skip(p)) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var node;
+    while ((node = walker.nextNode())) {
+      var old = node.nodeValue;
+      var v = tr(old);
+      if (v !== old) node.nodeValue = v;
+    }
+  }
+  function run() {
+    if (LANG === "ru" || running) return;
+    running = true;
+    try {
+      translateText(document.body);
+      translateAttrs(document.body);
+    } finally {
+      running = false;
+    }
+  }
+
+  function setLang(code) {
+    LANG = code || "ru";
+  }
+
+  window.OCLang = { code: LANG, tr: tr, run: run, setLang: setLang, dict: EN };
+  window.__t = tr;
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () {
+      run();
+      new MutationObserver(function () { run(); }).observe(document.body, {
+        childList: true, subtree: true, attributes: true,
+        attributeFilter: ["title", "placeholder", "aria-label"]
+      });
+    });
+  } else {
+    run();
+    new MutationObserver(function () { run(); }).observe(document.body, {
+      childList: true, subtree: true, attributes: true,
+      attributeFilter: ["title", "placeholder", "aria-label"]
+    });
+  }
+})();

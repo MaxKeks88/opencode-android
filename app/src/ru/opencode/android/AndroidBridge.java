@@ -128,6 +128,18 @@ public class AndroidBridge {
     }
 
     @JavascriptInterface
+    public String getLang() {
+        return Lang.get();
+    }
+
+    @JavascriptInterface
+    public void setLang(String code) {
+        if (Lang.EN.equals(code) || Lang.RU.equals(code)) {
+            Lang.set(code);
+        }
+    }
+
+    @JavascriptInterface
     public String appUpdateState() {
         return AppUpdater.state(this.act).toString();
     }

@@ -52,7 +52,9 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle bundle) {
         super.onCreate(bundle);
         if (!App.prefs().getBoolean("onboarded", false)) {
-            startActivity(new Intent(this, (Class<?>) OnboardingActivity.class));
+            String lang = App.prefs().getString(Lang.PREF, "");
+            Class<?> next = (lang == null || lang.isEmpty()) ? LanguageActivity.class : OnboardingActivity.class;
+            startActivity(new Intent(this, next));
             finish();
             return;
         }
@@ -143,7 +145,7 @@ public class MainActivity extends Activity {
         textView2.setPadding(0, dp(8), 0, dp(6));
         this.splash.addView(textView2);
         this.status = new TextView(this);
-        this.status.setText("Запуск…");
+        this.status.setText(Lang.tr("Запуск…"));
         this.status.setTextColor(-7626568);
         this.status.setTextSize(14.0f);
         this.status.setGravity(17);
@@ -162,7 +164,7 @@ public class MainActivity extends Activity {
         this.detail.setGravity(17);
         this.splash.addView(this.detail);
         Button button = new Button(this);
-        button.setText("Настройки");
+        button.setText(Lang.tr("Настройки"));
         button.setTextColor(-1);
         button.getBackground().setAlpha(60);
         button.setOnClickListener(new View.OnClickListener() { // from class: ru.opencode.android.MainActivity.3
@@ -197,7 +199,7 @@ public class MainActivity extends Activity {
                         MainActivity.this.runOnUiThread(new Runnable() { // from class: ru.opencode.android.MainActivity.4.1
                             @Override // java.lang.Runnable
                             public void run() {
-                                MainActivity.this.status.setText("Открываю чат…");
+                                MainActivity.this.status.setText(Lang.tr("Открываю чат…"));
                                 MainActivity.this.web.loadUrl("http://127.0.0.1:8769/?v=" + System.currentTimeMillis() + "#token=" + App.localToken);
                             }
                         });
@@ -207,10 +209,10 @@ public class MainActivity extends Activity {
                             @Override // java.lang.Runnable
                             public void run() {
                                 if (!App.lastError.isEmpty()) {
-                                    MainActivity.this.status.setText("Не удалось запустить");
+                                    MainActivity.this.status.setText(Lang.tr("Не удалось запустить"));
                                     MainActivity.this.detail.setText(App.lastError);
                                 } else {
-                                    MainActivity.this.status.setText("Запуск OpenCode… первый раз может занять до минуты");
+                                    MainActivity.this.status.setText(Lang.tr("Запуск OpenCode… первый раз может занять до минуты"));
                                 }
                             }
                         });
@@ -223,8 +225,8 @@ public class MainActivity extends Activity {
                 MainActivity.this.runOnUiThread(new Runnable() { // from class: ru.opencode.android.MainActivity.4.3
                     @Override // java.lang.Runnable
                     public void run() {
-                        MainActivity.this.status.setText("OpenCode не запустился");
-                        MainActivity.this.detail.setText(App.lastError.isEmpty() ? "Откройте настройки и посмотрите журнал" : App.lastError);
+                        MainActivity.this.status.setText(Lang.tr("OpenCode не запустился"));
+                        MainActivity.this.detail.setText(App.lastError.isEmpty() ? Lang.tr("Откройте настройки и посмотрите журнал") : App.lastError);
                     }
                 });
             }

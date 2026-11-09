@@ -210,7 +210,10 @@ details>summary::-webkit-details-marker{display:none}
 }
 /* настройки в меню чатов */
 .setrow{display:flex;align-items:center;gap:12px;padding:13px 12px;border-bottom:1px solid var(--line);cursor:pointer}
-.setrow .em{font-size:19px;width:26px;text-align:center;flex:0 0 26px}
+.langrow{display:flex;align-items:center;gap:10px;padding:15px 12px;border-bottom:1px solid var(--line);cursor:pointer}
+.langrow .ln{flex:1;font-size:15px;color:var(--txt)}
+.langrow .lc{color:var(--acc2);font-size:17px}
+.langrow.on{background:rgba(80,160,255,.07)}.setrow .em{font-size:19px;width:26px;text-align:center;flex:0 0 26px}
 .setrow .n{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
 .setrow .a{font-size:14.5px;color:var(--txt)}
 .setrow .b{font-size:12px;color:var(--dim)}
@@ -639,6 +642,7 @@ img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
+<script src="app/i18n.js"></script>
 <script src="app/bridge.js"></script>
 <script>
 "use strict";
@@ -694,6 +698,7 @@ let drawerOpen = false, sheetMode = null, fsPath = "", armed = null, stopArm = 0
 
 /* ---------------------------------------------------------- утилиты ---- */
 function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function T(s){ return window.__t ? window.__t(s) : s; }
 
 window.__blocks = [];
 window.__copy = [];      // тексты сообщений для значка «копировать»
@@ -713,7 +718,7 @@ function copyBar(m){
   if(!t) return "";
   const i = __copy.length;
   __copy.push(t);
-  return '<div class="cbar"><span class="cbtn" data-copy="' + i + '">⧉ копировать</span></div>';
+  return '<div class="cbar"><span class="cbtn" data-copy="' + i + '">' + T("⧉ копировать") + '</span></div>';
 }
 function md(src){
   if(!src) return "";
@@ -756,12 +761,13 @@ function md(src){
   s = s.replace(/\u0000IC(\d+)\u0000/g, (m, i) => "<code>" + code[+i] + "</code>");
   s = s.replace(/\u0000CB(\d+)\u0000/g, (m, i) => {
     __blocks.push(mine[+i]);
-    return '<pre><code>' + esc(mine[+i]) + '</code><span class="copy" data-cb="' + (__blocks.length-1) + '">копировать</span></pre>';
+    return '<pre><code>' + esc(mine[+i]) + '</code><span class="copy" data-cb="' + (__blocks.length-1) + '">' + T("копировать") + '</span></pre>';
   });
   return s;
 }
 
 function toast(text, kind){
+  if(window.__t) text = __t(text);
   const t = $("toast");
   t.textContent = text;
   t.className = "on" + (kind==="err" ? " err" : "");
@@ -860,7 +866,7 @@ function mediaTag(out){
 }
 function toolOutHtml(out){
   if(!out) return "";
-  let html = '<div class="lbl">результат</div>';
+  let html = '<div class="lbl">' + T("результат") + '</div>';
   const prefix = out.replace(/\s*Файл:.*/s, "").trim();
   if(prefix) html += esc(prefix) + "<br>";
   const tag = mediaTag(out);
@@ -991,8 +997,8 @@ function renderMsg(m){
     } else if(b.k === "reason" && (b.text||"").trim()){
       any = true;
       const live = !m.finish || S.busy;   // пока идёт работа ассистента — размышления раскрыты
-      h += '<details class="rsn"' + (live ? ' open data-live="1"' : '') + '><summary>🧠 Размышления <span style="color:var(--dim2)">' +
-           (b.text.length > 1000 ? Math.round(b.text.length/1000) + "k" : b.text.length) + ' симв.</span></summary><div class="rtxt">' + esc(b.text) + '</div></details>';
+      h += '<details class="rsn"' + (live ? ' open data-live="1"' : '') + '><summary>' + T("🧠 Размышления") + ' <span style="color:var(--dim2)">' +
+           (b.text.length > 1000 ? Math.round(b.text.length/1000) + "k" : b.text.length) + ' ' + T("симв.") + '</span></summary><div class="rtxt">' + esc(b.text) + '</div></details>';
     } else if(b.k === "tool"){
       any = true;
       const st = b.status || "";
@@ -1006,7 +1012,7 @@ function renderMsg(m){
       h += '<details class="tool"><summary>' + toolIcon(b.name) + ' <b>' + esc(b.name) + '</b> <span class="badge ' + cls + '">' + esc(lbl) + '</span>'
         + (hint ? '<span class="hintline"> ' + esc(hint.length>70 ? hint.slice(0,70)+"…" : hint) + '</span>' : '')
         + '</summary><div class="toolbody">'
-        + (inp ? '<div class="lbl">запрос</div><pre>' + esc(inp.length>1500 ? inp.slice(0,1500)+"…" : inp) + '</pre>' : "")
+        + (inp ? '<div class="lbl">' + T("запрос") + '</div><pre>' + esc(inp.length>1500 ? inp.slice(0,1500)+"…" : inp) + '</pre>' : "")
         + (b.out ? toolOutHtml(b.out) : "")
         + '</div></details>';
       // Готовые картинки/видео показываем прямо в сообщении: блоки инструментов
@@ -2252,17 +2258,18 @@ function renderPricing(){
 function openSettings(){
   openDrawer(false);
   openSheet("settings", "⚙ Настройки");
-  setTab = "perms";
+  setTab = "lang";
   renderSettings();
 }
 
-let setTab = "perms";
+let setTab = "lang";
 
 function renderSettings(){
   const tab = (id, label) => '<div class="ptab' + (setTab === id ? " on" : "") +
     '" data-stab="' + id + '">' + label + '</div>';
   const bar = $("settabs");
   bar.innerHTML =
+    tab("lang", "Языки") +
     tab("perms", "Разрешения") +
     tab("notify", "Уведомления") +
     tab("providers", "Провайдеры") +
@@ -2270,6 +2277,11 @@ function renderSettings(){
     tab("usage", "Использование") +
     tab("pricing", "Тарифы");
   bar.classList.add("on");
+  if(setTab === "lang"){
+    $("sbody").innerHTML = '<div id="langbox"></div>';
+    renderLanguages();
+    return;
+  }
   if(setTab === "perms"){
     renderPermissions();
     return;
@@ -2874,7 +2886,7 @@ function renderProvDetail(){
                         : "Ждём подтверждения в браузере…") + '</div>' +
         (function(){
           const c = String(o.instructions || "").match(/[A-Z0-9]{4,8}(?:-[A-Z0-9]{4,8})+/);
-          return c ? '<div class="btn" data-pcodecopy="' + esc(c[0]) + '">📋 Скопировать код ' +
+          return c ? '<div class="btn" data-pcodecopy="' + esc(c[0]) + '">' + T("📋 Скопировать код") + ' ' +
                       esc(c[0]) + '</div>' : "";
         })() +
         (o.url ? '<div class="btn" data-provurl="1">Открыть ссылку ещё раз</div>' : "");
@@ -2989,6 +3001,37 @@ function renderProviders(){
   };
   const ss = box.querySelector("#syssettings");
   if(ss) ss.onclick = () => { if(BR.openSettings) BR.openSettings(); };
+}
+
+/* ---- языки интерфейса ---- */
+const LANGUAGES = [
+  { code: "en", name: "English" },
+  { code: "ru", name: "Русский" }
+];
+
+function renderLanguages(){
+  const box = $("langbox");
+  if(!box) return;
+  const cur = (window.OCLang && OCLang.code) || "ru";
+  let h = '<div class="setnote">Выберите язык интерфейса. После переключения страница перезагрузится.</div>';
+  LANGUAGES.forEach(l => {
+    const on = l.code === cur;
+    h += '<div class="langrow' + (on ? " on" : "") + '" data-langpick="' + l.code + '">' +
+      '<div class="ln">' + esc(l.name) + '</div>' +
+      '<div class="lc">' + (on ? "✓" : "") + '</div></div>';
+  });
+  h += '<div class="setnote">Новые языки будут добавляться в обновлениях.</div>';
+  box.innerHTML = h;
+  box.querySelectorAll("[data-langpick]").forEach(el => {
+    el.onclick = () => {
+      const code = el.dataset.langpick;
+      if(code === cur) return;
+      try{ if(BR.setLang) BR.setLang(code); }catch(e){}
+      if(window.OCLang) OCLang.setLang(code);
+      toast(code === "en" ? "Switching to English…" : "Переключаю на русский…");
+      setTimeout(() => location.reload(), 250);
+    };
+  });
 }
 
 /* ---- веб-поиск: провайдер, ключ и проверка ---- */
@@ -3499,7 +3542,7 @@ msgsEl.addEventListener("click", e => {
     try{ navigator.clipboard && navigator.clipboard.writeText(t); }catch(err){}
     cp.textContent = "✓ скопировано";
     toast("Скопировано");
-    setTimeout(() => { cp.textContent = "⧉ копировать"; }, 1500);
+    setTimeout(() => { cp.textContent = T("⧉ копировать"); }, 1500);
   }
   const o = e.target.closest("#olderbtn");
   if(o){ send({t:"older"}); }

@@ -31,7 +31,12 @@ public final class Notifications {
             if (str == null || str.isEmpty()) {
                 str = App.TAG;
             }
-            Notification.Builder contentText = builder.setContentTitle(str).setContentText(str2 == null ? "" : str2);
+            str = Lang.tr(str);
+            if (str2 == null) {
+                str2 = "";
+            }
+            str2 = Lang.tr(str2);
+            Notification.Builder contentText = builder.setContentTitle(str).setContentText(str2);
             Notification.BigTextStyle bigTextStyle = new Notification.BigTextStyle();
             if (str2 == null) {
                 str2 = "";

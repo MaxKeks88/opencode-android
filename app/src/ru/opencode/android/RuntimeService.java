@@ -632,7 +632,7 @@ public class RuntimeService extends Service {
         intent2.setAction(ACTION_STOP);
         PendingIntent service = PendingIntent.getService(this, NOTIF_ID, intent2, 201326592);
         Notification.Builder builder = new Notification.Builder(this, "opencode");
-        builder.setContentTitle(App.TAG).setContentText(str).setSmallIcon(android.R.drawable.stat_sys_download_done).setOngoing(true).setContentIntent(activity).addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, "Стоп", service).build());
+        builder.setContentTitle(App.TAG).setContentText(Lang.tr(str)).setSmallIcon(android.R.drawable.stat_sys_download_done).setOngoing(true).setContentIntent(activity).addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, Lang.t("Стоп", "Stop"), service).build());
         return builder.build();
     }
 

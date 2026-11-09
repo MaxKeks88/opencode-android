@@ -35,7 +35,13 @@
     } catch (e) {}
     return DEFAULT_MODEL;
   }
-  function toast(text, kind) { handle({ t: "toast", text: String(text || ""), kind: kind || "ok" }); }
+  function t(s) { return window.__t ? window.__t(s) : s; }
+
+  function toast(text, kind) {
+    var msg = String(text || "");
+    if (window.__t) msg = window.__t(msg);
+    handle({ t: "toast", text: msg, kind: kind || "ok" });
+  }
   function log(msg) { try { BR.log("[bridge] " + msg); } catch (e) {} }
 
   async function json(method, path, body, timeout) {
@@ -104,7 +110,7 @@
     if (t === "user") {
       const files = [];
       for (const f of (m.files || [])) {
-        if (f && typeof f === "object") files.push({ name: f.name || f.uri || "файл", uri: f.uri || "" });
+        if (f && typeof f === "object") files.push({ name: f.name || f.uri || t("файл"), uri: f.uri || "" });
         else if (typeof f === "string") files.push({ name: f.split(/[\\/]/).pop(), uri: f });
       }
       return { id: mid, role: "user", text: m.text || (m.metadata || {}).displayText || "", files, ts };
@@ -124,7 +130,7 @@
             if (c && typeof c === "object" && c.type === "text") out += c.text || "";
             else if (typeof c === "string") out += c;
           }
-          if (out.length > 4000) out = out.slice(0, 4000) + "\n… (обрезано)";
+          if (out.length > 4000) out = out.slice(0, 4000) + "\n" + t("… (обрезано)");
           blocks.push({
             k: "tool", name: p.name || "tool", status: st.status || "",
             hint: toolHint(st.input), input: st.input, out
@@ -154,7 +160,7 @@
     };
     if (labels[t]) {
       const txt = m.text || m.title || "";
-      return { id: mid, role: "info", text: labels[t] + (txt ? ": " + txt : ""), ts };
+      return { id: mid, role: "info", text: t(labels[t]) + (txt ? ": " + txt : ""), ts };
     }
     return null;
   }

@@ -232,6 +232,43 @@ details>summary::-webkit-details-marker{display:none}
   cursor:pointer;user-select:none;-webkit-user-select:none}
 .provhide.off{background:#3b1d1d;border-color:#5b2a2a}
 .prov.hid{opacity:.55}
+/* каталог провайдеров */
+.poptitle{font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim);
+  padding:12px 12px 6px}
+.pcard{display:flex;align-items:center;gap:10px;margin:0 8px 6px;padding:10px 12px;
+  border:1px solid var(--line);border-radius:12px;background:var(--panel2);
+  cursor:pointer;user-select:none;-webkit-user-select:none}
+.pcard:active{filter:brightness(1.25)}
+.pcard .av{width:32px;height:32px;flex:0 0 auto;border-radius:10px;display:flex;
+  align-items:center;justify-content:center;font-size:13px;font-weight:700;
+  background:#1d3157;border:1px solid #3763bd;color:#d9e6ff}
+.pcard .nm{flex:1;font-size:14.5px;font-weight:600;color:var(--txt)}
+.pcard .psub,.provcard .psub{font-size:11.5px;color:var(--dim);margin-top:2px;font-weight:400}
+.pcard .psub.on,.provcard .psub.on{color:#7fd18b}
+.pcard .pgo{flex:0 0 auto;color:var(--dim);font-size:18px;padding-left:4px}
+.provcard{display:flex;align-items:center;gap:10px;padding:11px 12px;
+  border-bottom:1px solid var(--line);cursor:pointer;
+  user-select:none;-webkit-user-select:none}
+.provcard:active{background:var(--panel2)}
+.provcard .nm{flex:1;font-size:14px;color:var(--txt);font-weight:600}
+.provcard .pgo{flex:0 0 auto;color:var(--dim);font-size:18px}
+.provcard .pgo.on{color:#7fd18b}
+.optrow{display:flex;flex-wrap:wrap;gap:6px;padding:0 8px 8px}
+.opt{padding:8px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);font-size:12.5px;color:var(--txt);cursor:pointer;
+  user-select:none;-webkit-user-select:none}
+.opt.on{border-color:#3763bd;background:#1d3157;color:#d9e6ff}
+#provbox .poptitle{padding:8px 12px 4px}
+/* строка кнопок: «показать всех» + обновить каталог */
+.btnrow{display:flex;gap:8px;align-items:stretch;margin:8px 8px 2px}
+.btnrow .btn{flex:1;margin:0}
+#provbox .btnrow .btn{margin:0}
+.btnrow .btn.rfr{flex:0 0 auto;padding-left:16px;padding-right:16px}
+/* список моделей в карточке провайдера */
+.provmlist{padding:0 12px 6px}
+.pmrow{font-size:12.5px;color:#9fb0c4;line-height:1.7}
+.pmrow.dim{color:var(--dim)}
+.provmlist .free{color:#7fd18b;font-size:11px}
 /* статистика подписки */
 .useblk{padding:10px 14px}
 .usehead{display:flex;align-items:baseline;gap:8px}
@@ -631,7 +668,9 @@ let S = {
   chat: {}, chats: [], messages: [], attachments: [], hasOlder: false,
   chatRun: {}, localDone: {},
   models: [], home: "", status: "", usage: null, pin: "", asks: [], media: [],
-  providers: [], usageErr: "", sub: null, login: null, zenOpen: false
+  providers: [], usageErr: "", sub: null, login: null, zenOpen: false,
+  catalog: null, catShown: 60, catQ: "", provOpen: null, provKey: "", provForm: {},
+  provModels: {}, oauth: null, provBusy: false
 };
 let drawerOpen = false, sheetMode = null, fsPath = "", armed = null, stopArm = 0, lastUpd = 0;
 
@@ -1202,7 +1241,6 @@ function renderAsks(){
   if(fresh){
     BR.vibrate && BR.vibrate(220);
     toast("OpenCode спрашивает — выберите вариант");
-    if(document.hidden) BR.notify && BR.notify("OpenCode ждёт ответа", (S.chat && S.chat.title) || "Вопрос в чате");
   }
 }
 
@@ -1510,8 +1548,7 @@ function handle(m){
         /* Работа закончилась — сворачиваем размышления, чтобы чат не был завален текстом. */
         document.querySelectorAll("details.rsn[data-live]").forEach(d => { d.open = false; });
         BR.vibrate && BR.vibrate(180);
-        if(document.hidden) BR.notify && BR.notify("OpenCode", (S.chat && S.chat.title) || "Ответ готов");
-        else markDoneSeen(S.chat && S.chat.id);   // человек уже видит ответ в этом чате
+        if(!document.hidden) markDoneSeen(S.chat && S.chat.id);   // человек уже видит ответ в этом чате
       }
       break;
     }
@@ -1519,6 +1556,32 @@ function handle(m){
     case "providers":
       S.providers = m.items || [];
       if(sheetMode === "settings" && setTab === "providers") renderProviders();
+      else if(sheetMode === "prov"){
+        renderProvDetail();
+        if(S.provOpen && provConnected(S.provOpen))
+          send({t: "provmodels", integration: S.provOpen});
+      }
+      else if(sheetMode === "cat") renderCatalogList();
+      break;
+    case "catalog":
+      S.catalog = m.items || [];
+      if(m.error) toast("Каталог провайдеров: " + m.error, "err");
+      if(sheetMode === "settings" && setTab === "providers") renderProviders();
+      else if(sheetMode === "cat") renderCatalogList();
+      else if(sheetMode === "prov") renderProvDetail();
+      break;
+    case "provbusy":
+      S.provBusy = !!m.busy;
+      if(sheetMode === "prov") renderProvDetail();
+      break;
+    case "provmodels":
+      S.provModels[m.integration] = m.items || [];
+      if(sheetMode === "prov" && S.provOpen === m.integration) renderProvDetail();
+      break;
+    case "oauth":
+      S.oauth = { integration: m.integration, status: m.status, url: m.url || "",
+                  instructions: m.instructions || "", error: m.error || "" };
+      if(sheetMode === "prov" && S.provOpen === m.integration) renderProvDetail();
       break;
     case "login":
       S.login = m;
@@ -2161,6 +2224,7 @@ function renderSettings(){
     $("sbody").innerHTML =
       '<div id="provbox"><div class="empty">Загрузка провайдеров…</div></div>';
     send({t: "providers"});
+    if(!S.catalog) send({t: "catalog"});
     renderProviders();               // если уже загружали — покажем сразу
     // страховка: если из-за переподключения запрос потерялся — повторим
     setTimeout(() => {
@@ -2518,12 +2582,282 @@ function zenKeyBox(){
          '<div class="btn" data-zenkey="0">Отмена</div>';
 }
 
+/* ------------------------------ каталог провайдеров (как в официальном) --- */
+const PROV_POPULAR = ["anthropic", "github-copilot", "openai", "google", "opencode"];
+const PROV_EMOJI = { "anthropic": "🅐", "github-copilot": "🐙", "openai": "✳",
+                     "google": "🔎", "opencode": ">_" };
+
+function catFind(id){ return (S.catalog || []).find(p => p.id === id) || null; }
+/* подключён ли провайдер: по каталогу (credential) или по списку настроенных */
+function provConnected(id){
+  const c = catFind(id);
+  if(c && c.connections && c.connections.length) return true;
+  return (S.providers || []).some(p => p.id === id);
+}
+function provWay(p){
+  const t = (p.methods || []).map(m => m.type);
+  if(t.indexOf("oauth") >= 0) return t.indexOf("key") >= 0 ? "вход или ключ" : "вход по аккаунту";
+  if(t.indexOf("key") >= 0) return "по API-ключу";
+  if(t.indexOf("env") >= 0) return "переменная окружения";
+  return t.join(", ") || "нет способа входа";
+}
+
+function popularBlock(){
+  const items = S.catalog;
+  let h = '<div class="poptitle">Популярные</div>';
+  if(!items){
+    h += '<div class="setnote">Загрузка каталога провайдеров…</div>';
+    return h;
+  }
+  PROV_POPULAR.forEach(id => {
+    const p = catFind(id);
+    if(!p) return;
+    const on = provConnected(id);
+    h += '<div class="pcard" data-provopen="' + esc(id) + '">' +
+      '<div class="av">' + esc(PROV_EMOJI[id] || (p.name || id).slice(0, 2)) + '</div>' +
+      '<div class="nm">' + esc(p.name || id) +
+        '<div class="psub' + (on ? " on" : "") + '">' + (on ? "✓ подключён" : esc(provWay(p))) + '</div>' +
+      '</div><div class="pgo">›</div></div>';
+  });
+  h += '<div class="btnrow">' +
+       '<div class="btn" data-catopen="1">Показать всех (' + (items.length || 0) + ')</div>' +
+       '<div class="btn rfr" data-catrefresh="1" title="Обновить каталог">⟳</div>' +
+       '</div>';
+  return h;
+}
+
+function openCatalog(){
+  S.catQ = "";
+  openSheet("cat", "Провайдеры");
+  $("sbody").innerHTML =
+    '<div class="msearch"><input id="catq" type="search" autocomplete="off" ' +
+    'placeholder="Поиск: anthropic, openai, copilot…"></div><div id="catlist"></div>';
+  const q = $("catq");
+  if(q) q.oninput = () => { S.catQ = q.value; S.catShown = 60; renderCatalogList(); };
+  renderCatalogList();
+  if(!S.catalog) send({t: "catalog"});
+}
+
+function renderCatalogList(){
+  const box = $("catlist");
+  if(!box) return;
+  const q = String(S.catQ || "").trim().toLowerCase();
+  let list = (S.catalog || []).slice();
+  if(q) list = list.filter(p =>
+    String(p.name || "").toLowerCase().includes(q) || String(p.id || "").includes(q));
+  list.sort((a, b) => {
+    const ca = provConnected(a.id) ? 0 : 1, cb = provConnected(b.id) ? 0 : 1;
+    if(ca !== cb) return ca - cb;
+    return String(a.name || a.id).localeCompare(String(b.name || b.id), "ru");
+  });
+  const shown = list.slice(0, S.catShown || 60);
+  let h = "";
+  shown.forEach(p => {
+    const on = provConnected(p.id);
+    h += '<div class="provcard" data-provopen="' + esc(p.id) + '">' +
+      '<div class="nm">' + esc(p.name || p.id) +
+        '<div class="psub' + (on ? " on" : "") + '">' + esc(p.id) + ' · ' +
+        (on ? "подключён" : esc(provWay(p))) + '</div></div>' +
+      '<div class="pgo' + (on ? " on" : "") + '">' + (on ? "✓" : "›") + '</div></div>';
+  });
+  if(!shown.length) h = '<div class="empty">Ничего не найдено</div>';
+  if(list.length > shown.length)
+    h += '<div class="btn" data-catmore="1" style="margin:10px 8px 0">Показать ещё (' +
+         (list.length - shown.length) + ')</div>';
+  h += '<div class="btn" data-catrefresh="1" style="margin:10px 8px">⟳ Обновить каталог</div>';
+  box.innerHTML = h;
+}
+
+function provFieldVisible(f){
+  if(!f.when || !f.when.length) return true;
+  return f.when.every(w => {
+    const cur = (S.provForm && S.provForm[w.key] != null) ? S.provForm[w.key] : "";
+    if(w.op === "eq") return String(cur) === String(w.value);
+    if(w.op === "neq") return String(cur) !== String(w.value);
+    return true;
+  });
+}
+
+function provFormHTML(m){
+  const fields = (m.form || []).filter(f => !f.hidden && provFieldVisible(f));
+  if(!fields.length) return "";
+  let h = "";
+  fields.forEach(f => {
+    const cur = (S.provForm && S.provForm[f.key] != null) ? S.provForm[f.key] : f.def;
+    if(f.options && f.options.length){
+      h += '<div class="setnote">' + esc(f.title || f.key) + '</div><div class="optrow">';
+      f.options.forEach(o => {
+        const on = String(cur) === String(o.value);
+        h += '<div class="opt' + (on ? " on" : "") + '" data-popt="' +
+             esc(f.key) + "|" + esc(o.value) + '">' + esc(o.label || o.value) + '</div>';
+      });
+      h += '</div>';
+      if(f.description) h += '<div class="setnote">' + esc(f.description) + '</div>';
+    } else {
+      h += '<div class="setnote">' + esc(f.title || f.key) + (f.required ? " *" : "") + '</div>' +
+        '<div class="msearch" style="padding:0 8px 8px"><input data-pfield="' + esc(f.key) +
+        '" type="text" autocomplete="off" spellcheck="false" placeholder="' +
+        esc(f.placeholder || "") + '" value="' + esc(cur == null ? "" : cur) + '"></div>';
+    }
+  });
+  return h;
+}
+
+function initProvForm(p){
+  ((p && p.methods) || []).forEach(m => (m.form || []).forEach(f => {
+    if(S.provForm[f.key] !== undefined) return;
+    if(f.def !== undefined && f.def !== "") S.provForm[f.key] = f.def;
+    else if(f.options && f.options.length && !f.hidden) S.provForm[f.key] = f.options[0].value;
+  }));
+}
+
+function openProvider(id){
+  S.provOpen = id;
+  S.provKey = "";
+  S.oauth = null;
+  S.provBusy = false;
+  S.provForm = {};
+  const p = catFind(id);
+  initProvForm(p);
+  openSheet("prov", p ? (p.name || id) : id);
+  renderProvDetail();
+  if(!S.catalog) send({t: "catalog"});
+  if(provConnected(id)) send({t: "provmodels", integration: id});
+}
+
+function renderProvDetail(){
+  const box = $("sbody");
+  if(!box) return;
+  const id = S.provOpen;
+  const p = catFind(id);
+  if(!p){
+    box.innerHTML = '<div class="empty">Загрузка провайдера…</div>' +
+      '<div class="btn" data-provback="1">← К списку провайдеров</div>';
+    return;
+  }
+  initProvForm(p);
+  const on = provConnected(id);
+  const methods = p.methods || [];
+  let h = '<div class="setnote">' + esc(id) + (on ? ' · <span class="free">подключён</span>' : "") + '</div>';
+
+  if(on){
+    const mine = S.provModels[id];
+    if(mine && mine.length){
+      h += '<div class="setnote">Модели провайдера уже доступны в выборе модели.</div>';
+      const show = mine.slice(0, 12);
+      h += '<div class="poptitle">Модели · ' + mine.length + '</div>' +
+        '<div class="provmlist">' +
+        show.map(m => '<div class="pmrow">' + esc(m.name) +
+          (m.free ? ' <span class="free">free</span>' : '') + '</div>').join("") +
+        (mine.length > show.length
+          ? '<div class="pmrow dim">и ещё ' + (mine.length - show.length) + '</div>' : '') +
+        '</div>';
+    } else if(mine === undefined){
+      h += '<div class="setnote">Загрузка моделей…</div>';
+    } else {
+      h += '<div class="setnote" style="color:#ffb86b">Модели не появились. Обычно так бывает, ' +
+           'если у аккаунта нет доступа к провайдеру (нет подписки) или ключ не подошёл. ' +
+           'Можно отключить провайдера и попробовать другой способ входа.</div>';
+    }
+    const conns = p.connections || [];
+    if(conns.length){
+      conns.forEach(c => {
+        h += '<div class="btn" data-provdel="' + esc(c.id) + '">Отключить' +
+             (c.label ? " «" + esc(c.label) + "»" : "") + '</div>';
+      });
+    } else {
+      h += '<div class="btn" data-provdel="">Отключить провайдера</div>';
+    }
+  }
+
+  const km = methods.find(m => m.type === "key");
+  if(km && !on){
+    h += '<div class="poptitle">API-ключ</div>' +
+      '<div class="msearch" style="padding:0 8px 8px"><input id="provkey" type="text" ' +
+      'autocomplete="off" spellcheck="false" placeholder="' +
+      esc(km.label || ("Вставьте ключ " + (p.name || id))) + '"></div>' +
+      '<div class="btn pri" data-provkey="1">' +
+      (S.provBusy ? "Подключаю…" : "Подключить по ключу") + '</div>' +
+      '<div class="setnote">Ключ сохраняется только в OpenCode на этом телефоне.</div>';
+  }
+
+  methods.filter(m => m.type === "oauth").forEach(m => {
+    if(on) return;
+    if(S.oauth && S.oauth.integration === id && S.oauth.status === "code") return;
+    h += '<div class="poptitle">' + esc(m.label || "Вход по аккаунту") + '</div>' +
+      provFormHTML(m) +
+      '<div class="btn pri" data-provoauth="' + esc(m.id) + '">Войти</div>' +
+      '<div class="setnote">Откроется браузер — войдите и вернитесь в приложение.</div>';
+  });
+
+  const em = methods.find(m => m.type === "env");
+  if(em && !on && (em.names || []).length)
+    h += '<div class="setnote">Можно задать ключ переменной окружения: ' +
+         esc((em.names || []).join(", ")) + '</div>';
+  if(!on && !km && !methods.some(m => m.type === "oauth") && !em)
+    h += '<div class="setnote">У этого провайдера нет способа входа через приложение.</div>';
+
+  if(S.oauth && S.oauth.integration === id){
+    const o = S.oauth;
+    if(o.status === "waiting")
+      h += '<div class="setnote">' +
+        (o.instructions ? esc(o.instructions) + '<br>Ждём подтверждения в браузере…'
+                        : "Ждём подтверждения в браузере…") + '</div>' +
+        (function(){
+          const c = String(o.instructions || "").match(/[A-Z0-9]{4,8}(?:-[A-Z0-9]{4,8})+/);
+          return c ? '<div class="btn" data-pcodecopy="' + esc(c[0]) + '">📋 Скопировать код ' +
+                      esc(c[0]) + '</div>' : "";
+        })() +
+        (o.url ? '<div class="btn" data-provurl="1">Открыть ссылку ещё раз</div>' : "");
+    if(o.status === "code")
+      h += '<div class="setnote">' + esc(o.instructions || "Введите код со страницы входа") + '</div>' +
+        '<div class="msearch" style="padding:0 8px 8px"><input id="provcode" type="text" ' +
+        'autocomplete="off" placeholder="Код"></div>' +
+        '<div class="btn pri" data-provcode="1">Отправить код</div>';
+    if(o.status === "error")
+      h += '<div class="setnote" style="color:#ff9c9c">Ошибка входа: ' + esc(o.error || "") + '</div>';
+  }
+
+  h += '<div class="btn" data-provback="1" style="margin-top:14px">← К списку провайдеров</div>';
+  box.innerHTML = h;
+
+  const ki = $("provkey");
+  if(ki){
+    if(S.provKey) ki.value = S.provKey;
+    ki.oninput = () => { S.provKey = ki.value; };
+  }
+  box.querySelectorAll("[data-pfield]").forEach(inp => {
+    inp.oninput = () => { S.provForm[inp.dataset.pfield] = inp.value; };
+  });
+  const ci = $("provcode");
+  if(ci) ci.oninput = () => { S.provCode = ci.value; };
+}
+
+function provOAuthStart(methodID){
+  const p = catFind(S.provOpen);
+  const m = ((p && p.methods) || []).find(x => x.type === "oauth" && x.id === methodID);
+  const answer = {};
+  let missing = "";
+  ((m && m.form) || []).forEach(f => {
+    if(f.hidden) return;
+    if(!provFieldVisible(f)) return;
+    const v = (S.provForm && S.provForm[f.key] != null) ? S.provForm[f.key] : f.def;
+    if(v === undefined || v === "" || v === null){
+      if(f.required) missing = f.title || f.key;
+      return;
+    }
+    answer[f.key] = f.type === "boolean" ? (v === true || v === "true") : v;
+  });
+  if(missing){ toast("Заполните: " + missing, "err"); return; }
+  send({t: "connectoauth", integration: S.provOpen, methodID, answer});
+}
+
 /* Провайдеры и модели из настроек OpenCode. */
 function renderProviders(){
   const box = $("provbox");
   if(!box) return;
   const list = S.providers || [];
-  let h = loginBox() + zenKeyBox();
+  let h = popularBlock() + loginBox() + zenKeyBox();
   if(!list.length){
     h += '<div class="empty">Загрузка провайдеров…</div>';
   } else {
@@ -2598,6 +2932,64 @@ $("settabs").addEventListener("click", e => {
   $("sbody").scrollTop = 0;
 });
 $("sbody").addEventListener("click", e => {
+  const cl = sel => (e.target.closest ? e.target.closest(sel) : null);
+  const po = cl("[data-provopen]");
+  if(po){ openProvider(po.dataset.provopen); return; }
+  const co = cl("[data-catopen]");
+  if(co){ openCatalog(); return; }
+  const cm = cl("[data-catmore]");
+  if(cm){ S.catShown = (S.catShown || 60) + 60; renderCatalogList(); return; }
+  const crf = cl("[data-catrefresh]");
+  if(crf){ toast("Обновляю каталог…"); send({t: "catalog", force: true}); return; }
+  const pcc = cl("[data-pcodecopy]");
+  if(pcc){
+    if(BR.copyText){ BR.copyText(pcc.dataset.pcodecopy); toast("Код скопирован: " + pcc.dataset.pcodecopy); }
+    else toast("Код: " + pcc.dataset.pcodecopy);
+    return;
+  }
+  const pb = cl("[data-provback]");
+  if(pb){
+    openSheet("settings", "⚙ Настройки");
+    setTab = "providers";
+    renderSettings();
+    return;
+  }
+  const opt = cl("[data-popt]");
+  if(opt){
+    const parts = String(opt.dataset.popt || "").split("|");
+    S.provForm[parts[0]] = parts.slice(1).join("|");
+    renderProvDetail();
+    return;
+  }
+  const pk = cl("[data-provkey]");
+  if(pk){
+    const el = $("provkey");
+    const k = el ? el.value.trim() : String(S.provKey || "");
+    if(!k){ toast("Введите ключ", "err"); return; }
+    send({t: "connectkey", integration: S.provOpen, key: k});
+    return;
+  }
+  const pg = cl("[data-provoauth]");
+  if(pg){ provOAuthStart(pg.dataset.provoauth); return; }
+  const pc = cl("[data-provcode]");
+  if(pc){
+    const el = $("provcode");
+    const c = el ? el.value.trim() : "";
+    if(!c){ toast("Введите код", "err"); return; }
+    send({t: "oauthcode", code: c});
+    return;
+  }
+  const pu = cl("[data-provurl]");
+  if(pu){ if(S.oauth && S.oauth.url && BR.openUrl) BR.openUrl(S.oauth.url); return; }
+  const pd = cl("[data-provdel]");
+  if(pd){
+    const name = (catFind(S.provOpen) || {}).name || S.provOpen;
+    if(confirm("Отключить «" + name + "»?\n\nСохранённый ключ или вход удалятся с телефона. " +
+               "Модели этого провайдера исчезнут из списка.")){
+      send({t: "disconnectprov", integration: S.provOpen, credential: pd.dataset.provdel || ""});
+    }
+    return;
+  }
   const pl = e.target.closest ? e.target.closest("[data-plan]") : null;
   if(pl){
     pricePlan = pl.dataset.plan === "plus" ? "plus" : "go";

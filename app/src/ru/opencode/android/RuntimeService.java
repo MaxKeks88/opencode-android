@@ -23,8 +23,14 @@ import java.net.ServerSocket;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -39,6 +45,10 @@ public class RuntimeService extends Service {
     private volatile boolean started = false;
     private volatile boolean stopping = false;
     private Thread worker;
+    private final ScheduledExecutorService notifierScheduler = Executors.newSingleThreadScheduledExecutor();
+    private final Map<String, Long> pendingStamp = new ConcurrentHashMap<String, Long>();
+    private final Map<String, String> pendingType = new ConcurrentHashMap<String, String>();
+    private final Set<String> askedIds = Collections.synchronizedSet(new HashSet<String>());
 
     public static void start(Context context) {
         context.startForegroundService(new Intent(context, (Class<?>) RuntimeService.class));
@@ -320,14 +330,31 @@ public class RuntimeService extends Service {
                                 if (strOptString.equals("session.execution.started")) {
                                     if (!strOptString2.isEmpty()) {
                                         hashSet.add(strOptString2);
+                                        pendingStamp.remove(strOptString2);
+                                        pendingType.remove(strOptString2);
                                     }
                                 } else if (strOptString.equals("session.execution.succeeded") || strOptString.equals("session.execution.failed") || strOptString.equals("session.execution.interrupted")) {
-                                    if (!strOptString2.isEmpty() && hashSet.remove(strOptString2) && !MainActivity.visible && jCurrentTimeMillis - Notifications.lastShownAt > 8000) {
-                                        Notifications.show(this, App.TAG, strOptString.endsWith("failed") ? "Ошибка выполнения" : "Ответ готов");
+                                    if (!strOptString2.isEmpty()) {
+                                        hashSet.remove(strOptString2);
+                                        scheduleCheck(strOptString2, strOptString);
                                     }
                                 } else if (strOptString.equals("permission.asked") || strOptString.equals("form.created")) {
-                                    if (!MainActivity.visible && jCurrentTimeMillis - Notifications.lastShownAt > 8000) {
-                                        Notifications.show(this, App.TAG, "OpenCode ждёт вашего ответа");
+                                    String key = data == null ? "" : data.optString("id", "");
+                                    if (key.isEmpty() && data != null) {
+                                        key = data.optString("permissionID", "");
+                                    }
+                                    if (key.isEmpty() && data != null) {
+                                        key = data.optString("formID", "");
+                                    }
+                                    if (key.isEmpty()) {
+                                        key = strOptString2 + ":" + strOptString;
+                                    }
+                                    if (!askedIds.contains(key)) {
+                                        askedIds.add(key);
+                                        if (!MainActivity.visible && App.prefs().getBoolean("notify", true)
+                                                && jCurrentTimeMillis - Notifications.lastShownAt > 2000) {
+                                            Notifications.show(this, App.TAG, "OpenCode ждёт вашего ответа");
+                                        }
                                     }
                                 }
                             }
@@ -355,6 +382,73 @@ public class RuntimeService extends Service {
                 }
             }
         }
+    }
+
+    private void scheduleCheck(final String sid, String type) {
+        pendingType.put(sid, type);
+        final long stamp = System.currentTimeMillis();
+        pendingStamp.put(sid, Long.valueOf(stamp));
+        try {
+            notifierScheduler.schedule(new Runnable() {
+                public void run() {
+                    checkDone(sid, stamp, 0);
+                }
+            }, 1800L, TimeUnit.MILLISECONDS);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /** Проверяем, что сессия реально свободна, и показываем одно уведомление. */
+    private void checkDone(final String sid, final long stamp, final int attempt) {
+        Long cur = pendingStamp.get(sid);
+        if (cur == null || cur.longValue() != stamp) {
+            return;
+        }
+        if (this.stopping || MainActivity.visible || !App.prefs().getBoolean("notify", true)) {
+            pendingStamp.remove(sid, Long.valueOf(stamp));
+            pendingType.remove(sid);
+            return;
+        }
+        boolean done = false;
+        try {
+            JSONObject j = getJson("/api/session/" + sid, 8000);
+            JSONObject d = j == null ? null : j.optJSONObject("data");
+            if (d == null) {
+                d = j;
+            }
+            JSONObject t = d == null ? null : d.optJSONObject("time");
+            if (t != null) {
+                long b = t.optLong("busy", 0L);
+                long i = t.optLong("idle", 0L);
+                done = i > 0L && i >= b;
+            }
+        } catch (Throwable ignored) {
+        }
+        if (!done) {
+            if (attempt < 5) {
+                try {
+                    notifierScheduler.schedule(new Runnable() {
+                        public void run() {
+                            checkDone(sid, stamp, attempt + 1);
+                        }
+                    }, 1500L, TimeUnit.MILLISECONDS);
+                } catch (Throwable ignored) {
+                }
+            } else {
+                pendingStamp.remove(sid, Long.valueOf(stamp));
+                pendingType.remove(sid);
+            }
+            return;
+        }
+        pendingStamp.remove(sid, Long.valueOf(stamp));
+        String type = pendingType.remove(sid);
+        if (type == null) {
+            return;
+        }
+        if (System.currentTimeMillis() - Notifications.lastShownAt < 1500L) {
+            return;
+        }
+        Notifications.show(this, App.TAG, type.endsWith("failed") ? "Ошибка выполнения" : "Ответ готов");
     }
 
     private JSONObject getJson(String str, int i) {
@@ -484,6 +578,10 @@ public class RuntimeService extends Service {
 
     private void stopEverything() {
         this.stopping = true;
+        try {
+            notifierScheduler.shutdownNow();
+        } catch (Throwable ignored) {
+        }
         try {
             if (this.proc != null) {
                 this.proc.destroy();

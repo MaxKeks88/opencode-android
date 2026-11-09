@@ -17,6 +17,9 @@ public final class Notifications {
 
     public static void show(Context context, String str, String str2) {
         try {
+            if (!App.prefs().getBoolean("notify", true)) {
+                return;
+            }
             NotificationManager notificationManager = (NotificationManager) context.getSystemService("notification");
             NotificationChannel notificationChannel = new NotificationChannel(CHANNEL, "Сообщения OpenCode", 3);
             notificationChannel.setShowBadge(true);
@@ -35,7 +38,7 @@ public final class Notifications {
             }
             contentText.setStyle(bigTextStyle.bigText(str2)).setSmallIcon(android.R.drawable.stat_notify_chat).setAutoCancel(true).setContentIntent(activity);
             lastShownAt = System.currentTimeMillis();
-            notificationManager.notify((int) (System.currentTimeMillis() % 100000), builder.build());
+            notificationManager.notify(1001, builder.build());
         } catch (Throwable th) {
             App.log("notification: " + String.valueOf(th));
         }

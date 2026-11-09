@@ -16,6 +16,12 @@
   вложения (файл через `/upload` → `file://`), папки на `/sdcard`, настройки, уведомления.
 - Проверено вживую: агент создал `test.txt`, выполнил `ls -la`, нашёл файлы через `glob`,
   прочитал вложение, ответил на русском.
+- **Интернет у модели есть.** `webfetch` открывает URL (проверено:
+  `example.com` → «Example Domain», `opencode.ai/docs`), `websearch` ищет через
+  провайдера (`/api/websearch/provider` → `exa, firecrawl, parallel, tavily,
+  tinyfish`; по умолчанию **tinyfish**, ключ не нужен). Shell-инструменты тоже
+  в сети: `python3 -c "urllib…"` → 200, `git clone`/`pip`/`npx` — через прокси.
+  Выбор провайдера и ключ из UI пока не сделаны — см. `ЗАДАЧИ.md`, п.13.
 - Токен доступа к локальному серверу: без `X-Bridge-Token` запросы к `/oc`, `/android`,
   `/files`, `/thumb`, `/upload` возвращают **403** (проверено).
 
@@ -78,8 +84,8 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | ripgrep | 15.1.0, 3 152 312 байт + `libpcre2-8.so.0` | Alpine v3.24 community/main aarch64 |
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
-| APK | `OpenCodeAndroid.apk`, ~192.4 МБ | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 6, versionName 1.5 | `app/AndroidManifest.xml` |
+| APK | `OpenCodeAndroid.apk`, ~190.5 МБ | `python build_apk.py` |
+| Пакет | `ru.opencode.android`, versionCode 17, versionName 1.9.7 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `C:\Users\WorkPC\AppData\Local\Temp\opencode-src`
@@ -165,6 +171,11 @@ python X:\build_apk.py
 Шаги: `aapt2 compile` → `aapt2 link` → `javac` → `d8` → Python zip (runtime) →
 `zipalign` → `apksigner`. Выход: `OpenCodeAndroid.apk`.
 
+Подпись: по умолчанию берётся `keystore.jks`; если его нет, создаётся
+отладочный ключ с паролями `opencode2026` (сборщик печатает предупреждение).
+`python build_apk.py --release` требует свой ключ: падает с ошибкой, если нет
+`keystore.properties`/`keystore.jks` или остались пароли по умолчанию.
+
 ### Установка
 
 ```powershell
@@ -179,9 +190,11 @@ adb install --no-incremental -r -d OpenCodeAndroid.apk
 ### Обновление версии
 
 - `versionCode` и `versionName` — в `app/AndroidManifest.xml`.
-- Если менялись **runtime-файлы** (`opencode`, musl, rg) — подними маркер в
-  `Runtime.ensure()`: `String version = appVersion(ctx) + "-r1";` → `-r2`.
-  Иначе старый распакованный бинарник не обновится.
+- Маркер рантайма **руками не поднимается** (с 1.9.5): `build_apk.py` пишет
+  `assets/runtime/manifest.txt` (SHA-256 + размер каждого файла), а
+  `Runtime.ensure()` берёт `m<8 байт SHA-256 манифеста>`. Меняются бинарники —
+  маркер меняется сам; меняется только версия приложения — маркер тот же,
+  и 250 МБ не распаковываются. `usr/.version` хранит этот маркер.
 - `syncWeb()` копирует `assets/app/*` в `files/web` при **каждом** старте,
   поэтому правки `page.html`/`bridge.js` попадают после пересборки.
 
@@ -198,10 +211,14 @@ adb install --no-incremental -r -d OpenCodeAndroid.apk
   `asks`, `attachments`, `usage`, `online`, `status`, `busy`.
 - `handle({t:"chats", items})`, `{t:"models", items, current}`, `{t:"fs", ...}`,
   `{t:"toast", text, kind}`, `{t:"sent"}`, `{t:"pong"}`.
+- Каталог провайдеров: `{t:"catalog", items}`, `{t:"oauth", integration, status,
+  url, instructions, error}`, `{t:"provbusy", integration, busy}`,
+  `{t:"provmodels", integration, items}`.
 - Команды страницы (`send({t:...})`): `init`, `refresh`, `open`, `new`, `chats`,
   `send`, `stop`, `rename`, `delchat`, `move`, `models`, `setmodel`, `attach`,
   `detach`, `fs`, `mkdir`, `older`, `ansperm`, `ansform`, `providers`, `usage`,
-  `ping`, `debug`.
+  `catalog`, `connectkey`, `connectoauth`, `oauthcode`, `disconnectprov`,
+  `provmodels`, `ping`, `debug`.
 
 ### Сообщения OpenCode → формат страницы
 
@@ -239,6 +256,30 @@ adb install --no-incremental -r -d OpenCodeAndroid.apk
 Выбор сохраняется в `localStorage["oc_model"]`; новая сессия без модели
 получает сохранённую/дефолтную через `POST /api/session/{id}/model`.
 
+### Каталог провайдеров (1.6)
+
+- `GET /api/integration` — 239 провайдеров: `{id,name,methods[],connections[]}`.
+  Методы: `key`, `env`, `oauth` (с `form`), `external`, `command`.
+- Кэш каталога: `localStorage["oc_cat_v1"]` = `{at, items}`, TTL 24 ч.
+  `loadCatalog(true)` — принудительное обновление (после подключения).
+- Подключение по ключу: `POST /api/integration/{id}/connect/key {key}`.
+- OAuth: `POST .../connect/oauth {methodID, answer}` → `{attemptID,url,instructions,mode}`
+  → `GET .../oauth/{attemptID}` (poll) → `POST .../complete {code}`.
+  `answer` — объект `{поле: значение}` из `form` метода; поля с `when`
+  показываются условно (например, `enterpriseUrl` у GitHub Copilot).
+- Отключение: `DELETE /api/credential/{id}` (список — `GET /api/credential`).
+- После подключения/отключения `refreshProvidersAll()` обновляет каталог,
+  `/api/provider` и тихо `/api/model` (`listModelsQuiet()`, без открытия листа
+  моделей на странице).
+- UI: блок «Популярные» (Anthropic, GitHub Copilot, OpenAI, Google,
+  OpenCode Console) + «Показать всех (N)» и кнопка **⟳** (сброс кэша и
+  повторный `GET /api/integration`); экран каталога с поиском, порциями по 60
+  и «⟳ Обновить каталог»; карточка провайдера (`openProvider()` →
+  `renderProvDetail()`), в ней — список моделей провайдера
+  (`{t:"provmodels", integration}` → `{t:"provmodels", items}`) и кнопка
+  «📋 Скопировать код» для OAuth-инструкций вида `Enter code: XXXX-XXXX`.
+- Ключи хранятся только в OpenCode (`/api/credential`), не в prefs и не в HTML.
+
 ### Файлы и вложения
 
 - `/android/fs?path=` → `{ok,path,parent,drives,entries,shortcuts}`.
@@ -259,6 +300,19 @@ adb install --no-incremental -r -d OpenCodeAndroid.apk
   требуют `X-Bridge-Token` (или `?token=`), который генерируется при первом запуске
   и передаётся странице во фрагменте URL (`#token=...`).
 - Без токена — 403 (проверено).
+- **WebView (1.9):** навигация разрешена только на `http://127.0.0.1:8769`
+  (`isAppUrl()`: схема + host + порт). Остальные ссылки уходят в системный
+  браузер (`openExternally()`), а `file:`, `javascript:`, `data:`, `about:`,
+  `blob:`, `chrome:` блокируются. `setAllowFileAccess(false)` — страница и
+  медиа грузятся только по http (`/files/`), `file://` в WebView не нужен.
+- **Лимиты локального HTTP (1.9.1):** токен проверяется **до** чтения тела
+  (`needsToken()` в `handle()`), тело ≤ 128 МБ и для `Content-Length`, и для
+  chunked (иначе 413), заголовки ≤ 120 строк / 64 КБ (431). Пул —
+  `ThreadPoolExecutor(4..64, SynchronousQueue)`: SSE занимает поток надолго,
+  поэтому очередь не копится; при переполнении сокет закрывается.
+- **Импорт бэкапа (1.9.2):** `SettingsActivity` ограничивает архив 20 000
+  файлов и 512 МБ (счёт по фактически записанным байтам), поток файла
+  закрывается в `finally`. Пути по-прежнему проверяются (`..` + canonical).
 - `android:debuggable="true"` — **только для разработки**. Перед «боевым» APK
   можно выключить, но тогда пропадёт `run-as`/CDP-отладка.
 - `MANAGE_EXTERNAL_STORAGE` + legacy storage: приложение получает доступ к `/sdcard`.
@@ -328,8 +382,9 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
 4. **UTF-8** везде. `page.html` — без BOM.
 5. **`syncWeb`** перезаписывает `files/web` при каждом старте. Для dev-правок
    либо пушьте после старта, либо пересобирайте.
-6. **`Runtime.ensure`** проверяет `usr/.version`; при замене бинарника поднимите
-   `-r1` → `-r2`.
+6. **`Runtime.ensure`** сверяет `usr/.version` с хешем
+   `assets/runtime/manifest.txt` (его пишет `build_apk.py`). Руками маркер
+   поднимать не нужно — изменился любой runtime-файл, маркер сменится сам.
 7. **`OPENCODE_DISABLE_FFF=1`** — иначе opencode пытается загрузить glibc-модуль
    `@ff-labs/fff` и поиск файлов падает. `rg` подставляется из `files/usr/bin/rg`.
 8. **Каталог моделей тянется по сети.** Флаг `OPENCODE_DISABLE_MODELS_FETCH`
@@ -411,6 +466,22 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
     экран мигает каждые ~25–30 секунд. `refreshAll(false)` в `bridge.js` шлёт
     `push()` (только изменения), а `applyState()` пропускает `renderAll`, если
     сообщения не изменились. Полный `state` — только для `init`/открытия чата.
+26. **GitHub Copilot без подписки.** Вход по OAuth проходит (кред
+    `github-copilot` создаётся, провайдер получает `activation:"auto"`), но
+    моделей будет **0**: OpenCode обменивает GitHub-токен на Copilot-токен
+    (`api.github.com/copilot_internal/v2/token`), а без подписки Copilot этот
+    запрос отдаёт **403** (проверено: `/user` → 200, план `free`). Это не баг
+    приложения. В карточке подключённого провайдера теперь показывается
+    предупреждение «Модели не появились…», а после подключения без моделей —
+    тост «Подключено, но моделей нет — проверьте подписку или ключ».
+27. **`connect/key` и BOM.** Тело запроса нельзя отправлять с UTF-8 BOM
+    (PowerShell `Out-File -Encoding utf8` в PS 5.1 его добавляет): сервер
+    отвечает `404 IntegrationNotFoundError`. Для проверок из консоли писать
+    JSON через Python/`[IO.File]::WriteAllText` без BOM.
+28. **Проверка OAuth вручную.** Устройство-flow (GitHub Copilot) требует
+    ввести код на сайте; пока браузер открыт, WebView в фоне может тормозить
+    таймеры, поэтому опрос продолжается после возврата в приложение. Открытый
+    `<attemptID>` живёт ~10 минут, затем `expired`.
 
 ## 10. Что осталось / следующие шаги
 
@@ -434,18 +505,25 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
 8. **Резервная копия** сессий/ключей — ✅ экспорт/импорт ZIP в настройках.
 9. **Обновление OpenCode** — ✅ есть `Updater` (проверка/скачивание с бэкапом);
    `opencode upgrade` внутри APK не работает — обновление через APK.
+   С 1.9.4 сверяется SHA-256 из `digest` релиза (если поле есть), канал —
+   преф `update_channel` (`stable`/`preview`), кнопка в ⚙ Настройки.
 10. **Git исходников** — ✅ репозиторий вне Drive, см. раздел 13.
 11. **Расширенные права** — ✅ 1.4: одноразовый `tools/enable_powers.bat`,
     `occtl`, обёртки `settings`/`pm`; агент меняет системные настройки,
     читает `dumpsys`/`logcat`, открывает удаление приложений.
 12. **Shizuku** — ✅ 1.5: полный shell uid 2000, `ocsh`, автоподмена `pm/input/am/cmd`,
-    экран «Полные разрешения» с инструкциями. Осталось: проверить после
-    перезагрузки и, по желанию, автозапуск на доверенном Wi‑Fi.
-13. **Уведомления** — план: одно уведомление только по завершении полного
-    ответа и только при включённой галочке; см. `ЗАДАЧИ.md`, задача 3.
-14. **Каталог провайдеров** — план: популярные (Anthropic, GitHub Copilot,
-    OpenAI, Google), «Показать больше» + поиск; API `/api/integration` уже
-    отдаёт 239 провайдеров. См. `ЗАДАЧИ.md`, задача 4.
+    экран «Полные разрешения» с инструкциями. ✅ 2026-11-08 проверено после
+    перезагрузки: приложение и opencode поднимаются сами (`BootReceiver`),
+    токен и префы сохраняются, DeviceService (`settings`/`pm`) работает без
+    Shizuku, а сам Shizuku сбрасывается — `ocsh` и экран статуса честно пишут
+    «Полный доступ (Shizuku) не включён».
+13. **Уведомления** — ✅ 1.6: одно уведомление на полный ответ
+    (`Notifications` проверяет преф `notify`, фиксированный ID 1001;
+    `RuntimeService` — debounce 1.8 с + проверка `time.idle >= time.busy`,
+    дедуп запросов; дубли `BR.notify` со страницы убраны).
+14. **Каталог провайдеров** — ✅ 1.6: блок «Популярные», «Показать всех
+    провайдеров» с поиском/пагинацией, подключение по ключу и OAuth,
+    отключение, кэш каталога 24 ч. См. раздел 6 «Каталог провайдеров».
 
 ## 11. Быстрый чек-лист после изменений
 
@@ -458,6 +536,15 @@ adb shell run-as ru.opencode.android cat files/logs/app.log
 # в логе должно быть: порт OpenCode: 4096, локальный сервер: http://127.0.0.1:8769
 python tools\clean_project.py --yes   # убрать build/ и старые копии APK
 ```
+
+Автопроверка (телефон должен быть подключён):
+
+```powershell
+python tools\smoke_test.py          # 8 быстрых проверок: ping, токен, лимиты, каталог, модели
+python tools\smoke_test.py --deep   # + сообщение, ответ и уведомление (кладёт приложение в фон)
+```
+
+Скрипт сам берёт серийник и токен из `shared_prefs`, ничего не хранит в repo.
 
 Проверить:
 - `http://127.0.0.1:8769/ping` (через `adb forward`) → `online:true`.
@@ -653,3 +740,16 @@ uid 2000 и перечисленные операции становятся д�
 - `ocsh id` → `uid=2000(shell)`.
 - Агент в приложении выполнил `ocsh id` и `ocsh pm list packages -3 | wc -l`
   (56 пакетов).
+- **Лимиты `ocsh` (1.9.3):** вывод ≤ 4 МБ на поток с пометкой «… вывод
+  обрезан, лимит 4 МБ»; таймаут — ⚙ Настройки → «Лимит времени для
+  shell-команд, сек» (преф `ocsh_timeout`, 0 = без лимита). Проверено:
+  10 МБ `base64` → 4 194 356 байт с пометкой; лимит 5 с → `sleep 40`
+  остановлен за 5.2 с; лимит 0 → `sleep 8` отработал полностью.
+- **После перезагрузки (2026-11-08):** приложение стартует само (22:37),
+  opencode и локальный сервер поднимаются, токен из prefs тот же.
+  `BR.shizukuStatus()` → `running:false, granted:false, uid:-1` — Shizuku
+  нужно запустить заново; `ocsh`/`occtl sh-ready` отвечают «Полный доступ
+  (Shizuku) не включён». `pm list packages -3` через обёртку всё равно
+  работает (fallback на DeviceService, 55 пакетов), `settings get global
+  adb_enabled` → `1`. Ответ на сообщение и уведомление «Ответ готов» после
+  перезагрузки проверены.

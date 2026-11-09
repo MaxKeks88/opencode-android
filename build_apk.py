@@ -42,23 +42,45 @@ def find_tools():
     android_jar = platforms[-1] / "android.jar"
     return aapt2, zipalign, apksigner, d8, android_jar
 
-def keystore():
+DEV_PASSWORDS = {"opencode2026"}
+
+def keystore(release):
     ks = BASE / "keystore.jks"
     props = BASE / "keystore.properties"
     if not props.exists():
+        if release:
+            raise SystemExit(
+                "\n[релиз] нет keystore.properties.\n"
+                "Создайте файл с своими паролями:\n"
+                "  storePassword=<пароль>\n  keyPassword=<пароль>\n  alias=opencode\n")
         props.write_text("storePassword=opencode2026\nkeyPassword=opencode2026\nalias=opencode\n",
                          encoding="utf-8")
+        print("ВНИМАНИЕ: создан keystore.properties с паролями по умолчанию "
+              "(только для отладочной сборки)")
     cfg = {}
     for line in props.read_text(encoding="utf-8").splitlines():
         if "=" in line:
             k, v = line.split("=", 1)
             cfg[k.strip()] = v.strip()
+    if release and (cfg.get("storePassword") in DEV_PASSWORDS
+                    or cfg.get("keyPassword") in DEV_PASSWORDS):
+        raise SystemExit(
+            "\n[релиз] в keystore.properties пароли по умолчанию (opencode2026).\n"
+            "Для релизной сборки задайте свои пароли — иначе APK нельзя публиковать.")
     if not ks.exists():
+        if release:
+            raise SystemExit(
+                "\n[релиз] нет keystore.jks. Создайте ключ:\n"
+                "  keytool -genkeypair -keystore keystore.jks -alias opencode "
+                "-keyalg RSA -keysize 2048 -validity 10000\n")
+        print("ВНИМАНИЕ: создаётся отладочный keystore.jks с паролями по умолчанию")
         run([KEYTOOL, "-genkeypair", "-keystore", ks, "-alias", cfg.get("alias", "opencode"),
              "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000",
              "-storepass", cfg.get("storePassword", "opencode2026"),
              "-keypass", cfg.get("keyPassword", "opencode2026"),
              "-dname", "CN=OpenCode Android, O=OpenCode, C=RU"])
+    dev = (cfg.get("storePassword") in DEV_PASSWORDS or cfg.get("keyPassword") in DEV_PASSWORDS)
+    print("подпись:", ks, "(ОТЛАДОЧНЫЙ ключ с паролями по умолчанию)" if dev else "(свой ключ)")
     return ks, cfg
 
 def force_rmtree(p):
@@ -78,15 +100,54 @@ def force_rmtree(p):
     if p.exists():
         shutil.rmtree(p, ignore_errors=True)
 
+def runtime_manifest():
+    """SHA-256 всех runtime-файлов → assets/runtime/manifest.txt.
+
+    Runtime.ensure() использует хеш этого файла как маркер: меняются
+    бинарники — меняется маркер; меняется только версия приложения —
+    маркер тот же, и 250 МБ заново не распаковываются.
+    """
+    import hashlib
+    items = []
+    for root in (ASSETS / "runtime", BASE / "runtime"):
+        if not root.exists():
+            continue
+        for p in sorted(root.rglob("*")):
+            if not p.is_file():
+                continue
+            rel = p.relative_to(root).as_posix()
+            if rel == "manifest.txt":
+                continue
+            h = hashlib.sha256()
+            with open(p, "rb") as fh:
+                for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+                    h.update(chunk)
+            items.append((rel, h.hexdigest(), p.stat().st_size))
+    items.sort()
+    lines = ["%s  %d  %s" % (digest, size, name) for name, digest, size in items]
+    target = ASSETS / "runtime" / "manifest.txt"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print("манифест рантайма: %d файлов, %s" % (len(items), target))
+
+
 def main():
+    release = "--release" in sys.argv[1:]
+    if release:
+        print("режим: РЕЛИЗ (строгая проверка ключа подписи)")
     aapt2, zipalign, apksigner, d8, android_jar = find_tools()
     print("SDK:", SDK)
     print("android.jar:", android_jar)
+
+    # проверяем подпись сразу: при --release ошибки должны всплыть до сборки
+    ks, cfg = keystore(release)
 
     force_rmtree(BUILD)
     (BUILD / "gen").mkdir(parents=True)
     (BUILD / "classes").mkdir()
     (BUILD / "dex").mkdir()
+
+    runtime_manifest()
 
     # 1. ресурсы
     run([aapt2, "compile", "--dir", APP / "res", "-o", BUILD / "res.zip"])
@@ -127,7 +188,6 @@ def main():
     aligned = BUILD / "aligned.apk"
     run([zipalign, "-f", "4", out, aligned])
 
-    ks, cfg = keystore()
     run([apksigner, "sign", "--ks", ks, "--ks-key-alias", cfg.get("alias", "opencode"),
          "--ks-pass", "pass:" + cfg.get("storePassword", "opencode2026"),
          "--key-pass", "pass:" + cfg.get("keyPassword", "opencode2026"),

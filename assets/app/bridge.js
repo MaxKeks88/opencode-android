@@ -507,6 +507,24 @@
         case "zenkey":
           await saveZenKey(o.key);
           break;
+        case "catalog":
+          await loadCatalog(!!o.force);
+          break;
+        case "connectkey":
+          await connectProviderKey(o.integration, o.key);
+          break;
+        case "connectoauth":
+          await startOAuth(o.integration, o.methodID, o.answer);
+          break;
+        case "oauthcode":
+          await oauthCode(o.code);
+          break;
+        case "disconnectprov":
+          await disconnectProvider(o.integration, o.credential);
+          break;
+        case "provmodels":
+          await providerModels(o.integration);
+          break;
         case "usage":
           await loadUsage();
           break;
@@ -588,6 +606,19 @@
 
   async function listModels() {
     const r = await json("GET", "/api/model", null, 60000);
+    const list = modelItems(r);
+    BS.models = list;
+    handle({ t: "models", items: list, current: BS.chat.model || {} });
+  }
+
+  /* то же, но без открытия листа моделей на странице */
+  async function listModelsQuiet() {
+    try {
+      BS.models = modelItems(await json("GET", "/api/model", null, 60000));
+    } catch (e) {}
+  }
+
+  function modelItems(r) {
     const items = [];
     for (const m of ((r && r.data) || [])) {
       if (m.enabled === false) continue;
@@ -614,8 +645,7 @@
     const list = Array.from(best.values());
     list.sort((a, b) => (a.free === b.free ? 0 : (a.free ? -1 : 1))
       || String(a.name).toLowerCase().localeCompare(String(b.name).toLowerCase()));
-    BS.models = list;
-    handle({ t: "models", items: list, current: BS.chat.model || {} });
+    return list;
   }
 
   async function setModel(id, provider, variant) {
@@ -882,6 +912,225 @@
       await listProviders();
     } catch (e) {
       toast("Не удалось выйти: " + e.message, "err");
+    }
+  }
+
+  /* ------------------------------------ каталог провайдеров (integration) --- */
+
+  const CAT_KEY = "oc_cat_v1";
+  const CAT_TTL = 24 * 60 * 60 * 1000;
+  let catalog = null;
+  let oauthState = null;
+
+  function normMethod(m) {
+    return {
+      id: m.id || "",
+      type: m.type || "key",
+      label: m.label || "",
+      names: m.names || [],
+      form: (m.form || []).map(f => ({
+        key: f.key, type: f.type || "string", title: f.title || f.key,
+        description: f.description || "", required: !!f.required,
+        hidden: !!f.hidden,
+        def: f.default === undefined ? "" : f.default,
+        placeholder: f.placeholder || "",
+        options: f.options || [], when: f.when || []
+      }))
+    };
+  }
+
+  async function loadCatalog(force) {
+    if (!force && catalog) { handle({ t: "catalog", items: catalog }); return; }
+    if (!force) {
+      try {
+        const raw = localStorage.getItem(CAT_KEY);
+        if (raw) {
+          const c = JSON.parse(raw);
+          if (c && Array.isArray(c.items) && Date.now() - (c.at || 0) < CAT_TTL) {
+            catalog = c.items;
+            handle({ t: "catalog", items: catalog });
+            return;
+          }
+        }
+      } catch (e) {}
+    }
+    try {
+      const r = await json("GET", "/api/integration", null, 60000);
+      const arr = (r && r.data) || r || [];
+      catalog = arr.map(it => ({
+        id: it.id, name: it.name || it.id,
+        methods: (it.methods || []).map(normMethod),
+        connections: (it.connections || []).map(c => ({
+          id: c.id, label: c.label || "", method: c.method || ""
+        }))
+      }));
+      try {
+        localStorage.setItem(CAT_KEY, JSON.stringify({ at: Date.now(), items: catalog }));
+      } catch (e) {}
+      handle({ t: "catalog", items: catalog });
+    } catch (e) {
+      handle({ t: "catalog", items: [], error: e.message });
+    }
+  }
+
+  async function refreshProvidersAll() {
+    try { await loadCatalog(true); } catch (e) {}
+    try { await listProviders(); } catch (e) {}
+    try { await listModelsQuiet(); } catch (e) {}
+  }
+
+  /* После подключения: если у провайдера нет моделей — предупредить. */
+  async function afterProviderConnect(integration) {
+    await refreshProvidersAll();
+    const n = (BS.models || []).filter(m => m.providerID === integration).length;
+    if (!n) {
+      toast("Подключено, но моделей нет — проверьте подписку или ключ", "err");
+    }
+  }
+
+  async function connectProviderKey(integration, key) {
+    const k = String(key || "").trim();
+    if (!k) { toast("Введите ключ", "err"); return; }
+    handle({ t: "provbusy", integration, busy: true });
+    try {
+      await json("POST", "/api/integration/" + encodeURIComponent(integration) + "/connect/key",
+        { key: k }, 60000);
+      handle({ t: "provbusy", integration, busy: false });
+      toast("Провайдер подключён");
+      await afterProviderConnect(integration);
+    } catch (e) {
+      handle({ t: "provbusy", integration, busy: false });
+      toast("Не удалось подключить: " + e.message, "err");
+    }
+  }
+
+  function oauthEvent(integration, status, extra) {
+    handle(Object.assign({ t: "oauth", integration, status }, extra || {}));
+  }
+
+  function oauthBase(integration) {
+    return "/api/integration/" + encodeURIComponent(integration) + "/connect/oauth";
+  }
+
+  async function startOAuth(integration, methodID, answer) {
+    if (oauthState && oauthState.polling) { toast("Подключение уже выполняется…"); return; }
+    oauthEvent(integration, "starting");
+    let r;
+    try {
+      r = await json("POST", oauthBase(integration),
+        { methodID: methodID, answer: answer || null }, 60000);
+    } catch (e) {
+      oauthEvent(integration, "error", { error: e.message });
+      toast("Не удалось начать вход: " + e.message, "err");
+      return;
+    }
+    const d = (r && r.data) || r || {};
+    const attemptID = d.attemptID;
+    if (!attemptID) {
+      oauthEvent(integration, "error", { error: "нет attemptID" });
+      toast("Сервер не выдал код входа", "err");
+      return;
+    }
+    oauthState = { integration, methodID, attemptID, mode: d.mode || "auto", polling: true };
+    oauthEvent(integration, d.mode === "code" ? "code" : "waiting",
+      { url: d.url || "", instructions: d.instructions || "", mode: oauthState.mode });
+    if (d.url) {
+      try { BR.openUrl(d.url); } catch (e) { toast("Откройте ссылку: " + d.url); }
+    }
+    if (oauthState.mode === "code") {
+      toast(d.instructions || "Введите код со страницы входа");
+      return;
+    }
+    pollOAuth();
+  }
+
+  async function oauthCode(code) {
+    if (!oauthState || !oauthState.polling) { toast("Сначала начните вход", "err"); return; }
+    const integration = oauthState.integration;
+    try {
+      await json("POST", oauthBase(integration) + "/"
+        + encodeURIComponent(oauthState.attemptID) + "/complete",
+        { code: code || null }, 30000);
+    } catch (e) {
+      toast("Код не принят: " + e.message, "err");
+      return;
+    }
+    oauthState.polling = false;
+    oauthEvent(integration, "done");
+    toast("Провайдер подключён");
+    await afterProviderConnect(integration);
+  }
+
+  async function pollOAuth() {
+    const deadline = Date.now() + 5 * 60 * 1000;
+    while (oauthState && oauthState.polling && Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 2500));
+      const integration = oauthState.integration;
+      let st;
+      try {
+        st = await json("GET", oauthBase(integration) + "/"
+          + encodeURIComponent(oauthState.attemptID), null, 20000);
+      } catch (e) { continue; }
+      const sd = (st && st.data) || st || {};
+      const status = sd.status;
+      if (status === "complete") {
+        try {
+          await json("POST", oauthBase(integration) + "/"
+            + encodeURIComponent(oauthState.attemptID) + "/complete",
+            { code: null }, 30000);
+        } catch (e) {}
+        oauthState.polling = false;
+        oauthEvent(integration, "done");
+        toast("Провайдер подключён");
+        await afterProviderConnect(integration);
+        return;
+      }
+      if (status === "failed" || status === "expired") {
+        oauthState.polling = false;
+        const msg = sd.message || sd.error || status;
+        oauthEvent(integration, "error", { error: msg });
+        toast("Вход не выполнен: " + msg, "err");
+        return;
+      }
+    }
+    if (oauthState && oauthState.polling) {
+      oauthState.polling = false;
+      oauthEvent(oauthState.integration, "expired");
+      toast("Время входа истекло", "err");
+    }
+  }
+
+  async function providerModels(integration) {
+    try {
+      const r = await json("GET", "/api/model", null, 60000);
+      const items = ((r && r.data) || [])
+        .filter(m => m.providerID === integration && m.enabled !== false)
+        .map(m => ({
+          id: m.id, modelID: m.modelID, name: m.name || m.id,
+          free: !(m.cost || []).some(t => t && (t.input > 0 || t.output > 0))
+        }));
+      handle({ t: "provmodels", integration, items });
+    } catch (e) {
+      handle({ t: "provmodels", integration, items: [], error: e.message });
+    }
+  }
+
+  async function disconnectProvider(integration, credentialID) {
+    try {
+      if (credentialID) {
+        await json("DELETE", "/api/credential/" + encodeURIComponent(credentialID), null, 20000);
+      } else {
+        const l = await json("GET", "/api/credential", null, 20000);
+        for (const c of ((l && l.data) || [])) {
+          if (c && c.integrationID === integration) {
+            try { await json("DELETE", "/api/credential/" + c.id, null, 20000); } catch (e) {}
+          }
+        }
+      }
+      toast("Провайдер отключён");
+      await refreshProvidersAll();
+    } catch (e) {
+      toast("Не удалось отключить: " + e.message, "err");
     }
   }
 

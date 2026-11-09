@@ -10,6 +10,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
 
 /* JADX INFO: loaded from: C:\Users\WorkPC\AppData\Local\Temp\opencode\apkdex\classes.dex */
@@ -19,7 +20,7 @@ public final class Runtime {
 
     public static synchronized void ensure(Context context) throws IOException {
         syncWeb(context);
-        String str = appVersion(context) + "-r10";
+        String str = runtimeSignature(context);
         File file = new File(App.usr, ".version");
         if (file.exists() && str.equals(readText(file).trim()) && App.loader().isFile() && App.opencode().isFile() && App.opencode().length() > 100000000) {
             writeWrappers();
@@ -87,6 +88,34 @@ public final class Runtime {
             return context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
         } catch (Throwable th) {
             return "1.0";
+        }
+    }
+
+    /* Маркер рантайма = SHA-256 от assets/runtime/manifest.txt (см. build_apk.py).
+       Меняются бинарники → меняется маркер; меняется только версия приложения →
+       маркер тот же, 250 МБ заново не распаковываются. */
+    private static String runtimeSignature(Context context) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            InputStream in = context.getAssets().open("runtime/manifest.txt");
+            try {
+                byte[] buf = new byte[8192];
+                int read;
+                while ((read = in.read(buf)) > 0) {
+                    digest.update(buf, 0, read);
+                }
+            } finally {
+                in.close();
+            }
+            StringBuilder sb = new StringBuilder("m");
+            byte[] hash = digest.digest();
+            for (int i = 0; i < 8; i++) {
+                sb.append(String.format("%02x", hash[i] & 0xff));
+            }
+            return sb.toString();
+        } catch (Throwable th) {
+            App.log("runtimeSignature: " + String.valueOf(th));
+            return appVersion(context) + "-r10";
         }
     }
 

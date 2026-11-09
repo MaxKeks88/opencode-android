@@ -46,7 +46,11 @@ import ru.opencode.android.Updater;
 /* loaded from: C:\Users\WorkPC\AppData\Local\Temp\opencode\apkdex\classes.dex */
 public class SettingsActivity extends Activity {
     private static final int REQ_IMPORT = 201;
+    /* Пределы импорта: бэкап проходит, ZIP-бомба — нет. */
+    private static final int MAX_BACKUP_FILES = 20000;
+    private static final long MAX_BACKUP_BYTES = 536870912L;
     private EditText dirEdit;
+    private EditText shEdit;
     private TextView info;
 
     @Override // android.app.Activity
@@ -94,6 +98,40 @@ public class SettingsActivity extends Activity {
             }
         });
         linearLayout.addView(btn);
+        TextView textViewSh = new TextView(this);
+        textViewSh.setText("Лимит времени для shell-команд, сек (0 — без лимита)");
+        textViewSh.setTextColor(-1);
+        textViewSh.setTextSize(15.0f);
+        textViewSh.setPadding(0, i4, 0, i5);
+        linearLayout.addView(textViewSh);
+        this.shEdit = new EditText(this);
+        this.shEdit.setSingleLine(true);
+        this.shEdit.setInputType(2);
+        this.shEdit.setText(String.valueOf(App.prefs().getInt("ocsh_timeout", 0)));
+        this.shEdit.setTextColor(-1);
+        linearLayout.addView(this.shEdit);
+        Button btnSh = btn("Сохранить лимит shell");
+        btnSh.setOnClickListener(new View.OnClickListener() {
+            @Override // android.view.View.OnClickListener
+            public void onClick(View view) {
+                int sec;
+                try {
+                    sec = Integer.parseInt(SettingsActivity.this.shEdit.getText().toString().trim());
+                } catch (Throwable th) {
+                    sec = 0;
+                }
+                if (sec < 0) {
+                    sec = 0;
+                }
+                if (sec > 86400) {
+                    sec = 86400;
+                }
+                App.prefs().edit().putInt("ocsh_timeout", sec).apply();
+                Toast.makeText(SettingsActivity.this,
+                        sec == 0 ? "Лимит shell выключен" : ("Лимит shell: " + sec + " с"), 0).show();
+            }
+        });
+        linearLayout.addView(btnSh);
         Button btn4 = btn("Проверить уведомление");
         btn4.setOnClickListener(new View.OnClickListener() { // from class: ru.opencode.android.SettingsActivity$$ExternalSyntheticLambda22
             @Override // android.view.View.OnClickListener
@@ -148,6 +186,21 @@ public class SettingsActivity extends Activity {
         textView5.setTextSize(12.0f);
         textView5.setPadding(0, i5, 0, 0);
         linearLayout.addView(textView5);
+        final Button btnChannel = btn("");
+        btnChannel.setText(Updater.previewChannel() ? "Канал: предрелизы (нажмите для стабильного)"
+                                                     : "Канал: стабильный (нажмите для предрелизов)");
+        btnChannel.setOnClickListener(new View.OnClickListener() {
+            @Override // android.view.View.OnClickListener
+            public void onClick(View view) {
+                boolean preview = !Updater.previewChannel();
+                Updater.setPreviewChannel(preview);
+                btnChannel.setText(preview ? "Канал: предрелизы (нажмите для стабильного)"
+                                           : "Канал: стабильный (нажмите для предрелизов)");
+                Toast.makeText(SettingsActivity.this,
+                        preview ? "Канал: предрелизы" : "Канал: стабильный", 0).show();
+            }
+        });
+        linearLayout.addView(btnChannel);
         Button btn9 = btn("Проверить обновления OpenCode");
         btn9.setOnClickListener(new View.OnClickListener() { // from class: ru.opencode.android.SettingsActivity$$ExternalSyntheticLambda14
             @Override // android.view.View.OnClickListener
@@ -419,10 +472,16 @@ public class SettingsActivity extends Activity {
             ZipInputStream zipInputStream = new ZipInputStream(new BufferedInputStream(getContentResolver().openInputStream(uri)));
             byte[] bArr = new byte[65536];
             int i = 0;
+            int entries = 0;
+            long total = 0L;
             while (true) {
                 ZipEntry nextEntry = zipInputStream.getNextEntry();
                 if (nextEntry == null) {
                     break;
+                }
+                entries++;
+                if (entries > MAX_BACKUP_FILES) {
+                    throw new Exception("в архиве больше " + MAX_BACKUP_FILES + " файлов");
                 }
                 String name = nextEntry.getName();
                 if (name != null && !name.isEmpty() && !name.contains("..")) {
@@ -440,14 +499,21 @@ public class SettingsActivity extends Activity {
                             parentFile.mkdirs();
                         }
                         FileOutputStream fileOutputStream = new FileOutputStream(file);
-                        while (true) {
-                            int read = zipInputStream.read(bArr);
-                            if (read <= 0) {
-                                break;
+                        try {
+                            while (true) {
+                                int read = zipInputStream.read(bArr);
+                                if (read <= 0) {
+                                    break;
+                                }
+                                total += read;
+                                if (total > MAX_BACKUP_BYTES) {
+                                    throw new Exception("архив больше " + (MAX_BACKUP_BYTES / 1048576L) + " МБ");
+                                }
+                                fileOutputStream.write(bArr, 0, read);
                             }
-                            fileOutputStream.write(bArr, 0, read);
+                        } finally {
+                            fileOutputStream.close();
                         }
-                        fileOutputStream.close();
                         i++;
                     }
                     zipInputStream.closeEntry();

@@ -18,3 +18,6 @@ keystore.properties
 # Временное
 *.log
 .tmp*
+
+# генерируется build_apk.py (хеши рантайма)
+assets/runtime/manifest.txt

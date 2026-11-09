@@ -12,6 +12,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -30,10 +31,14 @@ public final class Updater {
 
     public static JSONObject latestV2() throws Exception {
         JSONArray jSONArray = new JSONArray(get("https://api.github.com/repos/anomalyco/opencode/releases?per_page=50"));
+        boolean preview = previewChannel();
         JSONObject jSONObject = null;
         for (int i = 0; i < jSONArray.length(); i++) {
             JSONObject jSONObjectOptJSONObject = jSONArray.optJSONObject(i);
             if (jSONObjectOptJSONObject != null) {
+                if (!preview && jSONObjectOptJSONObject.optBoolean("prerelease", false)) {
+                    continue;
+                }
                 String strOptString = jSONObjectOptJSONObject.optString("tag_name", "");
                 if (strOptString.matches("v2\\.\\d+\\.\\d+") && (jSONObject == null || isNewer(strOptString, jSONObject.optString("tag_name")))) {
                     jSONObject = jSONObjectOptJSONObject;
@@ -44,6 +49,39 @@ public final class Updater {
             throw new Exception("нет релизов v2.x");
         }
         return jSONObject;
+    }
+
+    /* Канал обновлений: stable (по умолчанию) или preview (включая prerelease). */
+    public static boolean previewChannel() {
+        try {
+            return "preview".equals(App.prefs().getString("update_channel", "stable"));
+        } catch (Throwable th) {
+            return false;
+        }
+    }
+
+    public static void setPreviewChannel(boolean z) {
+        try {
+            App.prefs().edit().putString("update_channel", z ? "preview" : "stable").apply();
+        } catch (Throwable th) {
+        }
+    }
+
+    /* SHA-256 файла — сверяем с digest из релиза GitHub. */
+    private static String sha256(File file) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        try (FileInputStream in = new FileInputStream(file)) {
+            byte[] buf = new byte[65536];
+            int read;
+            while ((read = in.read(buf)) > 0) {
+                digest.update(buf, 0, read);
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (byte b : digest.digest()) {
+            sb.append(String.format("%02x", b & 0xff));
+        }
+        return sb.toString();
     }
 
     public static boolean isNewer(String str, String str2) {
@@ -113,29 +151,35 @@ public final class Updater {
         File file2 = new File(App.tmp, "opencode-update.tar.gz");
         File file3 = new File(App.tmp, "opencode.new");
         try {
+            JSONObject asset = null;
             JSONArray jSONArrayOptJSONArray = jSONObject.optJSONArray("assets");
             if (jSONArrayOptJSONArray != null) {
-                int i = 0;
-                while (true) {
-                    if (i < jSONArrayOptJSONArray.length()) {
-                        JSONObject jSONObjectOptJSONObject = jSONArrayOptJSONArray.optJSONObject(i);
-                        if (jSONObjectOptJSONObject != null && ASSET.equals(jSONObjectOptJSONObject.optString("name"))) {
-                            strOptString = jSONObjectOptJSONObject.optString("browser_download_url");
-                            break;
-                        }
-                        i++;
-                    } else {
-                        strOptString = null;
+                for (int i = 0; i < jSONArrayOptJSONArray.length(); i++) {
+                    JSONObject jSONObjectOptJSONObject = jSONArrayOptJSONArray.optJSONObject(i);
+                    if (jSONObjectOptJSONObject != null && ASSET.equals(jSONObjectOptJSONObject.optString("name"))) {
+                        asset = jSONObjectOptJSONObject;
                         break;
                     }
                 }
-            } else {
-                strOptString = null;
             }
-            if (strOptString == null) {
+            if (asset == null) {
                 throw new Exception("нет ассета opencode-linux-arm64-musl.tar.gz");
             }
+            strOptString = asset.optString("browser_download_url");
+            if (strOptString == null || strOptString.isEmpty()) {
+                throw new Exception("нет ссылки на ассет");
+            }
             download(strOptString, file2);
+            String digest = asset.optString("digest", "");
+            if (digest.startsWith("sha256:")) {
+                String actual = sha256(file2);
+                if (!actual.equalsIgnoreCase(digest.substring(7))) {
+                    throw new Exception("контрольная сумма не совпала");
+                }
+                App.log("обновление: sha256 совпал");
+            } else {
+                App.log("обновление: digest в релизе нет — проверяю только HTTPS и ELF");
+            }
             extractOpencode(file2, file3);
             FileInputStream fileInputStream = new FileInputStream(file3);
             byte[] bArr = new byte[4];

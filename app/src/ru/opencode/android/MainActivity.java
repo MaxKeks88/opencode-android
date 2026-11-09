@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
         settings.setDatabaseEnabled(true);
-        settings.setAllowFileAccess(true);
+        settings.setAllowFileAccess(false);
         settings.setAllowContentAccess(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setMixedContentMode(0);
@@ -82,15 +82,11 @@ public class MainActivity extends Activity {
         this.web.setWebViewClient(new WebViewClient() { // from class: ru.opencode.android.MainActivity.1
             @Override // android.webkit.WebViewClient
             public boolean shouldOverrideUrlLoading(WebView webView, String str) {
-                if (str.startsWith("http://127.0.0.1") || str.startsWith("file:")) {
+                if (MainActivity.this.isAppUrl(str)) {
                     return false;
                 }
-                try {
-                    MainActivity.this.startActivity(new Intent("android.intent.action.VIEW", Uri.parse(str)));
-                    return true;
-                } catch (Throwable th2) {
-                    return true;
-                }
+                MainActivity.this.openExternally(str);
+                return true;
             }
 
             @Override // android.webkit.WebViewClient
@@ -403,6 +399,38 @@ public class MainActivity extends Activity {
 
     private int dp(int i) {
         return (int) (i * getResources().getDisplayMetrics().density);
+    }
+
+    /* Свой адрес: только http://127.0.0.1:8769 (иначе — во внешний браузер). */
+    private boolean isAppUrl(String str) {
+        try {
+            Uri uri = Uri.parse(str);
+            return "http".equalsIgnoreCase(uri.getScheme())
+                    && ("127.0.0.1".equals(uri.getHost()) || "localhost".equals(uri.getHost()))
+                    && uri.getPort() == App.HTTP_PORT;
+        } catch (Throwable th) {
+            return false;
+        }
+    }
+
+    /* Внешние ссылки — в браузер; file:/javascript:/data: не открываем вовсе. */
+    private void openExternally(String str) {
+        try {
+            Uri uri = Uri.parse(str);
+            String scheme = uri.getScheme();
+            if (scheme == null) {
+                return;
+            }
+            scheme = scheme.toLowerCase();
+            if (scheme.equals("file") || scheme.equals("javascript") || scheme.equals("data")
+                    || scheme.equals("about") || scheme.equals("blob") || scheme.equals("chrome")) {
+                App.log("nav blocked: " + str);
+                return;
+            }
+            startActivity(new Intent("android.intent.action.VIEW", uri));
+        } catch (Throwable th) {
+            App.log("nav: " + String.valueOf(th));
+        }
     }
 
     @Override // android.app.Activity

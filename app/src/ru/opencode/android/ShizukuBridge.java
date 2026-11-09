@@ -3,6 +3,7 @@ package ru.opencode.android;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.ParcelFileDescriptor;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import moe.shizuku.server.IRemoteProcess;
@@ -17,6 +18,8 @@ import rikka.shizuku.Shizuku;
 public final class ShizukuBridge {
     public static final int REQUEST_CODE = 4201;
     private static final String PACKAGE = "moe.shizuku.privileged.api";
+    /* Предел вывода на поток (stdout и stderr отдельно). */
+    private static final int MAX_STREAM = 4 * 1024 * 1024;
     private static volatile boolean listenersAdded = false;
 
     private ShizukuBridge() {
@@ -115,27 +118,88 @@ public final class ShizukuBridge {
         StringBuilder err = new StringBuilder();
         Thread tOut = reader(process.getInputStream(), out);
         Thread tErr = reader(process.getErrorStream(), err);
+        int limit = 0;
+        try {
+            limit = App.prefs().getInt("ocsh_timeout", 0);
+        } catch (Throwable th) {
+        }
+        if (limit > 0) {
+            long deadline = System.currentTimeMillis() + limit * 1000L;
+            long left;
+            while ((left = deadline - System.currentTimeMillis()) > 0) {
+                boolean alive;
+                try {
+                    alive = process.alive();
+                } catch (Throwable th) {
+                    alive = false;
+                }
+                if (!alive) {
+                    break;
+                }
+                try {
+                    Thread.sleep(Math.min(200L, left));
+                } catch (InterruptedException interrupted) {
+                    break;
+                }
+            }
+            boolean stillAlive;
+            try {
+                stillAlive = process.alive();
+            } catch (Throwable th) {
+                stillAlive = false;
+            }
+            if (stillAlive) {
+                try {
+                    process.destroy();
+                } catch (Throwable th) {
+                }
+                tOut.join(2000L);
+                tErr.join(2000L);
+                return new Result(text(out, err) + "\n[команда остановлена: лимит "
+                        + limit + " с. Изменить: ⚙ Настройки → «Лимит shell»]", -1);
+            }
+        }
         int code = process.waitFor();
         tOut.join(5000L);
         tErr.join(5000L);
+        return new Result(text(out, err), code);
+    }
+
+    private static String text(StringBuilder out, StringBuilder err) {
         String text = out.toString();
         if (err.length() > 0) {
             text = text.isEmpty() ? err.toString() : text + "\n" + err;
         }
-        return new Result(text, code);
+        return text;
     }
 
     private static Thread reader(final ParcelFileDescriptor pfd, final StringBuilder sb) {
         Thread thread = new Thread(new Runnable() {
             @Override // java.lang.Runnable
             public void run() {
+                ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+                boolean cut = false;
                 try (InputStream in = new ParcelFileDescriptor.AutoCloseInputStream(pfd)) {
                     byte[] buf = new byte[8192];
                     int read;
                     while ((read = in.read(buf)) > 0) {
-                        sb.append(new String(buf, 0, read, StandardCharsets.UTF_8));
+                        if (buffer.size() < MAX_STREAM) {
+                            int take = Math.min(read, MAX_STREAM - buffer.size());
+                            buffer.write(buf, 0, take);
+                            if (take < read) {
+                                cut = true;
+                            }
+                        } else {
+                            cut = true;
+                        }
                     }
                 } catch (Throwable th) {
+                }
+                sb.append(new String(buffer.toByteArray(), StandardCharsets.UTF_8));
+                if (cut) {
+                    sb.append("\n… (вывод обрезан, лимит ")
+                      .append(MAX_STREAM / 1048576)
+                      .append(" МБ)\n");
                 }
             }
         }, "ocsh-read");

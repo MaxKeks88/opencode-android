@@ -32,6 +32,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -41,7 +44,15 @@ public final class LocalServer {
     private static Context ctx;
     private static ServerSocket server;
     public static volatile boolean running = false;
-    private static final ExecutorService pool = Executors.newCachedThreadPool();
+
+    /* Тело запроса: 128 МБ с запасом на вложения. */
+    private static final int MAX_BODY = 134217728;
+    /* Заголовки: защита от мусора и медленных клиентов. */
+    private static final int MAX_HEADER_LINES = 120;
+    private static final int MAX_HEADER_CHARS = 65536;
+    /* Пул ограничен: SSE занимает поток надолго, поэтому очередь не нужна. */
+    private static final ExecutorService pool = new ThreadPoolExecutor(
+            4, 64, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 
     private LocalServer() {
     }
@@ -62,12 +73,18 @@ public final class LocalServer {
                     while (LocalServer.running) {
                         try {
                             final Socket socketAccept = LocalServer.server.accept();
-                            LocalServer.pool.execute(new Runnable() { // from class: ru.opencode.android.LocalServer.1.1
-                                @Override // java.lang.Runnable
-                                public void run() {
-                                    LocalServer.handle(socketAccept);
-                                }
-                            });
+                            try {
+                                LocalServer.pool.execute(new Runnable() { // from class: ru.opencode.android.LocalServer.1.1
+                                    @Override // java.lang.Runnable
+                                    public void run() {
+                                        LocalServer.handle(socketAccept);
+                                    }
+                                });
+                            } catch (Throwable th0) {
+                                // пул переполнен — не держим соединение
+                                App.log("http: соединений слишком много, закрываю");
+                                LocalServer.close(socketAccept);
+                            }
                         } catch (Throwable th) {
                             if (LocalServer.running) {
                                 App.log("accept: " + String.valueOf(th));
@@ -129,15 +146,29 @@ public final class LocalServer {
                 int iIndexOf = str.indexOf(63);
                 req.path = iIndexOf >= 0 ? str.substring(0, iIndexOf) : str;
                 req.query = iIndexOf >= 0 ? str.substring(iIndexOf + 1) : "";
+                int headerCount = 0;
+                int headerChars = 0;
                 while (true) {
                     String line2 = readLine(inputStream);
                     if (line2 == null || line2.isEmpty()) {
                         break;
                     }
+                    headerCount++;
+                    headerChars += line2.length();
+                    if (headerCount > MAX_HEADER_LINES || headerChars > MAX_HEADER_CHARS) {
+                        sendText(socket, 431, "text/plain", "too many headers");
+                        return;
+                    }
                     int iIndexOf2 = line2.indexOf(58);
                     if (iIndexOf2 > 0) {
                         req.headers.put(line2.substring(0, iIndexOf2).trim().toLowerCase(), line2.substring(iIndexOf2 + 1).trim());
                     }
+                }
+                // Токен проверяем ДО чтения тела: анонимный запрос не должен
+                // занимать память даже заголовком Content-Length.
+                if (needsToken(req.path) && !authorized(req)) {
+                    sendText(socket, 403, "text/plain", "forbidden");
+                    return;
                 }
                 String str2 = req.headers.get("transfer-encoding");
                 if (str2 == null || !str2.toLowerCase().contains("chunked")) {
@@ -146,7 +177,11 @@ public final class LocalServer {
                     } catch (Throwable th) {
                         i = 0;
                     }
-                    if (i > 0 && i < 268435456) {
+                    if (i > MAX_BODY) {
+                        sendText(socket, 413, "text/plain", "body too large");
+                        return;
+                    }
+                    if (i > 0) {
                         byte[] bArr = new byte[i];
                         while (i2 < i) {
                             int i3 = inputStream.read(bArr, i2, i - i2);
@@ -159,7 +194,12 @@ public final class LocalServer {
                         req.body = bArr;
                     }
                 } else {
-                    req.body = readChunked(inputStream);
+                    try {
+                        req.body = readChunked(inputStream, MAX_BODY);
+                    } catch (Throwable tooBig) {
+                        sendText(socket, 413, "text/plain", "body too large");
+                        return;
+                    }
                 }
                 route(socket, req);
                 return;
@@ -179,6 +219,12 @@ public final class LocalServer {
         }
     }
 
+    /* Маршруты, которым нужен X-Bridge-Token. */
+    private static boolean needsToken(String str) {
+        return str.startsWith("/oc/") || str.startsWith("/android/") || str.equals("/upload")
+                || str.equals("/upload_raw") || str.startsWith("/files/") || str.equals("/thumb");
+    }
+
     private static boolean authorized(Req req) {
         String str = req.headers.get("x-bridge-token");
         if (str == null || str.isEmpty()) {
@@ -189,7 +235,7 @@ public final class LocalServer {
 
     private static void route(Socket socket, Req req) throws Exception {
         String strSubstring = req.path;
-        if ((strSubstring.startsWith("/oc/") || strSubstring.startsWith("/android/") || strSubstring.equals("/upload") || strSubstring.equals("/upload_raw") || strSubstring.startsWith("/files/") || strSubstring.equals("/thumb")) && !authorized(req)) {
+        if (needsToken(strSubstring) && !authorized(req)) {
             sendText(socket, 403, "text/plain", "forbidden");
             return;
         }
@@ -353,6 +399,10 @@ public final class LocalServer {
                 return "Forbidden";
             case 404:
                 return "Not Found";
+            case 413:
+                return "Payload Too Large";
+            case 431:
+                return "Request Header Fields Too Large";
             case 500:
                 return "Internal Server Error";
             case 502:
@@ -866,7 +916,7 @@ public final class LocalServer {
         return null;
     }
 
-    private static byte[] readChunked(InputStream inputStream) throws IOException {
+    private static byte[] readChunked(InputStream inputStream, int max) throws IOException {
         ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
         while (true) {
             String line = readLine(inputStream);
@@ -877,25 +927,30 @@ public final class LocalServer {
             if (iIndexOf >= 0) {
                 line = line.substring(0, iIndexOf);
             }
+            int i;
             try {
-                int i = Integer.parseInt(line.trim(), 16);
-                if (i == 0) {
-                    readLine(inputStream);
+                i = Integer.parseInt(line.trim(), 16);
+            } catch (Throwable th) {
+                continue;
+            }
+            if (i == 0) {
+                readLine(inputStream);
+                break;
+            }
+            if (i < 0 || byteArrayOutputStream.size() + i > max) {
+                throw new IOException("body too large");
+            }
+            byte[] bArr = new byte[i];
+            int i2 = 0;
+            while (i2 < i) {
+                int i3 = inputStream.read(bArr, i2, i - i2);
+                if (i3 < 0) {
                     break;
                 }
-                byte[] bArr = new byte[i];
-                int i2 = 0;
-                while (i2 < i) {
-                    int i3 = inputStream.read(bArr, i2, i - i2);
-                    if (i3 < 0) {
-                        break;
-                    }
-                    i2 += i3;
-                }
-                byteArrayOutputStream.write(bArr, 0, i2);
-                readLine(inputStream);
-            } catch (Throwable th) {
+                i2 += i3;
             }
+            byteArrayOutputStream.write(bArr, 0, i2);
+            readLine(inputStream);
         }
         return byteArrayOutputStream.toByteArray();
     }

@@ -45,7 +45,7 @@ header{display:flex;align-items:center;gap:10px;padding:calc(env(safe-area-inset
 .bub p{margin:0 0 7px}.bub p:last-child{margin:0}
 .bub h1,.bub h2,.bub h3{margin:9px 0 5px;font-size:15px}
 .bub ul,.bub ol{margin:5px 0 7px;padding-left:20px}
-.bub a{color:var(--acc2)}
+.bub a{color:var(--acc2);text-decoration:underline;overflow-wrap:anywhere}
 .copy{position:absolute;top:5px;right:5px;font-size:11px;color:var(--dim2);background:#0f151d;
   border:1px solid var(--line);border-radius:6px;padding:1px 6px;cursor:pointer}
 .cbar{display:flex;justify-content:flex-end;margin-top:7px;line-height:1}
@@ -700,18 +700,42 @@ function copyBar(m){
 function md(src){
   if(!src) return "";
   const mine = [];
+  const ols = [];
   let s = String(src).replace(/```(\w*)\n?([\s\S]*?)```/g, (m, lang, code) => {
     mine.push(code.replace(/\n$/, ""));
     return "\u0000CB" + (mine.length-1) + "\u0000";
   });
   s = esc(s);
+  // нумерованные списки — отдельными блоками, чтобы не смешаться с маркированными
+  s = s.replace(/(?:^|\n)(?:[ \t]*\d+[.)][ \t]+[^\n]*(?:\n|$))+/g, block => {
+    const items = block.replace(/^\n/, "").trim().split(/\n+/)
+      .map(line => "<li>" + line.replace(/^[ \t]*\d+[.)][ \t]+/, "") + "</li>").join("");
+    ols.push("<ol>" + items + "</ol>");
+    return "\n\u0000OL" + (ols.length-1) + "\u0000\n";
+  });
+  // инлайн-код прячем до ссылок и курсива, чтобы не портить его содержимое
+  const code = [];
+  s = s.replace(/`([^`\n]+)`/g, (m, c) => {
+    code.push(c);
+    return "\u0000IC" + (code.length-1) + "\u0000";
+  });
   s = s.replace(/^#{1,4}\s+(.*)$/gm, "<h3>$1</h3>");
-  s = s.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+  s = s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s = s.replace(/(^|[\s(])(https?:\/\/[^\s<>\u0000]+)/g, (m, pre, url) => {
+    const trail = (url.match(/[.,;:!?)\]]+$/) || [""])[0];
+    const clean = trail ? url.slice(0, -trail.length) : url;
+    return pre + '<a href="' + clean + '" target="_blank" rel="noopener">' + clean + '</a>' + trail;
+  });
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/(^|[\s(])\*([^*\n<>]+)\*(?=$|[\s).,;:!?])/gm, "$1<em>$2</em>");
   s = s.replace(/^\s*[-*]\s+(.*)$/gm, "<li>$1</li>");
   s = s.replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, "<ul>$1</ul>");
   s = s.replace(/\n{2,}/g, "</p><p>").replace(/\n/g, "<br>");
   s = "<p>" + s + "</p>";
+  s = s.replace(/<p>\s*\u0000OL(\d+)\u0000\s*<\/p>/g, (m, i) => ols[+i]);
+  s = s.replace(/\u0000OL(\d+)\u0000/g, (m, i) => ols[+i]);
+  s = s.replace(/\u0000IC(\d+)\u0000/g, (m, i) => "<code>" + code[+i] + "</code>");
   s = s.replace(/\u0000CB(\d+)\u0000/g, (m, i) => {
     __blocks.push(mine[+i]);
     return '<pre><code>' + esc(mine[+i]) + '</code><span class="copy" data-cb="' + (__blocks.length-1) + '">копировать</span></pre>';

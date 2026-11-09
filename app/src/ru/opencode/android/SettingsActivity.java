@@ -51,6 +51,7 @@ public class SettingsActivity extends Activity {
     private static final long MAX_BACKUP_BYTES = 536870912L;
     private EditText dirEdit;
     private EditText shEdit;
+    private EditText outEdit;
     private TextView info;
 
     @Override // android.app.Activity
@@ -132,6 +133,40 @@ public class SettingsActivity extends Activity {
             }
         });
         linearLayout.addView(btnSh);
+        TextView textViewOut = new TextView(this);
+        textViewOut.setText("Лимит вывода shell, МБ (0 — без лимита)");
+        textViewOut.setTextColor(-1);
+        textViewOut.setTextSize(15.0f);
+        textViewOut.setPadding(0, i4, 0, i5);
+        linearLayout.addView(textViewOut);
+        this.outEdit = new EditText(this);
+        this.outEdit.setSingleLine(true);
+        this.outEdit.setInputType(2);
+        this.outEdit.setText(String.valueOf(App.prefs().getInt("ocsh_max_out", 4)));
+        this.outEdit.setTextColor(-1);
+        linearLayout.addView(this.outEdit);
+        Button btnOut = btn("Сохранить лимит вывода");
+        btnOut.setOnClickListener(new View.OnClickListener() {
+            @Override // android.view.View.OnClickListener
+            public void onClick(View view) {
+                int mb;
+                try {
+                    mb = Integer.parseInt(SettingsActivity.this.outEdit.getText().toString().trim());
+                } catch (Throwable th) {
+                    mb = 4;
+                }
+                if (mb < 0) {
+                    mb = 0;
+                }
+                if (mb > 1024) {
+                    mb = 1024;
+                }
+                App.prefs().edit().putInt("ocsh_max_out", mb).apply();
+                Toast.makeText(SettingsActivity.this,
+                        mb == 0 ? "Лимит вывода shell выключен" : ("Лимит вывода shell: " + mb + " МБ"), 0).show();
+            }
+        });
+        linearLayout.addView(btnOut);
         Button btn4 = btn("Проверить уведомление");
         btn4.setOnClickListener(new View.OnClickListener() { // from class: ru.opencode.android.SettingsActivity$$ExternalSyntheticLambda22
             @Override // android.view.View.OnClickListener

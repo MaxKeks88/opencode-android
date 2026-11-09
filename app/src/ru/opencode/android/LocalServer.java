@@ -50,6 +50,8 @@ public final class LocalServer {
     /* Заголовки: защита от мусора и медленных клиентов. */
     private static final int MAX_HEADER_LINES = 120;
     private static final int MAX_HEADER_CHARS = 65536;
+    /* Прокси: обычный запрос не должен висеть дольше 5 минут (SSE — без лимита). */
+    private static final int PROXY_READ_TIMEOUT_MS = 300000;
     /* Пул ограничен: SSE занимает поток надолго, поэтому очередь не нужна. */
     private static final ExecutorService pool = new ThreadPoolExecutor(
             4, 64, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
@@ -136,7 +138,6 @@ public final class LocalServer {
                 String[] strArrSplit = line.split(" ");
                 if (strArrSplit.length < 2) {
                     close(socket);
-                    close(socket);
                     return;
                 }
                 Req req = new Req();
@@ -204,7 +205,6 @@ public final class LocalServer {
                 route(socket, req);
                 return;
             }
-            close(socket);
             close(socket);
         } catch (Throwable th2) {
             try {
@@ -312,7 +312,9 @@ public final class LocalServer {
             httpURLConnection = (HttpURLConnection) new URL("http://127.0.0.1:" + App.ocPort + str + (replaceAll.isEmpty() ? "" : "?" + replaceAll)).openConnection();
             httpURLConnection.setRequestMethod(req.method);
             httpURLConnection.setConnectTimeout(10000);
-            httpURLConnection.setReadTimeout(0);
+            // SSE живёт бесконечно; обычные запросы не должны держать поток пула вечно.
+            boolean sse = str.startsWith("/api/event");
+            httpURLConnection.setReadTimeout(sse ? 0 : PROXY_READ_TIMEOUT_MS);
             httpURLConnection.setRequestProperty("Authorization", "Basic " + Base64.encodeToString(("opencode:" + App.password).getBytes(StandardCharsets.UTF_8), 2));
             String str2 = req.headers.get("content-type");
             if (str2 != null) {

@@ -84,8 +84,8 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | ripgrep | 15.1.0, 3 152 312 байт + `libpcre2-8.so.0` | Alpine v3.24 community/main aarch64 |
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
-| APK | `OpenCodeAndroid.apk`, ~190.5 МБ | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 17, versionName 1.9.7 | `app/AndroidManifest.xml` |
+| APK | `OpenCodeAndroid.apk`, ~192.6 МБ | `python build_apk.py` |
+| Пакет | `ru.opencode.android`, versionCode 18, versionName 1.10.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `C:\Users\WorkPC\AppData\Local\Temp\opencode-src`
@@ -256,6 +256,22 @@ adb install --no-incremental -r -d OpenCodeAndroid.apk
 Выбор сохраняется в `localStorage["oc_model"]`; новая сессия без модели
 получает сохранённую/дефолтную через `POST /api/session/{id}/model`.
 
+### Markdown в ответах (1.10)
+
+`md()` (page.html) понимает заголовки, `**жирный**`, `*курсив*`, `` `код` ``,
+маркированные и нумерованные списки, блоки кода. Ссылки (`http/https` и
+`[текст](url)`) становятся кликабельными (`target="_blank"` → внешний
+браузер через `openExternally()`); инлайн-код экранируется до ссылок, поэтому
+URL внутри `` ` `` не превращается в ссылку.
+
+### Правила агента (1.10)
+
+`Runtime.writeDeviceGuide()` пишет `~/.config/opencode/AGENTS.md` **только если
+файла нет** — правки пользователя переживают перезапуск. Рядом создаётся
+`AGENTS.user.md` (тоже не перезаписывается), его путь добавляется в
+`"instructions"` в `opencode.json` (существующие ключи не трогаются; если
+конфиг не парсится, файл остаётся как есть).
+
 ### Каталог провайдеров (1.6)
 
 - `GET /api/integration` — 239 провайдеров: `{id,name,methods[],connections[]}`.
@@ -313,6 +329,11 @@ adb install --no-incremental -r -d OpenCodeAndroid.apk
 - **Импорт бэкапа (1.9.2):** `SettingsActivity` ограничивает архив 20 000
   файлов и 512 МБ (счёт по фактически записанным байтам), поток файла
   закрывается в `finally`. Пути по-прежнему проверяются (`..` + canonical).
+- **Сеть по типу сборки (1.10):** `network_security_config.xml` разрешает
+  cleartext только `127.0.0.1`/`localhost` (`usesCleartextTraffic="false"`);
+  WebView-отладка включается лишь при `FLAG_DEBUGGABLE`; `build_apk.py
+  --release` вырезает `android:debuggable="true"` из манифеста (dev-сборка
+  по-прежнему отлаживается через `run-as`/CDP).
 - `android:debuggable="true"` — **только для разработки**. Перед «боевым» APK
   можно выключить, но тогда пропадёт `run-as`/CDP-отладка.
 - `MANAGE_EXTERNAL_STORAGE` + legacy storage: приложение получает доступ к `/sdcard`.

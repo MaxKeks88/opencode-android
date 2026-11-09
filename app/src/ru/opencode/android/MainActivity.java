@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
@@ -35,6 +36,7 @@ public class MainActivity extends Activity {
     private static final int REQ_NOTIFY = 101;
     private static final int REQ_PICK = 102;
     private static final int REQ_STORAGE = 100;
+    private static final int TEXT_ZOOM = 100;
     public static volatile boolean visible = false;
     private ProgressBar bar;
     private TextView detail;
@@ -72,10 +74,13 @@ public class MainActivity extends Activity {
         settings.setCacheMode(2);
         settings.setLoadWithOverviewMode(false);
         settings.setUseWideViewPort(true);
-        settings.setTextZoom(REQ_STORAGE);
+        settings.setTextZoom(TEXT_ZOOM);
         settings.setSafeBrowsingEnabled(false);
         try {
-            WebView.setWebContentsDebuggingEnabled(true);
+            // Отладка WebView только в debuggable-сборке: в релизе CDP не нужен.
+            if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
         } catch (Throwable th) {
         }
         this.web.addJavascriptInterface(new AndroidBridge(this), "Android");

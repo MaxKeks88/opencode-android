@@ -152,12 +152,22 @@ def main():
     # 1. ресурсы
     run([aapt2, "compile", "--dir", APP / "res", "-o", BUILD / "res.zip"])
 
-    # 2. link (маленькие assets; тяжёлый runtime добавим позже)
+    # 2. манифест: --release вырезает android:debuggable
+    manifest = APP / "AndroidManifest.xml"
+    if release:
+        text = manifest.read_text(encoding="utf-8")
+        stripped = re.sub(r'\s*android:debuggable\s*=\s*"true"', "", text)
+        if stripped != text:
+            manifest = BUILD / "AndroidManifest.xml"
+            manifest.write_text(stripped, encoding="utf-8")
+            print("релиз: android:debuggable удалён из манифеста")
+
+    # 3. link (маленькие assets; тяжёлый runtime добавим позже)
     run([aapt2, "link", "-o", BUILD / "base.apk", "-I", android_jar,
-         "--manifest", APP / "AndroidManifest.xml", "-R", BUILD / "res.zip",
+         "--manifest", manifest, "-R", BUILD / "res.zip",
          "-A", ASSETS, "--java", BUILD / "gen", "--auto-add-overlay"])
 
-    # 3. java
+    # 4. java
     libs = sorted(LIBS.glob("*.jar")) if LIBS.exists() else []
     classpath = [str(android_jar)] + [str(p) for p in libs]
     srcs = [str(p) for p in (APP / "src").rglob("*.java")]
@@ -165,12 +175,12 @@ def main():
     run([JAVAC, "-encoding", "UTF-8", "-source", "11", "-target", "11",
          "-classpath", os.pathsep.join(classpath), "-d", BUILD / "classes"] + srcs)
 
-    # 4. dex
+    # 5. dex
     run([JAR, "cf", BUILD / "classes.jar", "-C", BUILD / "classes", "."])
     run([d8, "--lib", android_jar, "--min-api", "26", "--output", BUILD / "dex",
          BUILD / "classes.jar"] + [str(p) for p in libs])
 
-    # 5. собрать APK
+    # 6. собрать APK
     out = BUILD / "unsigned.apk"
     with zipfile.ZipFile(BUILD / "base.apk", "r") as zin, zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as zout:
         for item in zin.infolist():

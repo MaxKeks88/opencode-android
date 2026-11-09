@@ -74,7 +74,7 @@ public class RuntimeService extends Service {
             stopEverything();
             stopForeground(true);
             stopSelf();
-            return 2;
+            return START_NOT_STICKY;
         }
         if (!this.started) {
             this.started = true;
@@ -86,7 +86,7 @@ public class RuntimeService extends Service {
             }, "oc-supervisor");
             this.worker.start();
         }
-        return NOTIF_ID;
+        return START_STICKY;
     }
 
     /* JADX INFO: Access modifiers changed from: private */
@@ -481,18 +481,18 @@ public class RuntimeService extends Service {
     }
 
     private int freePort() {
-        for (int i = 4096; i < 4196; i += NOTIF_ID) {
+        for (int port = 4096; port < 4196; port++) {
             ServerSocket serverSocket = null;
             try {
                 ServerSocket serverSocket2 = new ServerSocket();
                 try {
                     serverSocket2.setReuseAddress(true);
-                    serverSocket2.bind(new InetSocketAddress("127.0.0.1", i));
+                    serverSocket2.bind(new InetSocketAddress("127.0.0.1", port));
                     try {
                         serverSocket2.close();
                     } catch (Throwable th) {
                     }
-                    return i;
+                    return port;
                 } catch (Throwable th2) {
                     serverSocket = serverSocket2;
                     if (serverSocket != null) {
@@ -505,6 +505,7 @@ public class RuntimeService extends Service {
             } catch (Throwable th4) {
             }
         }
+        App.log("freePort: 4096–4195 заняты, пробуем " + App.OC_PORT);
         return App.OC_PORT;
     }
 

@@ -12,6 +12,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.util.zip.GZIPInputStream;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /* JADX INFO: loaded from: C:\Users\WorkPC\AppData\Local\Temp\opencode\apkdex\classes.dex */
 public final class Runtime {
@@ -459,9 +461,11 @@ public final class Runtime {
         }
     }
 
-    /** Подсказка агенту, какие команды доступны внутри приложения. */
+    /** Подсказка агенту, какие команды доступны внутри приложения.
+     *  Пишется только если файла ещё нет: правки пользователя переживают перезапуск.
+     *  Личные правила — в AGENTS.user.md (тоже не перезаписывается, подключён в opencode.json). */
     private static void writeDeviceGuide() {
-        String text =
+        writeIfMissing(new File(App.home, ".config/opencode/AGENTS.md"),
             "# Устройство Android (OpenCode app)\n\n" +
             "Ты работаешь внутри приложения OpenCode на телефоне под uid приложения (не root).\n\n" +
             "Доступно всегда:\n" +
@@ -478,9 +482,47 @@ public final class Runtime {
             "  автоматически уходят в `ocsh`, когда полный доступ включён.\n" +
             "- Если `ocsh`/`pm` отвечает «нужен полный доступ (Shizuku)» — честно скажи, что нужно\n" +
             "  включить «Полные разрешения» в настройках приложения (ПК или Wi-Fi + Shizuku).\n\n" +
-            "Недоступно даже с Shizuku: изменение system-раздела, обход SELinux, root-операции.\n";
-        writeText(new File(App.home, ".config/opencode/AGENTS.md"), text);
+            "Недоступно даже с Shizuku: изменение system-раздела, обход SELinux, root-операции.\n");
+        writeIfMissing(new File(App.home, ".config/opencode/AGENTS.user.md"),
+            "# Мои правила для агента\n\n" +
+            "Этот файл — для личных правил: приложение его не перезаписывает.\n" +
+            "Пиши сюда свои указания, они подключаются через `instructions` в opencode.json.\n");
+        ensureUserGuideConfigured();
     }
+
+    private static void writeIfMissing(File file, String text) {
+        if (!file.isFile()) {
+            writeText(file, text);
+        }
+    }
+
+    /** Добавляет AGENTS.user.md в "instructions" opencode.json, не трогая остальные ключи. */
+    private static void ensureUserGuideConfigured() {
+        File file = new File(App.home, ".config/opencode/opencode.json");
+        if (!file.isFile()) {
+            return;
+        }
+        String source = "~/.config/opencode/AGENTS.user.md";
+        try {
+            JSONObject config = new JSONObject(readText(file));
+            JSONArray list = config.optJSONArray("instructions");
+            for (int i = 0; list != null && i < list.length(); i++) {
+                if (source.equals(list.optString(i))) {
+                    return;
+                }
+            }
+            if (list == null) {
+                list = new JSONArray();
+                config.put("instructions", list);
+            }
+            list.put(source);
+            writeText(file, config.toString(2) + "\n");
+            App.log("opencode.json: добавлен " + source + " в instructions");
+        } catch (Throwable th) {
+            App.log("opencode.json: не удалось добавить instructions (" + th + ")");
+        }
+    }
+
 
     private static String readText(File file) {
         try {

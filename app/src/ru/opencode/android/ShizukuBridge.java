@@ -18,8 +18,8 @@ import rikka.shizuku.Shizuku;
 public final class ShizukuBridge {
     public static final int REQUEST_CODE = 4201;
     private static final String PACKAGE = "moe.shizuku.privileged.api";
-    /* Предел вывода на поток (stdout и stderr отдельно). */
-    private static final int MAX_STREAM = 4 * 1024 * 1024;
+    /* Предел вывода на поток (stdout и stderr отдельно): преф ocsh_max_out, МБ; 0 — без лимита. */
+    private static final int MAX_STREAM_DEFAULT = 4 * 1024 * 1024;
     private static volatile boolean listenersAdded = false;
 
     private ShizukuBridge() {
@@ -116,8 +116,9 @@ public final class ShizukuBridge {
         IRemoteProcess process = service.newProcess(new String[]{"sh", "-c", command}, null, dir);
         StringBuilder out = new StringBuilder();
         StringBuilder err = new StringBuilder();
-        Thread tOut = reader(process.getInputStream(), out);
-        Thread tErr = reader(process.getErrorStream(), err);
+        int maxOut = maxOutputBytes();
+        Thread tOut = reader(process.getInputStream(), out, maxOut);
+        Thread tErr = reader(process.getErrorStream(), err, maxOut);
         int limit = 0;
         try {
             limit = App.prefs().getInt("ocsh_timeout", 0);
@@ -173,7 +174,19 @@ public final class ShizukuBridge {
         return text;
     }
 
-    private static Thread reader(final ParcelFileDescriptor pfd, final StringBuilder sb) {
+    private static int maxOutputBytes() {
+        try {
+            int mb = App.prefs().getInt("ocsh_max_out", MAX_STREAM_DEFAULT / 1048576);
+            if (mb <= 0) {
+                return 0;
+            }
+            return mb * 1024 * 1024;
+        } catch (Throwable th) {
+            return MAX_STREAM_DEFAULT;
+        }
+    }
+
+    private static Thread reader(final ParcelFileDescriptor pfd, final StringBuilder sb, final int limit) {
         Thread thread = new Thread(new Runnable() {
             @Override // java.lang.Runnable
             public void run() {
@@ -183,8 +196,10 @@ public final class ShizukuBridge {
                     byte[] buf = new byte[8192];
                     int read;
                     while ((read = in.read(buf)) > 0) {
-                        if (buffer.size() < MAX_STREAM) {
-                            int take = Math.min(read, MAX_STREAM - buffer.size());
+                        if (limit <= 0) {
+                            buffer.write(buf, 0, read);
+                        } else if (buffer.size() < limit) {
+                            int take = Math.min(read, limit - buffer.size());
                             buffer.write(buf, 0, take);
                             if (take < read) {
                                 cut = true;
@@ -198,8 +213,8 @@ public final class ShizukuBridge {
                 sb.append(new String(buffer.toByteArray(), StandardCharsets.UTF_8));
                 if (cut) {
                     sb.append("\n… (вывод обрезан, лимит ")
-                      .append(MAX_STREAM / 1048576)
-                      .append(" МБ)\n");
+                      .append(limit / 1048576)
+                      .append(" МБ: ⚙ Настройки → «Лимит вывода shell»)\n");
                 }
             }
         }, "ocsh-read");

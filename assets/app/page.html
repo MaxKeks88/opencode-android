@@ -3827,7 +3827,7 @@ function panePointerEnd(e){
 pbody.addEventListener("pointerup", panePointerEnd);
 pbody.addEventListener("pointercancel", panePointerEnd);
 
-$("panebtn").onclick = paneOpen;
+/* кнопка справа в шапке — настройки; привязка в bridge.js (injectUiFixes) */
 $("pback").onclick = paneClose;
 $("pwin").onclick = paneReconnect;
 $("pview").onclick = () => {

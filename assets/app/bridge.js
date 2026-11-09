@@ -105,6 +105,7 @@
   }
 
   function renderMessage(m) {
+    try {
     if (!m || typeof m !== "object") return null;
     const typ = m.type, mid = m.id, ts = (m.time || {}).created;
     if (typ === "user") {
@@ -163,6 +164,9 @@
       return { id: mid, role: "info", text: t(labels[typ]) + (txt ? ": " + txt : ""), ts };
     }
     return null;
+    } catch (e) {
+      return { id: (m && m.id) || "", role: "info", text: "⚠️ " + (e && e.message ? e.message : e) };
+    }
   }
 
   function msgDone(m) {

@@ -89,7 +89,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, 199 741 853 байт (~190.5 МБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 25, versionName 1.14.0 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 26, versionName 1.14.1 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `<temp>\opencode-src`
@@ -179,6 +179,9 @@ python X:\build_apk.py
 отладочный ключ с паролями `opencode2026` (сборщик печатает предупреждение).
 `python build_apk.py --release` требует свой ключ: падает с ошибкой, если нет
 `keystore.properties`/`keystore.jks` или остались пароли по умолчанию.
+С 1.14.1 рабочий пароль keystore — случайные 28 символов; он лежит вне Drive в
+`C:\Users\HomePC\OpenCodeAPK-keys-2026-11-09\PASSWORD.txt` (там же резервная
+копия старого keystore). `build_apk.py` маскирует пароли в журнале сборки.
 
 ### Установка
 

@@ -19,8 +19,27 @@ JAVAC = JAVA_HOME / "bin" / ("javac.exe" if os.name == "nt" else "javac")
 JAR = JAVA_HOME / "bin" / ("jar.exe" if os.name == "nt" else "jar")
 KEYTOOL = JAVA_HOME / "bin" / ("keytool.exe" if os.name == "nt" else "keytool")
 
+def _redact(args):
+    """Не печатать пароли keystore в журнал сборки."""
+    out, hide_next = [], False
+    for a in args:
+        s = str(a)
+        if hide_next:
+            out.append("***")
+            hide_next = False
+            continue
+        if s in ("-storepass", "-keypass", "--ks-pass", "--key-pass"):
+            out.append(s)
+            hide_next = True
+            continue
+        if s.startswith("pass:"):
+            out.append("pass:***")
+            continue
+        out.append(s)
+    return out
+
 def run(cmd, **kw):
-    print("+", " ".join(str(c) for c in cmd))
+    print("+", " ".join(_redact(cmd)))
     r = subprocess.run([str(c) for c in cmd], **kw)
     if r.returncode != 0:
         raise SystemExit("command failed: %s" % (cmd[0],))

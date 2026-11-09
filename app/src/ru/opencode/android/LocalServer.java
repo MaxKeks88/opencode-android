@@ -21,6 +21,8 @@ import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -443,6 +445,42 @@ public final class LocalServer {
             }
             throw new Exception("нет имени");
         }
+        if (str.equals("occonfig")) {
+            /* websearch.provider в ~/.config/opencode/opencode.json: единственный
+               способ закрепить провайдера веб-поиска (API только читает список). */
+            File file = new File(App.home, ".config/opencode/opencode.json");
+            JSONObject out = new JSONObject();
+            try {
+                JSONObject conf = file.isFile() ? new JSONObject(readFile(file)) : new JSONObject();
+                if ("POST".equals(req.method)) {
+                    JSONObject body = new JSONObject(new String(req.body, StandardCharsets.UTF_8));
+                    if (body.optBoolean("disabled", false)) {
+                        conf.put("websearch", false);
+                    } else if (body.has("provider")) {
+                        String provider = body.optString("provider", "").trim();
+                        if (provider.isEmpty() || "default".equals(provider)) {
+                            conf.remove("websearch");
+                        } else {
+                            JSONObject ws = new JSONObject();
+                            ws.put("provider", provider);
+                            conf.put("websearch", ws);
+                        }
+                    } else {
+                        throw new IllegalArgumentException("нет provider");
+                    }
+                    writeFileAtomic(file, conf.toString(2) + "\n");
+                    App.log("occonfig: websearch=" + conf.opt("websearch"));
+                }
+                out.put("ok", true);
+                Object ws = conf.opt("websearch");
+                out.put("websearch", ws == null ? JSONObject.NULL : ws);
+            } catch (Throwable th) {
+                out.put("ok", false);
+                out.put("error", String.valueOf(th.getMessage()));
+            }
+            sendJson(socket, out.optBoolean("ok") ? 200 : 400, out);
+            return;
+        }
         if (str.equals("home")) {
             String strDefaultDirectory = App.defaultDirectory();
             File file2 = new File(strDefaultDirectory);
@@ -522,9 +560,46 @@ public final class LocalServer {
         sendText(socket, 404, "text/plain", "not found");
     }
 
+    private static String readFile(File file) throws IOException {
+        FileInputStream in = new FileInputStream(file);
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int read;
+            while ((read = in.read(buf)) > 0) {
+                out.write(buf, 0, read);
+            }
+            return new String(out.toByteArray(), StandardCharsets.UTF_8);
+        } finally {
+            in.close();
+        }
+    }
+
+    private static void writeFileAtomic(File file, String text) throws IOException {
+        File parent = file.getParentFile();
+        if (parent != null && !parent.exists() && !parent.mkdirs()) {
+            throw new IOException("не удалось создать " + parent);
+        }
+        File tmp = new File(file.getAbsolutePath() + ".tmp");
+        FileOutputStream out = new FileOutputStream(tmp);
+        try {
+            out.write(text.getBytes(StandardCharsets.UTF_8));
+            out.flush();
+        } finally {
+            out.close();
+        }
+        try {
+            Files.move(tmp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+        } catch (Throwable th) {
+            if (!tmp.renameTo(file)) {
+                throw new IOException("не удалось заменить " + file);
+            }
+        }
+    }
+
     /* JADX WARN: Code duplicated, block: B:12:0x0027  */
-    private static JSONObject fsJson(String str) {
-        JSONObject jSONObject = new JSONObject();
+    private static JSONObject fsJson(String str) {        JSONObject jSONObject = new JSONObject();
         try {
             boolean drives = str == null || str.isEmpty() || str.equals("::drives");
             File file = drives ? Environment.getExternalStorageDirectory() : new File(str);

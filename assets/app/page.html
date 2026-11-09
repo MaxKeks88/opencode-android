@@ -223,6 +223,8 @@ details>summary::-webkit-details-marker{display:none}
 .provhead .pb{display:flex;gap:6px;font-size:11px;flex:0 0 auto}
 .provmeta{font-size:11.5px;color:var(--dim);margin-top:3px}
 .provmodels{font-size:11.5px;color:#66788c;margin-top:4px;line-height:1.45}
+.prov.wsact{background:rgba(80,160,255,.07);border-left:3px solid var(--acc2)}
+.provmodels a{color:var(--acc2);text-decoration:underline;overflow-wrap:anywhere}
 .provdel{flex:0 0 auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;
   border-radius:9px;background:var(--panel2);border:1px solid var(--line);color:#f87171;font-size:15px;
   cursor:pointer;user-select:none;-webkit-user-select:none}
@@ -670,7 +672,8 @@ let S = {
   models: [], home: "", status: "", usage: null, pin: "", asks: [], media: [],
   providers: [], usageErr: "", sub: null, login: null, zenOpen: false,
   catalog: null, catShown: 60, catQ: "", provOpen: null, provKey: "", provForm: {},
-  provModels: {}, oauth: null, provBusy: false
+  provModels: {}, oauth: null, provBusy: false,
+  websearch: null, wsKey: "", wsCheck: {}
 };
 let drawerOpen = false, sheetMode = null, fsPath = "", armed = null, stopArm = 0, lastUpd = 0;
 
@@ -1602,6 +1605,16 @@ function handle(m){
       S.provModels[m.integration] = m.items || [];
       if(sheetMode === "prov" && S.provOpen === m.integration) renderProvDetail();
       break;
+    case "websearch":
+      S.websearch = { items: m.items || [], current: m.current || null,
+                      disabled: !!m.disabled, error: m.error || "" };
+      if(sheetMode === "settings" && setTab === "websearch") renderWebsearch();
+      break;
+    case "wscheck":
+      S.wsCheck[m.integration] = { busy: !!m.busy, ok: !!m.ok, error: m.error || "",
+                                   providerID: m.providerID || "", results: m.items || [] };
+      if(sheetMode === "settings" && setTab === "websearch") renderWebsearch();
+      break;
     case "oauth":
       S.oauth = { integration: m.integration, status: m.status, url: m.url || "",
                   instructions: m.instructions || "", error: m.error || "" };
@@ -2232,6 +2245,7 @@ function renderSettings(){
     tab("perms", "Разрешения") +
     tab("notify", "Уведомления") +
     tab("providers", "Провайдеры") +
+    tab("websearch", "Веб-поиск") +
     tab("usage", "Использование") +
     tab("pricing", "Тарифы");
   bar.classList.add("on");
@@ -2255,6 +2269,16 @@ function renderSettings(){
       if(sheetMode === "settings" && setTab === "providers" && !(S.providers || []).length){
         send({t: "providers"});
       }
+    }, 1500);
+    return;
+  }
+  if(setTab === "websearch"){
+    $("sbody").innerHTML =
+      '<div id="wsbox"><div class="empty">Загрузка провайдеров веб-поиска…</div></div>';
+    send({t: "websearch"});
+    renderWebsearch();
+    setTimeout(() => {
+      if(sheetMode === "settings" && setTab === "websearch" && !S.websearch) send({t: "websearch"});
     }, 1500);
     return;
   }
@@ -2944,6 +2968,94 @@ function renderProviders(){
   };
   const ss = box.querySelector("#syssettings");
   if(ss) ss.onclick = () => { if(BR.openSettings) BR.openSettings(); };
+}
+
+/* ---- веб-поиск: провайдер, ключ и проверка ---- */
+function renderWebsearch(){
+  const box = $("wsbox");
+  if(!box) return;
+  const W = S.websearch;
+  if(!W){
+    box.innerHTML = '<div class="empty">Загрузка провайдеров веб-поиска…</div>';
+    return;
+  }
+  let h = '<div class="setnote">Модель ищет в интернете через выбранного провайдера. ' +
+          'Выбор хранится в конфиге OpenCode; ключи — в его хранилище, не в приложении.</div>';
+  if(W.error){
+    h += '<div class="empty">Не удалось получить список: ' + esc(W.error) + '</div>';
+  }
+  let curName = "";
+  if(W.current === "random") curName = "случайный выбор";
+  else if(W.current){
+    const it = (W.items || []).find(p => p.id === W.current);
+    curName = it ? it.name : W.current;
+  }
+  h += '<div class="setnote">Активный провайдер: <b>' +
+       (curName ? esc(curName) : "не закреплён — сервер выбирает сам") + '</b></div>' +
+       '<div class="btnrow">' +
+       '<div class="btn' + (W.current === "random" ? " pri" : "") +
+       '" data-wspick="random">🎲 Случайный</div>' +
+       '<div class="btn' + (!W.current ? " pri" : "") +
+       '" data-wspick="default">Автоматически</div></div>';
+  (W.items || []).forEach(p => {
+    const active = p.id === W.current;
+    const chk = S.wsCheck[p.id];
+    h += '<div class="prov' + (active ? " wsact" : "") + '">' +
+      '<div class="provhead"><div class="pn">' + esc(p.name) + '</div>' +
+      '<div class="pb">' + (active ? '<span class="free">активен</span>' : '') +
+      (p.key ? '<span class="free">ключ есть</span>' : '') + '</div></div>' +
+      '<div class="provmeta">' + esc(p.id) + '</div>' +
+      '<div class="btnrow">' +
+      '<div class="btn' + (active ? "" : " pri") + '" data-wspick="' + esc(p.id) + '">' +
+      (active ? "Выбран" : "Выбрать") + '</div>' +
+      '<div class="btn" data-wskey="' + esc(p.id) + '">🔑 Ключ</div>' +
+      '<div class="btn" data-wscheck="' + esc(p.id) + '">Проверить</div></div>';
+    if(S.wsKey === p.id){
+      h += '<div class="msearch"><input id="wskey" type="text" autocomplete="off" ' +
+           'placeholder="API-ключ ' + esc(p.name) + '"></div>' +
+           '<div class="btn pri" data-wssave="' + esc(p.id) + '">Сохранить ключ</div>';
+    }
+    if(chk){
+      if(chk.busy) h += '<div class="setnote">Проверяю запрос…</div>';
+      else if(chk.error) h += '<div class="setnote" style="color:#ff6b6b">Ошибка: ' +
+        esc(chk.error) + '</div>';
+      else if((chk.results || []).length){
+        h += '<div class="setnote">Ответ через <b>' + esc(chk.providerID) + '</b>:</div>' +
+             '<div class="provmodels">' + chk.results.slice(0, 3).map(r =>
+               '<a href="' + esc(r.url) + '" target="_blank" rel="noopener">' +
+               esc(r.title || r.url) + '</a>').join(" · ") + '</div>';
+      } else {
+        h += '<div class="setnote">Провайдер ответил без результатов.</div>';
+      }
+    }
+    h += '</div>';
+  });
+  h += '<div class="setnote">У TinyFish ключ не нужен. Остальным нужен свой ключ: ' +
+       'без него «Проверить» покажет ошибку.</div>';
+  box.innerHTML = h;
+  box.querySelectorAll("[data-wspick]").forEach(el => {
+    el.onclick = () => send({t: "setwebsearch", provider: el.dataset.wspick});
+  });
+  box.querySelectorAll("[data-wskey]").forEach(el => {
+    el.onclick = () => { S.wsKey = S.wsKey === el.dataset.wskey ? "" : el.dataset.wskey; renderWebsearch(); };
+  });
+  box.querySelectorAll("[data-wssave]").forEach(el => {
+    el.onclick = () => {
+      const inp = $("wskey");
+      const key = inp ? inp.value.trim() : "";
+      if(!key){ toast("Введите ключ", "err"); return; }
+      S.wsKey = "";
+      renderWebsearch();
+      send({t: "wskey", integration: el.dataset.wssave, key});
+    };
+  });
+  box.querySelectorAll("[data-wscheck]").forEach(el => {
+    el.onclick = () => {
+      S.wsCheck[el.dataset.wscheck] = {busy: true, results: []};
+      renderWebsearch();
+      send({t: "wscheck", integration: el.dataset.wscheck});
+    };
+  });
 }
 
 $("dset").onclick = openSettings;

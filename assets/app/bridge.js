@@ -67,6 +67,23 @@
     return await r.json();
   }
 
+  /* POST/PATCH к локальному серверу приложения (не к OpenCode). */
+  async function androidReq(method, path, body) {
+    const opt = { method, headers: { "Accept": "application/json", "X-Bridge-Token": TOKEN } };
+    if (body !== undefined && body !== null) {
+      opt.headers["Content-Type"] = "application/json";
+      opt.body = JSON.stringify(body);
+    }
+    const r = await fetch("/android/" + path, opt);
+    const txt = await r.text();
+    let data = null;
+    try { data = txt ? JSON.parse(txt) : null; } catch (e) {}
+    if (r.status >= 400 || !data || data.ok === false) {
+      throw new Error((data && (data.error || data.message)) || txt.slice(0, 200) || ("HTTP " + r.status));
+    }
+    return data;
+  }
+
   /* ---------------------------------------------------------- сообщения --- */
 
   function toolHint(inp) {
@@ -524,6 +541,18 @@
           break;
         case "provmodels":
           await providerModels(o.integration);
+          break;
+        case "websearch":
+          await loadWebsearch();
+          break;
+        case "setwebsearch":
+          await setWebsearch(o.provider);
+          break;
+        case "wskey":
+          await websearchKey(o.integration, o.key);
+          break;
+        case "wscheck":
+          await websearchCheck(o.integration);
           break;
         case "usage":
           await loadUsage();
@@ -1134,6 +1163,70 @@
     }
   }
 
+  /* ------------------------------------------------ веб-поиск (провайдеры) --- */
+
+  async function loadWebsearch() {
+    try {
+      const r = await json("GET", "/api/websearch/provider", null, 30000);
+      const items = ((r && r.data) || []).map(p => ({ id: p.id, name: p.name || p.id, key: false }));
+      let current = null, disabled = false;
+      try {
+        const cfg = await androidReq("GET", "occonfig");
+        const ws = cfg && cfg.websearch;
+        if (ws === false) disabled = true;
+        else if (ws && ws.provider) current = ws.provider;
+      } catch (e) {}
+      try {
+        const cr = await json("GET", "/api/credential", null, 15000);
+        const creds = ((cr && cr.data) || []);
+        for (const p of items) p.key = creds.some(c => c && c.integrationID === p.id && c.active !== false);
+      } catch (e) {}
+      BS.lastWebsearch = { items, current, disabled };
+      handle({ t: "websearch", items, current, disabled, error: "" });
+    } catch (e) {
+      handle({ t: "websearch", items: [], current: null, disabled: false, error: e.message });
+    }
+  }
+
+  async function setWebsearch(provider) {
+    try {
+      await androidReq("POST", "occonfig", { provider: provider || "" });
+      await loadWebsearch();
+      const ws = BS.lastWebsearch || {};
+      const id = provider || "";
+      const item = (ws.items || []).find(p => p.id === id);
+      toast(id ? ("Веб-поиск: " + (item ? item.name : id)) : "Провайдер не закреплён — сервер выбирает сам");
+    } catch (e) {
+      toast("Не удалось сохранить выбор: " + e.message, "err");
+    }
+  }
+
+  async function websearchKey(integration, key) {
+    const k = String(key || "").trim();
+    if (!k) { toast("Введите ключ", "err"); return; }
+    try {
+      await json("POST", "/api/integration/" + encodeURIComponent(integration) + "/connect/key",
+                 { key: k }, 25000);
+      toast("Ключ сохранён");
+      await loadWebsearch();
+    } catch (e) {
+      toast("Не удалось сохранить ключ: " + e.message, "err");
+    }
+  }
+
+  async function websearchCheck(integration) {
+    handle({ t: "wscheck", integration, busy: true, items: [] });
+    try {
+      const r = await json("POST", "/api/websearch",
+                           { query: "opencode ai coding agent", providerID: integration }, 120000);
+      const d = (r && r.data) || {};
+      handle({ t: "wscheck", integration, busy: false, ok: true,
+               providerID: d.providerID || integration, items: d.results || [] });
+    } catch (e) {
+      handle({ t: "wscheck", integration, busy: false, ok: false, error: e.message, items: [] });
+    }
+  }
+
   /* ----------------------------------------------------------- события SSE --- */
 
   let es = null;
@@ -1219,6 +1312,12 @@
     }
     if (t === "session.model.selected") {
       if (sid === BS.sid) { await syncMeta(); schedulePush(80); }
+      return;
+    }
+    if (t === "websearch.updated") {
+      if (!BS.wsTimer) {
+        BS.wsTimer = setTimeout(() => { BS.wsTimer = null; loadWebsearch(); }, 400);
+      }
       return;
     }
     if (t.indexOf("provider.") === 0 || t.indexOf("model.") === 0) return;

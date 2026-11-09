@@ -19,9 +19,9 @@
 - **Интернет у модели есть.** `webfetch` открывает URL (проверено:
   `example.com` → «Example Domain», `opencode.ai/docs`), `websearch` ищет через
   провайдера (`/api/websearch/provider` → `exa, firecrawl, parallel, tavily,
-  tinyfish`; по умолчанию **tinyfish**, ключ не нужен). Shell-инструменты тоже
+  tinyfish`; у TinyFish ключ не нужен). Shell-инструменты тоже
   в сети: `python3 -c "urllib…"` → 200, `git clone`/`pip`/`npx` — через прокси.
-  Выбор провайдера и ключ из UI пока не сделаны — см. `ЗАДАЧИ.md`, п.13.
+  Выбор провайдера и ключ — ⚙ Настройки → «Веб-поиск» (1.11).
 - Токен доступа к локальному серверу: без `X-Bridge-Token` запросы к `/oc`, `/android`,
   `/files`, `/thumb`, `/upload` возвращают **403** (проверено).
 
@@ -85,7 +85,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, ~192.6 МБ | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 18, versionName 1.10.0 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 19, versionName 1.11.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `C:\Users\WorkPC\AppData\Local\Temp\opencode-src`
@@ -296,6 +296,25 @@ URL внутри `` ` `` не превращается в ссылку.
   «📋 Скопировать код» для OAuth-инструкций вида `Enter code: XXXX-XXXX`.
 - Ключи хранятся только в OpenCode (`/api/credential`), не в prefs и не в HTML.
 
+### Веб-поиск (1.11)
+
+- `GET /api/websearch/provider` → `{location, data:[{id,name}]}`; провайдеры
+  `exa`, `firecrawl`, `parallel`, `tavily`, `tinyfish`. `POST /api/websearch`
+  `{query, providerID?}` → `{location, data:{providerID, results[]}}`.
+- Активный провайдер API **не отдаёт** (только список). Он хранится в конфиге:
+  `"websearch": {"provider": "<id>"|"random"}` (или `false`) в
+  `~/.config/opencode/opencode.json`; OpenCode перечитывает файл на лету.
+- Для записи выбора добавлен `GET/POST /android/occonfig` в `LocalServer`
+  (токен обязателен): меняет только ключ `websearch`, остальные настройки
+  сохраняет; запись атомарная (`.tmp` + rename).
+- Ключи — через `/api/integration/{id}/connect/key`, хранятся в
+  `/api/credential`. TinyFish работает без ключа.
+- UI: ⚙ Настройки → вкладка «Веб-поиск» (`renderWebsearch()`): метки
+  «активен»/«ключ есть», «Выбрать», «Случайный», «Автоматически», поле ключа,
+  «Проверить» (результаты `POST /api/websearch` — до 3 ссылок).
+  Команды моста: `websearch`, `setwebsearch`, `wskey`, `wscheck`;
+  событие `websearch.updated` обновляет список.
+
 ### Файлы и вложения
 
 - `/android/fs?path=` → `{ok,path,parent,drives,entries,shortcuts}`.
@@ -334,6 +353,9 @@ URL внутри `` ` `` не превращается в ссылку.
   WebView-отладка включается лишь при `FLAG_DEBUGGABLE`; `build_apk.py
   --release` вырезает `android:debuggable="true"` из манифеста (dev-сборка
   по-прежнему отлаживается через `run-as`/CDP).
+- **`/android/occonfig` (1.11)** требует токен (как весь `/android`), принимает
+  только `provider`/`disabled` и меняет в `opencode.json` лишь ключ
+  `websearch`; произвольные настройки через него не записать.
 - `android:debuggable="true"` — **только для разработки**. Перед «боевым» APK
   можно выключить, но тогда пропадёт `run-as`/CDP-отладка.
 - `MANAGE_EXTERNAL_STORAGE` + legacy storage: приложение получает доступ к `/sdcard`.

@@ -1,6 +1,6 @@
 # OpenCode Android
 
-**Версия 1.10.0** (versionCode 18), APK ~192.6 МБ, `ru.opencode.android`.
+**Версия 1.11.0** (versionCode 19), APK ~192.6 МБ, `ru.opencode.android`.
 
 Самостоятельное Android-приложение: настоящий OpenCode v2.2.6 внутри APK,
 без ПК, без моста и без proot. Дизайн — из проекта `C:\Users\WorkPC\Мой диск\Open`.

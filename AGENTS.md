@@ -14,6 +14,9 @@
 - Работают: список чатов, создание/переименование/удаление, выбор модели, отправка,
   остановка, стриминг текста/размышлений, инструменты `write`, `shell`, `glob`, `grep`,
   вложения (файл через `/upload` → `file://`), папки на `/sdcard`, настройки, уведомления.
+- **Медиа в чате (1.18):** сгенерированные картинки/видео показываются прямо в
+  сообщении (файлы инструмента, пути «Файл: …», markdown-картинки) и
+  открываются на весь экран; ошибки генерации — аккуратным блоком.
 - Проверено вживую: агент создал `test.txt`, выполнил `ls -la`, нашёл файлы через `glob`,
   прочитал вложение, ответил на русском.
 - **Интернет у модели есть.** `webfetch` открывает URL (проверено:
@@ -88,8 +91,8 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | ripgrep | 15.1.0, 3 152 312 байт + `libpcre2-8.so.0` | Alpine v3.24 community/main aarch64 |
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
-| APK | `OpenCodeAndroid.apk`, 199 803 499 байт (~190.5 МБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 30, versionName 1.17.0 | `app/AndroidManifest.xml` |
+| APK | `OpenCodeAndroid.apk`, 199 807 595 байт (~190.6 МБ) | `python build_apk.py` |
+| Пакет | `ru.opencode.android`, versionCode 31, versionName 1.18.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `<temp>\opencode-src`
@@ -270,6 +273,27 @@ adb install --no-incremental -r -d OpenCodeAndroid.apk
 `[текст](url)`) становятся кликабельными (`target="_blank"` → внешний
 браузер через `openExternally()`); инлайн-код экранируется до ссылок, поэтому
 URL внутри `` ` `` не превращается в ссылку.
+
+### Картинки и видео в чате (1.18)
+
+- `renderMessage()` (bridge.js) превращает части инструмента `type:"file"`
+  в `blocks[].files = [{uri, mime, name}]`, а синтетические сообщения
+  генерации (`type:"synthetic"`, `metadata.source` содержит `image`/`video`)
+  — в блок `{k:"media", state, path, source, text}`.
+- `page.html`: `mediaFile()` рисует `<img>`/`<video>` для `Tool.FileContent`,
+  `mediaTag()` — для пути «Файл: /sdcard/…png» в тексте результата,
+  `md()` — для markdown-картинок (`http(s)`, `data:image/`, `file://`).
+- Клик по `[data-media]` открывает полноэкранный просмотр (`openMedia`),
+  `data-src` хранит готовый URL для `data:`/`file://`.
+- Ошибка генерации показывается как `.errbox` с текстом из
+  «Image request failed for …: <причина>»; известная причина
+  «Insufficient account funds» локализуется, сырой `<image>`-тег не выводится.
+- `LocalServer.mime(File)` определяет тип по сигнатуре, если у файла нет
+  расширения (генерация часто сохраняет без суффикса): PNG/JPEG/GIF/WEBP/
+  MP4/WEBM/MP3/PDF.
+- Скрипты страницы подключаются с `?v=N` (`page.html`); при правках
+  `bridge.js`/`i18n-*.js` **поднимайте N**, иначе WebView отдаст старый файл
+  из кэша.
 
 ### Правила агента (1.10)
 

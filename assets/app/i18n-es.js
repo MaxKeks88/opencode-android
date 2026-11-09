@@ -501,6 +501,8 @@
     "Модель: ": "Modelo: ",
     "нет доступа": "sin acceso",
     "Не удалось создать папку: ": "No se pudo crear la carpeta: ",
+    "Не удалось создать изображение": "No se pudo crear la imagen",
+    "Недостаточно средств на счёте": "Fondos insuficientes en la cuenta",
     "Папка создана": "Carpeta creada",
     "Ключ OpenCode Zen сохранён": "Clave OpenCode Zen guardada",
     "нет attemptID": "sin intento",

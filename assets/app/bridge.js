@@ -127,14 +127,18 @@
         } else if (p.type === "tool") {
           const st = p.state || {};
           let out = "";
+          const files = [];
           for (const c of (st.content || [])) {
             if (c && typeof c === "object" && c.type === "text") out += c.text || "";
+            else if (c && typeof c === "object" && c.type === "file") {
+              files.push({ uri: c.uri || "", mime: c.mime || "", name: c.name || "" });
+            }
             else if (typeof c === "string") out += c;
           }
           if (out.length > 4000) out = out.slice(0, 4000) + "\n" + t("… (обрезано)");
           blocks.push({
             k: "tool", name: p.name || "tool", status: st.status || "",
-            hint: toolHint(st.input), input: st.input, out
+            hint: toolHint(st.input), input: st.input, out, files
           });
         } else if (p.type) {
           blocks.push({ k: "info", text: (p.type + ": " + String(p.text || "")).slice(0, 200) });
@@ -149,6 +153,20 @@
         model: model.modelID || model.id || "",
         finish: finish || "", cost: m.cost || 0, tokens: m.tokens || null,
         error: err ? String(err) : ""
+      };
+    }
+    if (typ === "synthetic" && m.metadata && /image|video/i.test(String(m.metadata.source || ""))) {
+      const md = m.metadata || {};
+      let path = md.path || "";
+      if (!path) {
+        const mm = String(m.text || "").match(/<image[^>]*>([\s\S]*?)<\/image>/i);
+        if (mm) path = mm[1].trim().split("\n")[0];
+      }
+      return {
+        id: mid, role: "assistant", finish: "", blocks: [{
+          k: "media", state: md.state || "", path, source: md.source || "",
+          text: m.text || "", jobID: md.jobID || "", ts
+        }], ts
       };
     }
     if (typ === "shell") {

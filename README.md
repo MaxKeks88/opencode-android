@@ -2,6 +2,8 @@
 
 **OpenCode running natively on Android — no PC, no proot, no remote bridge.**
 
+**Languages / Языки:** English 🇬🇧 · Русский 🇷🇺 · 中文（简体） 🇨🇳 · 中文（繁體） 🇹🇼 · Español 🇪🇸
+
 [English](#english) · [Русский](#русский)
 
 ---
@@ -20,6 +22,8 @@ commands, clone repositories and talk to any model provider.
 
 - Real `opencode serve` on `127.0.0.1`, no PC required.
 - Chat UI with streaming, reasoning, tool calls, attachments and sessions.
+- Generated images/videos from tools are shown inline (file content, file paths
+  and markdown images), with an in-app fullscreen viewer.
 - Provider catalog (239 integrations): API key, OAuth device flow, OpenCode Go.
 - Built-in `git` (HTTPS + SSH), `python3`/`pip`, `node`/`bun`/`npx`, `rg`.
 - Files on `/sdcard`, project folders, share/attachments.
@@ -138,6 +142,8 @@ OpenCode 2.2.6 (musl arm64), git, OpenSSH, Python 3.12, обёртки Node/Bun 
 
 - Настоящий `opencode serve` на `127.0.0.1`.
 - Чат со стримингом, размышлениями, инструментами, вложениями и сессиями.
+- Сгенерированные картинки и видео из инструментов показываются прямо в чате
+  (файлы инструмента, пути в тексте, markdown-картинки) с полноэкранным просмотром.
 - Каталог из 239 провайдеров: ключ, OAuth, OpenCode Go.
 - Встроенные `git` (HTTPS и SSH), `python3`/`pip`, `node`/`bun`/`npx`, `rg`.
 - Файлы на `/sdcard`, рабочие папки, вложения.

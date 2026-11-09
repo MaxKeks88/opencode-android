@@ -642,11 +642,11 @@ img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
-<script src="app/i18n-zh.js"></script>
-<script src="app/i18n-zh-hant.js"></script>
-<script src="app/i18n-es.js"></script>
-<script src="app/i18n.js"></script>
-<script src="app/bridge.js"></script>
+<script src="app/i18n-zh.js?v=32"></script>
+<script src="app/i18n-zh-hant.js?v=32"></script>
+<script src="app/i18n-es.js?v=32"></script>
+<script src="app/i18n.js?v=32"></script>
+<script src="app/bridge.js?v=32"></script>
 <script>
 "use strict";
 const PAGE_VER = 75;
@@ -746,6 +746,14 @@ function md(src){
     return "\u0000IC" + (code.length-1) + "\u0000";
   });
   s = s.replace(/^#{1,4}\s+(.*)$/gm, "<h3>$1</h3>");
+  // markdown-картинки: http(s), data:image, file://
+  s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (m, alt, url) => {
+    const raw = url.replace(/&amp;/g, "&");
+    if(!/^(https?:|data:image\/|file:\/\/)/i.test(raw)) return m;
+    const src = mediaSource(raw);
+    return '<img class="media" src="' + esc(src) + '" data-src="' + esc(src) +
+           '" data-media="' + esc(mediaName(raw)) + '" alt="' + alt + '">';
+  });
   s = s.replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/g,
     '<a href="$2" target="_blank" rel="noopener">$1</a>');
   s = s.replace(/(^|[\s(])(https?:\/\/[^\s<>\u0000]+)/g, (m, pre, url) => {
@@ -867,6 +875,45 @@ function mediaTag(out){
   }
   return "";
 }
+/* Файл из Tool.FileContent (type:"file"): картинка, видео или ссылка. */
+function mediaSource(uri){
+  uri = String(uri || "");
+  if(/^(data:|https?:)/i.test(uri)) return uri;
+  let p = uri;
+  if(/^file:\/\//i.test(p)){
+    try{ p = decodeURIComponent(p.slice(7)); }catch(e){ p = p.slice(7); }
+  }
+  return mediaUrl(p);
+}
+function mediaError(text){
+  const t = String(text || "");
+  const m = t.match(/Image request failed for [^:]+:\s*([^\n<]+)/i);
+  if(m){
+    const s = m[1].trim();
+    if(/Insufficient account funds/i.test(s)) return T("Недостаточно средств на счёте");
+    return s;
+  }
+  return t.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 300) ||
+         T("Не удалось создать изображение");
+}
+function mediaFile(f){
+  const uri = (f && f.uri) || "";
+  const mime = String((f && f.mime) || "").toLowerCase();
+  const name = (f && f.name) || mediaName(uri);
+  const src = mediaSource(uri);
+  const img = /^image\//.test(mime) || /^data:image\//i.test(uri) || IMG_RE.test(uri);
+  const vid = /^video\//.test(mime) || /^data:video\//i.test(uri) || /\.(mp4|mov|webm|m4v)$/i.test(uri);
+  if(img){
+    return '<img class="media" src="' + esc(src) + '" data-src="' + esc(src) +
+           '" data-media="' + esc(name) + '" alt="' + esc(name) + '">';
+  }
+  if(vid){
+    return '<div class="media video" data-src="' + esc(src) + '" data-media="' + esc(name) + '">' +
+           '<video src="' + esc(src) + '" controls preload="metadata" playsinline></video>' +
+           '<div class="vplay">▶</div></div>';
+  }
+  return '<div class="info">📎 ' + esc(name) + '</div>';
+}
 function toolOutHtml(out){
   if(!out) return "";
   let html = '<div class="lbl">' + T("результат") + '</div>';
@@ -891,19 +938,20 @@ function mvApply(){
   mty = Math.max(-my, Math.min(my, mty));
   mvImg.style.transform = "translate(" + mtx.toFixed(1) + "px," + mty.toFixed(1) + "px) scale(" + mz.toFixed(3) + ")";
 }
-function openMedia(fname, isVideo){
+function openMedia(fname, isVideo, src){
   mvReset();
+  const url = src || mediaUrl(fname);
   if(isVideo){
     mvImg.style.display = "none";
     mvVid.style.display = "";
-    mvVid.src = mediaUrl(fname);
+    mvVid.src = url;
     const p = mvVid.play(); if(p && p.catch) p.catch(function(){});
   } else {
     mvVid.pause();
     mvVid.removeAttribute("src");
     mvVid.style.display = "none";
     mvImg.style.display = "";
-    mvImg.src = mediaUrl(fname);
+    mvImg.src = url;
   }
   mvBox.classList.add("on");
 }
@@ -972,7 +1020,8 @@ msgsEl.addEventListener("click", function(e){
   const el = e.target.closest ? e.target.closest("[data-media]") : null;
   if(!el) return;
   const fname = el.getAttribute("data-media");
-  openMedia(fname, /\.(mp4|mov|webm|m4v)$/i.test(fname));
+  const src = el.getAttribute("data-src");
+  openMedia(fname, /\.(mp4|mov|webm|m4v)$/i.test(fname) || !!el.querySelector("video"), src);
 });
 
 function renderMsg(m){
@@ -1012,16 +1061,31 @@ function renderMsg(m){
       let inp = "";
       try{ inp = typeof b.input === "string" ? b.input : JSON.stringify(b.input, null, 1); }catch(e){ inp = ""; }
       const hint = (b.hint || "").trim();
+      const fileHtml = (b.files || []).map(f => {
+        const key = f.uri || f.name || "";
+        if(key && seenMedia[key]) return "";
+        if(key) seenMedia[key] = 1;
+        return mediaFile(f);
+      }).join("");
       h += '<details class="tool"><summary>' + toolIcon(b.name) + ' <b>' + esc(b.name) + '</b> <span class="badge ' + cls + '">' + esc(lbl) + '</span>'
         + (hint ? '<span class="hintline"> ' + esc(hint.length>70 ? hint.slice(0,70)+"…" : hint) + '</span>' : '')
         + '</summary><div class="toolbody">'
         + (inp ? '<div class="lbl">' + T("запрос") + '</div><pre>' + esc(inp.length>1500 ? inp.slice(0,1500)+"…" : inp) + '</pre>' : "")
         + (b.out ? toolOutHtml(b.out) : "")
-        + '</div></details>';
+        + '</div></details>' + fileHtml;
       // Готовые картинки/видео показываем прямо в сообщении: блоки инструментов
       // свёрнуты, и внутри них медиа никто не увидит. Один файл — один раз.
       const tag = mediaTag(b.out);
       if(tag && !seenMedia[tag]){ seenMedia[tag] = 1; h += tag; }
+    } else if(b.k === "media"){
+      any = true;
+      if(b.state === "completed" && b.path){
+        const isVid = /video/i.test(b.source || "") || /\.(mp4|mov|webm|m4v)$/i.test(b.path || "");
+        h += mediaFile({ uri: "file://" + b.path, mime: isVid ? "video/mp4" : "image/*",
+                         name: mediaName(b.path) });
+      } else {
+        h += '<div class="errbox">⚠️ ' + esc(mediaError(b.text)) + '</div>';
+      }
     } else if(b.k === "info"){
       h += '<div style="color:var(--dim2);font-size:12px">' + esc(b.text) + '</div>';
     }

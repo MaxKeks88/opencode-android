@@ -527,6 +527,8 @@
     "Модель: ": "Model: ",
     "нет доступа": "no access",
     "Не удалось создать папку: ": "Could not create folder: ",
+    "Не удалось создать изображение": "Could not create the image",
+    "Недостаточно средств на счёте": "Insufficient account funds",
     "Папка создана": "Folder created",
     "Ключ OpenCode Zen сохранён": "OpenCode Zen key saved",
     "нет attemptID": "no attemptID",

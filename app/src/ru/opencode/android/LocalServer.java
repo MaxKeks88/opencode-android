@@ -283,7 +283,7 @@ public final class LocalServer {
                 sendText(socket, 404, "text/plain", "not found");
                 return;
             } else {
-                sendFile(socket, fileResolveMedia, mime(fileResolveMedia.getName()));
+                sendFile(socket, fileResolveMedia, mime(fileResolveMedia));
                 return;
             }
         }
@@ -1076,6 +1076,46 @@ public final class LocalServer {
             return (j / 1024) + " КБ";
         }
         return j < 1073741824 ? String.format(Locale.US, "%.1f МБ", Double.valueOf(j / 1048576.0d)) : String.format(Locale.US, "%.1f ГБ", Double.valueOf(j / 1.073741824E9d));
+    }
+
+    /* Файлы генерации часто без расширения — определяем по сигнатуре. */
+    private static String mime(File file) {
+        String byName = mime(file.getName());
+        if (!"application/octet-stream".equals(byName)) {
+            return byName;
+        }
+        try (FileInputStream in = new FileInputStream(file)) {
+            byte[] b = new byte[12];
+            int n = in.read(b);
+            if (n >= 8 && (b[0] & 0xFF) == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47) {
+                return "image/png";
+            }
+            if (n >= 3 && (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF) {
+                return "image/jpeg";
+            }
+            if (n >= 4 && b[0] == 'G' && b[1] == 'I' && b[2] == 'F' && b[3] == '8') {
+                return "image/gif";
+            }
+            if (n >= 12 && b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
+                    && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P') {
+                return "image/webp";
+            }
+            if (n >= 8 && b[4] == 'f' && b[5] == 't' && b[6] == 'y' && b[7] == 'p') {
+                return "video/mp4";
+            }
+            if (n >= 4 && (b[0] & 0xFF) == 0x1A && (b[1] & 0xFF) == 0x45
+                    && (b[2] & 0xFF) == 0xDF && (b[3] & 0xFF) == 0xA3) {
+                return "video/webm";
+            }
+            if (n >= 3 && b[0] == 'I' && b[1] == 'D' && b[2] == '3') {
+                return "audio/mpeg";
+            }
+            if (n >= 4 && b[0] == '%' && b[1] == 'P' && b[2] == 'D' && b[3] == 'F') {
+                return "application/pdf";
+            }
+        } catch (Throwable th) {
+        }
+        return byName;
     }
 
     private static String mime(String str) {

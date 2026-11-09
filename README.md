@@ -102,6 +102,8 @@ Nothing proprietary is stored in this repository.
 | `runtime/` | downloaded binaries (git-ignored) |
 | `tools/` | runtime fetcher, smoke tests, ADB helpers |
 | `AGENTS.md` | architecture and developer notes (Russian) |
+| `docs/LOCALIZATION.md` | translation status and checklist (Russian) |
+| `docs/RELEASING.md` | release and GitHub maintenance guide (Russian) |
 | `ЗАДАЧИ.md`, `СДЕЛАНО.md`, `ПЛАН.md` | development journal (Russian) |
 
 ### Security

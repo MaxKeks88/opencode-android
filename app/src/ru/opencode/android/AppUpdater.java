@@ -7,7 +7,6 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
-import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.net.Uri;
@@ -363,40 +362,23 @@ public final class AppUpdater {
         return info.versionCode;
     }
 
-    /** Отдаёт APK системному установщику (диалог подтверждения). */
-    private static String installApk(Context context, File apk) throws Exception {
-        PackageManager pm = context.getPackageManager();
-        PackageInstaller installer = pm.getPackageInstaller();
-        PackageInstaller.SessionParams params =
-                new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
-        params.setAppPackageName(context.getPackageName());
-        int sessionId = installer.createSession(params);
-        PackageInstaller.Session session = installer.openSession(sessionId);
-        try {
-            OutputStream out = session.openWrite("base.apk", 0, apk.length());
-            FileInputStream in = new FileInputStream(apk);
-            try {
-                byte[] buf = new byte[1048576];
-                int read;
-                while ((read = in.read(buf)) > 0) {
-                    out.write(buf, 0, read);
-                }
-                session.fsync(out);
-            } finally {
+    /** Отдаёт APK системному установщику через content:// (диалог подтверждения). */
+    private static String installApk(final Context context, File apk) throws Exception {
+        final Uri uri = Uri.parse("content://" + UpdateProvider.AUTHORITY + "/" + Uri.encode(apk.getName()));
+        final Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(uri, "application/vnd.android.package-archive");
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+        new android.os.Handler(android.os.Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
                 try {
-                    in.close();
-                } catch (Throwable ignored) {
+                    context.startActivity(intent);
+                } catch (Throwable th) {
+                    App.log("app-update: установщик: " + th);
                 }
-                out.close();
             }
-            Intent result = new Intent(context, UpdateReceiver.class).setAction(UpdateReceiver.ACTION);
-            PendingIntent pending = PendingIntent.getBroadcast(context, sessionId, result,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-            session.commit(pending.getIntentSender());
-        } finally {
-            session.close();
-        }
-        App.log("app-update: установка " + apk.getName() + " запущена");
+        });
+        App.log("app-update: установка " + apk.getName() + " передана системе");
         return "Скачано. Подтвердите установку в системном окне.";
     }
 
@@ -412,12 +394,21 @@ public final class AppUpdater {
         }
     }
 
-    public static void openInstallSettings(Context context) {
+    public static void openInstallSettings(final Context context) {
         try {
-            Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                    Uri.parse("package:" + context.getPackageName()));
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            context.startActivity(intent);
+            new android.os.Handler(android.os.Looper.getMainLooper()).post(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                Uri.parse("package:" + context.getPackageName()));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                        context.startActivity(intent);
+                    } catch (Throwable th) {
+                        App.log("app-update: настройки установки: " + th);
+                    }
+                }
+            });
         } catch (Throwable th) {
             App.log("app-update: настройки установки: " + th);
         }

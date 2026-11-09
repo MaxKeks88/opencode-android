@@ -85,7 +85,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, ~192.6 МБ | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 21, versionName 1.12.1 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 23, versionName 1.12.3 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `<temp>\opencode-src`
@@ -329,7 +329,9 @@ URL внутри `` ` `` не превращается в ссылку.
   «Проверить обновления приложения» и автопроверка.
 - Установка: `REQUEST_INSTALL_PACKAGES`; APK качается в `files/updates`,
   проверяются SHA-256 (`digest` релиза), имя пакета, versionCode и **подпись**
-  (иначе установка запрещена), затем `PackageInstaller` + `UpdateReceiver`.
+  (иначе установка запрещена), затем системный установщик через
+  `content://` (`UpdateProvider` + `ACTION_VIEW`); `PackageInstaller` для
+  self-update на этом телефоне возвращал `STATUS_FAILURE`.
   Если «неизвестные источники» выключены — открывается системный экран.
 - Публичная сборка: `python build_apk.py --no-debug` (без `android:debuggable`,
   без CDP), подпись тем же `keystore.jks`. Порядок релиза: поднять

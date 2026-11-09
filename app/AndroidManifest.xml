@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ru.opencode.android"
-    android:versionCode="21"
-    android:versionName="1.12.1">
+    android:versionCode="23"
+    android:versionName="1.12.3">
 
     <!-- targetSdk 28: как у Termux — разрешает запуск своих исполняемых файлов
          из каталога приложения. Приложение ставится вручную, не из Play. -->
@@ -89,10 +89,9 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name=".UpdateReceiver" android:exported="false">
-            <intent-filter>
-                <action android:name="ru.opencode.android.UPDATE_RESULT"/>
-            </intent-filter>
-        </receiver>
+        <provider android:name=".UpdateProvider"
+            android:authorities="ru.opencode.android.updates"
+            android:exported="false"
+            android:grantUriPermissions="true"/>
     </application>
 </manifest>

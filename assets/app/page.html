@@ -500,6 +500,10 @@ details>summary::-webkit-details-marker{display:none}
 .pzoom .pbtn.on{background:#1d3157;color:#d9e6ff}
 /* Сгенерированные картинки/видео в чате */
 img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top:6px;cursor:pointer}
+a.site{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:6px 10px;border-radius:9px;
+  background:#122333;border:1px solid #24405a;color:#8ecbff;text-decoration:none;font-size:13px;
+  word-break:break-all}
+a.site:active{background:#18324a}
 .media.video{position:relative;display:block;width:min(100%,420px);aspect-ratio:16/9;border-radius:10px;
   margin-top:6px;overflow:hidden;background:#000;cursor:pointer}
 .media.video video{width:100%;height:100%;object-fit:contain;display:block;background:#000}
@@ -642,11 +646,11 @@ img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
-<script src="app/i18n-zh.js?v=32"></script>
-<script src="app/i18n-zh-hant.js?v=32"></script>
-<script src="app/i18n-es.js?v=32"></script>
-<script src="app/i18n.js?v=32"></script>
-<script src="app/bridge.js?v=32"></script>
+<script src="app/i18n-zh.js?v=33"></script>
+<script src="app/i18n-zh-hant.js?v=33"></script>
+<script src="app/i18n-es.js?v=33"></script>
+<script src="app/i18n.js?v=33"></script>
+<script src="app/bridge.js?v=33"></script>
 <script>
 "use strict";
 const PAGE_VER = 75;
@@ -761,6 +765,8 @@ function md(src){
     const clean = trail ? url.slice(0, -trail.length) : url;
     return pre + '<a href="' + clean + '" target="_blank" rel="noopener">' + clean + '</a>' + trail;
   });
+  // локальные index.html из рабочей папки — открыть в браузере
+  s = linkifyLocal(s);
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/(^|[\s(])\*([^*\n<>]+)\*(?=$|[\s).,;:!?])/gm, "$1<em>$2</em>");
   s = s.replace(/^\s*[-*]\s+(.*)$/gm, "<li>$1</li>");
@@ -914,14 +920,37 @@ function mediaFile(f){
   }
   return '<div class="info">📎 ' + esc(name) + '</div>';
 }
+/* Локальная сборка сайта: открываем index.html в браузере по умолчанию.
+   Ссылка ведёт на /site у локального сервера (он отдаёт каталог и ресурсы). */
+function siteUrl(p){
+  let s = String(p || "").trim();
+  if(/^file:\/\//i.test(s)){
+    try{ s = decodeURIComponent(s.slice(7)); }catch(e){ s = s.slice(7); }
+  }
+  const host = window.location.hostname || "127.0.0.1";
+  const port = window.location.port || "8769";
+  return "http://" + host + ":" + port + "/site?path=" + encodeURIComponent(s) +
+         "&token=" + encodeURIComponent(BRIDGE_TOKEN);
+}
+function siteLink(path){
+  const p = String(path || "").trim();
+  const name = mediaName(p) || p;
+  return '<a class="site" href="#" data-site="' + esc(p) + '">🌐 ' + esc(name) + '</a>';
+}
+function linkifyLocal(html){
+  if(!html) return html;
+  return String(html).replace(
+    /(^|[\s(])((?:file:\/\/)?\/(?:sdcard|storage|data\/user\/0)\/[^\s<>"']*?\.(?:html?|htm)(?:[?#][^\s<>"']*)?)/gi,
+    (m, pre, path) => pre + siteLink(path.replace(/&amp;/g, "&").replace(/&quot;/g, '"')));
+}
 function toolOutHtml(out){
   if(!out) return "";
   let html = '<div class="lbl">' + T("результат") + '</div>';
   const prefix = out.replace(/\s*Файл:.*/s, "").trim();
-  if(prefix) html += esc(prefix) + "<br>";
+  if(prefix) html += linkifyLocal(esc(prefix)) + "<br>";
   const tag = mediaTag(out);
   if(tag) return html + tag;
-  html += '<pre>' + esc(out) + '</pre>';
+  html += '<pre>' + linkifyLocal(esc(out)) + '</pre>';
   return html;
 }
 
@@ -1017,6 +1046,13 @@ function mvPointerEnd(e){
 mvBox.addEventListener("pointerup", mvPointerEnd);
 mvBox.addEventListener("pointercancel", mvPointerEnd);
 msgsEl.addEventListener("click", function(e){
+  const site = e.target.closest ? e.target.closest("[data-site]") : null;
+  if(site){
+    e.preventDefault();
+    const p = site.getAttribute("data-site");
+    if(p && BR.openUrl) BR.openUrl(siteUrl(p));
+    return;
+  }
   const el = e.target.closest ? e.target.closest("[data-media]") : null;
   if(!el) return;
   const fname = el.getAttribute("data-media");
@@ -1067,12 +1103,19 @@ function renderMsg(m){
         if(key) seenMedia[key] = 1;
         return mediaFile(f);
       }).join("");
+      // write/edit по index.html — сразу чип «открыть в браузере»
+      let siteHtml = "";
+      try{
+        const bi = (b.input && typeof b.input === "object") ? b.input : {};
+        const bp = String(bi.filePath || bi.path || bi.file || "");
+        if(/\.html?$/i.test(bp)) siteHtml = siteLink(bp);
+      }catch(err){}
       h += '<details class="tool"><summary>' + toolIcon(b.name) + ' <b>' + esc(b.name) + '</b> <span class="badge ' + cls + '">' + esc(lbl) + '</span>'
         + (hint ? '<span class="hintline"> ' + esc(hint.length>70 ? hint.slice(0,70)+"…" : hint) + '</span>' : '')
         + '</summary><div class="toolbody">'
         + (inp ? '<div class="lbl">' + T("запрос") + '</div><pre>' + esc(inp.length>1500 ? inp.slice(0,1500)+"…" : inp) + '</pre>' : "")
         + (b.out ? toolOutHtml(b.out) : "")
-        + '</div></details>' + fileHtml;
+        + '</div></details>' + fileHtml + siteHtml;
       // Готовые картинки/видео показываем прямо в сообщении: блоки инструментов
       // свёрнуты, и внутри них медиа никто не увидит. Один файл — один раз.
       const tag = mediaTag(b.out);

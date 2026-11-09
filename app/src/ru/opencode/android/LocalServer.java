@@ -23,6 +23,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +33,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.SynchronousQueue;
@@ -57,6 +59,10 @@ public final class LocalServer {
     /* Пул ограничен: SSE занимает поток надолго, поэтому очередь не нужна. */
     private static final ExecutorService pool = new ThreadPoolExecutor(
             4, 64, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+    /* Открытые локальные сайты: id → корневой каталог. id — capability-токен. */
+    private static final ConcurrentHashMap<String, String> SITE_ROOTS = new ConcurrentHashMap<>();
+    private static final SecureRandom SITE_RANDOM = new SecureRandom();
+    private static final int SITE_ROOTS_MAX = 16;
 
     private LocalServer() {
     }
@@ -224,7 +230,8 @@ public final class LocalServer {
     /* Маршруты, которым нужен X-Bridge-Token. */
     private static boolean needsToken(String str) {
         return str.startsWith("/oc/") || str.startsWith("/android/") || str.equals("/upload")
-                || str.equals("/upload_raw") || str.startsWith("/files/") || str.equals("/thumb");
+                || str.equals("/upload_raw") || str.startsWith("/files/") || str.equals("/thumb")
+                || str.equals("/site") || str.equals("/site/");
     }
 
     private static boolean authorized(Req req) {
@@ -268,6 +275,11 @@ public final class LocalServer {
                 sendFile(socket, fileSafeChild, mime(fileSafeChild.getName()));
                 return;
             }
+        }
+        if (strSubstring.equals("/site") || strSubstring.equals("/site/")
+                || strSubstring.startsWith("/site/")) {
+            site(socket, req);
+            return;
         }
         if (strSubstring.startsWith("/oc/")) {
             proxy(socket, req, strSubstring.substring(3));
@@ -385,6 +397,81 @@ public final class LocalServer {
                 httpURLConnection.disconnect();
             }
         }
+    }
+
+    /* Локальная сборка сайта: /site?path=<файл>&token=… → /site/<id>/<файл>.
+       id случайный (capability), поэтому относительные css/js/img грузятся без токена. */
+    private static void site(Socket socket, Req req) throws Exception {
+        if (req.path.equals("/site") || req.path.equals("/site/")) {
+            String target = parseQuery(req.query).get("path");
+            if (target == null || target.trim().isEmpty()) {
+                sendText(socket, 400, "text/plain", "path required");
+                return;
+            }
+            File file = resolveMedia(target);
+            if (file == null || !file.isFile()) {
+                sendText(socket, 404, "text/plain", "site not found");
+                return;
+            }
+            File dir = file.getParentFile();
+            if (dir == null) {
+                sendText(socket, 404, "text/plain", "site not found");
+                return;
+            }
+            if (SITE_ROOTS.size() >= SITE_ROOTS_MAX) {
+                SITE_ROOTS.clear();
+            }
+            byte[] rnd = new byte[16];
+            SITE_RANDOM.nextBytes(rnd);
+            StringBuilder sb = new StringBuilder(32);
+            for (byte b : rnd) {
+                sb.append(Character.forDigit((b >> 4) & 0xF, 16)).append(Character.forDigit(b & 0xF, 16));
+            }
+            String id = sb.toString();
+            SITE_ROOTS.put(id, dir.getCanonicalPath());
+            sendRedirect(socket, "/site/" + id + "/" + Uri.encode(file.getName()));
+            return;
+        }
+        String rest;
+        try {
+            rest = URLDecoder.decode(req.path.substring("/site/".length()), "UTF-8");
+        } catch (Throwable th) {
+            rest = req.path.substring("/site/".length());
+        }
+        int slash = rest.indexOf('/');
+        if (slash <= 0) {
+            sendText(socket, 404, "text/plain", "not found");
+            return;
+        }
+        String root = SITE_ROOTS.get(rest.substring(0, slash));
+        if (root == null) {
+            sendText(socket, 404, "text/plain", "not found");
+            return;
+        }
+        String rel = rest.substring(slash + 1);
+        File base = new File(root);
+        File target = new File(base, rel);
+        String canonical = target.getCanonicalPath();
+        if (!canonical.equals(root) && !canonical.startsWith(root + File.separator)) {
+            sendText(socket, 404, "text/plain", "not found");
+            return;
+        }
+        if (target.isDirectory()) {
+            target = new File(target, "index.html");
+        }
+        if (!target.isFile()) {
+            sendText(socket, 404, "text/plain", "not found");
+            return;
+        }
+        sendFile(socket, target, mime(target));
+    }
+
+    private static void sendRedirect(Socket socket, String str) throws IOException {
+        OutputStream outputStream = socket.getOutputStream();
+        outputStream.write(("HTTP/1.1 302 Found\r\nLocation: " + str
+                + "\r\nContent-Length: 0\r\nCache-Control: no-store\r\nConnection: close\r\n\r\n")
+                .getBytes(StandardCharsets.UTF_8));
+        outputStream.flush();
     }
 
     private static String reason(int i) {

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ru.opencode.android"
-    android:versionCode="19"
-    android:versionName="1.11.0">
+    android:versionCode="20"
+    android:versionName="1.12.0">
 
     <!-- targetSdk 28: как у Termux — разрешает запуск своих исполняемых файлов
          из каталога приложения. Приложение ставится вручную, не из Play. -->
@@ -15,6 +15,7 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"/>
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
@@ -85,6 +86,12 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
                 <action android:name="android.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
+
+        <receiver android:name=".UpdateReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="ru.opencode.android.UPDATE_RESULT"/>
             </intent-filter>
         </receiver>
     </application>

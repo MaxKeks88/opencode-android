@@ -554,6 +554,12 @@
         case "wscheck":
           await websearchCheck(o.integration);
           break;
+        case "appupdate":
+          loadAppUpdate(!!o.force);
+          break;
+        case "appupdateinstall":
+          appUpdateInstall();
+          break;
         case "usage":
           await loadUsage();
           break;
@@ -1225,6 +1231,54 @@
     } catch (e) {
       handle({ t: "wscheck", integration, busy: false, ok: false, error: e.message, items: [] });
     }
+  }
+
+  /* ------------------------------------------- обновление приложения (GitHub) --- */
+
+  function appUpdateState() {
+    try {
+      return JSON.parse(BR.appUpdateState ? BR.appUpdateState() : "{}") || {};
+    } catch (e) {
+      return { error: e.message };
+    }
+  }
+
+  function emitAppUpdate(st) {
+    handle(Object.assign({ t: "appupdate" }, st || {}));
+  }
+
+  function pollAppUpdate(n) {
+    if (n > 30) return;
+    setTimeout(() => {
+      const st = appUpdateState();
+      emitAppUpdate(st);
+      if (st.checking) pollAppUpdate(n + 1);
+    }, 1000);
+  }
+
+  function loadAppUpdate(force) {
+    let st;
+    try {
+      st = JSON.parse(BR.appUpdateCheck ? BR.appUpdateCheck(!!force) : "{}") || {};
+    } catch (e) {
+      st = { error: e.message };
+    }
+    emitAppUpdate(st);
+    if (force && !st.error) toast("Проверяю обновления…");
+    pollAppUpdate(0);
+  }
+
+  function appUpdateInstall() {
+    let st;
+    try {
+      st = JSON.parse(BR.appUpdateInstall ? BR.appUpdateInstall() : "{}") || {};
+    } catch (e) {
+      st = { error: e.message };
+    }
+    emitAppUpdate(st);
+    if (!st.error) toast("Скачивание обновления началось");
+    else if (st.error) toast(st.error, "err");
+    pollAppUpdate(0);
   }
 
   /* ----------------------------------------------------------- события SSE --- */

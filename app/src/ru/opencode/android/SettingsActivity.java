@@ -244,6 +244,64 @@ public class SettingsActivity extends Activity {
             }
         });
         linearLayout.addView(btn9);
+        Button btnAppUpdate = btn("Проверить обновления приложения");
+        btnAppUpdate.setOnClickListener(new View.OnClickListener() {
+            @Override // android.view.View.OnClickListener
+            public void onClick(View view) {
+                Toast.makeText(SettingsActivity.this, "Проверяю обновления приложения…", 0).show();
+                AppUpdater.checkAsync(SettingsActivity.this, true, new AppUpdater.Callback() {
+                    @Override // ru.opencode.android.AppUpdater.Callback
+                    public void done(final String text) {
+                        SettingsActivity.this.runOnUiThread(new Runnable() {
+                            @Override // java.lang.Runnable
+                            public void run() {
+                                JSONObject st = AppUpdater.state(SettingsActivity.this);
+                                if (st.optBoolean("available")) {
+                                    new AlertDialog.Builder(SettingsActivity.this)
+                                        .setTitle("Обновление приложения")
+                                        .setMessage("Доступно " + st.optString("version") +
+                                            " (установлено " + st.optString("current") +
+                                            ").\n\nСкачать и установить?")
+                                        .setPositiveButton("Скачать", new DialogInterface.OnClickListener() {
+                                            @Override // android.content.DialogInterface.OnClickListener
+                                            public void onClick(DialogInterface dialogInterface, int i) {
+                                                AppUpdater.installAsync(SettingsActivity.this, new AppUpdater.Callback() {
+                                                    @Override // ru.opencode.android.AppUpdater.Callback
+                                                    public void done(final String msg) {
+                                                        SettingsActivity.this.runOnUiThread(new Runnable() {
+                                                            @Override // java.lang.Runnable
+                                                            public void run() {
+                                                                Toast.makeText(SettingsActivity.this, msg, 1).show();
+                                                            }
+                                                        });
+                                                    }
+                                                });
+                                            }
+                                        })
+                                        .setNegativeButton("Позже", (DialogInterface.OnClickListener) null)
+                                        .show();
+                                } else {
+                                    Toast.makeText(SettingsActivity.this, text, 1).show();
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        linearLayout.addView(btnAppUpdate);
+        final Button btnAppAuto = btn("");
+        btnAppAuto.setText("Автопроверка обновлений приложения: " +
+                (AppUpdater.autoEnabled() ? "вкл" : "выкл"));
+        btnAppAuto.setOnClickListener(new View.OnClickListener() {
+            @Override // android.view.View.OnClickListener
+            public void onClick(View view) {
+                boolean on = !AppUpdater.autoEnabled();
+                AppUpdater.setAutoEnabled(on);
+                btnAppAuto.setText("Автопроверка обновлений приложения: " + (on ? "вкл" : "выкл"));
+            }
+        });
+        linearLayout.addView(btnAppAuto);
         this.info = new TextView(this);
         this.info.setTextColor(-7626568);
         this.info.setTextSize(12.0f);

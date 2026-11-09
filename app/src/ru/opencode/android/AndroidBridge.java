@@ -90,8 +90,7 @@ public class AndroidBridge {
     }
 
     @JavascriptInterface
-    public String getSettings() {
-        try {
+    public String getSettings() {        try {
             JSONObject jSONObject = new JSONObject();
             jSONObject.put("notify", App.prefs().getBoolean("notify", true));
             jSONObject.put("sound", App.prefs().getBoolean("sound", false));
@@ -126,6 +125,53 @@ public class AndroidBridge {
     @JavascriptInterface
     public void setSetting(String str, boolean z) {
         saveSetting(str, z);
+    }
+
+    @JavascriptInterface
+    public String appUpdateState() {
+        return AppUpdater.state(this.act).toString();
+    }
+
+    @JavascriptInterface
+    public String appUpdateCheck(boolean force) {
+        AppUpdater.checkAsync(this.act, force, new AppUpdater.Callback() {
+            @Override // ru.opencode.android.AppUpdater.Callback
+            public void done(String text) {
+                App.log("app-update: " + text);
+            }
+        });
+        return AppUpdater.state(this.act).toString();
+    }
+
+    @JavascriptInterface
+    public String appUpdateInstall() {
+        AppUpdater.installAsync(this.act, new AppUpdater.Callback() {
+            @Override // ru.opencode.android.AppUpdater.Callback
+            public void done(String text) {
+                App.log("app-update: " + text);
+            }
+        });
+        return AppUpdater.state(this.act).toString();
+    }
+
+    @JavascriptInterface
+    public void appUpdateOpenPage() {
+        openUrl(AppUpdater.RELEASE_URL);
+    }
+
+    @JavascriptInterface
+    public void appUpdateOpenInstallSettings() {
+        AppUpdater.openInstallSettings(this.act);
+    }
+
+    @JavascriptInterface
+    public boolean appUpdateAllowed() {
+        return AppUpdater.allowedToInstall(this.act);
+    }
+
+    @JavascriptInterface
+    public void appUpdateAuto(boolean enabled) {
+        AppUpdater.setAutoEnabled(enabled);
     }
 
     @JavascriptInterface

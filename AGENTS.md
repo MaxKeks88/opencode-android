@@ -2,7 +2,7 @@
 
 > Это **не** старый `OpenCode Remote` (мост к ПК). Это самостоятельное Android-приложение:
 > внутри APK лежит настоящий OpenCode v2.2.6, он работает на телефоне без ПК.
-> Дизайн и логика интерфейса взяты из `C:\Users\WorkPC\Мой диск\Open\page_chat.html`.
+> Дизайн и логика интерфейса взяты из `<old-project>\page_chat.html`.
 
 ## 1. Что уже работает (проверено на телефоне)
 
@@ -85,17 +85,17 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, ~192.6 МБ | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 19, versionName 1.11.0 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 20, versionName 1.12.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
-Исходники OpenCode для справки: `C:\Users\WorkPC\AppData\Local\Temp\opencode-src`
+Исходники OpenCode для справки: `<temp>\opencode-src`
 (ветка `dev`). API-схема живого сервера: `openapi.json` в корне проекта
 (снята с v2.2.6; можно обновить `GET /openapi.json`).
 
 ## 4. Структура проекта
 
 ```
-C:\Users\WorkPC\Desktop\OpenCodeAPK\
+<project>\
 ├── AGENTS.md                     ← этот файл
 ├── СДЕЛАНО.md                    ← краткий русский журнал
 ├── build_apk.py                  ← сборщик APK без Gradle
@@ -153,7 +153,7 @@ C:\Users\WorkPC\Desktop\OpenCodeAPK\
 ```powershell
 # на домашнем ПК путь содержит кириллицу («Мой диск») — aapt2 её не открывает,
 # поэтому собираем через буквенный диск
-subst X: "C:\Users\HomePC\Мой диск\OpenCodeAPK"
+subst X: "<project>"
 python X:\build_apk.py
 ```
 
@@ -315,6 +315,27 @@ URL внутри `` ` `` не превращается в ссылку.
   Команды моста: `websearch`, `setwebsearch`, `wskey`, `wscheck`;
   событие `websearch.updated` обновляет список.
 
+### Обновление приложения (GitHub Releases, 1.12)
+
+- Репозиторий: `MaxKeks88/opencode-android` (константа `AppUpdater.REPO`).
+  Релиз — тег `vX.Y.Z`, ассет `*.apk`; приложение смотрит
+  `GET /repos/{repo}/releases/latest` (prerelease/draft пропускаются).
+- `AppUpdater.java`: проверка с кэшем 6 ч (преф `app_update_auto`, по
+  умолчанию вкл), состояние в префах `app_update_cache`, ручная проверка.
+- UI: в боковом меню у ⚙ маленькая стрелка **⟳**, видна только когда есть
+  обновление и мягко светится жёлтым. Тап — лист «Обновление приложения»
+  (версия, размер, заметки релиза, «Скачать и установить», «Проверить снова»,
+  «Открыть релизы», тумблер автопроверки). В нативных настройках —
+  «Проверить обновления приложения» и автопроверка.
+- Установка: `REQUEST_INSTALL_PACKAGES`; APK качается в `files/updates`,
+  проверяются SHA-256 (`digest` релиза), имя пакета, versionCode и **подпись**
+  (иначе установка запрещена), затем `PackageInstaller` + `UpdateReceiver`.
+  Если «неизвестные источники» выключены — открывается системный экран.
+- Публичная сборка: `python build_apk.py --no-debug` (без `android:debuggable`,
+  без CDP), подпись тем же `keystore.jks`. Порядок релиза: поднять
+  versionCode/versionName → собрать → `gh release create vX.Y.Z APK` →
+  приложить `SHA256SUMS`, в описании — изменения.
+
 ### Файлы и вложения
 
 - `/android/fs?path=` → `{ok,path,parent,drives,entries,shortcuts}`.
@@ -444,7 +465,7 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
 13. **Страница ждёт `/ping` с `app:"opencode-remote"`** для autoreload; сервер
     отдаёт `ver:0`, поэтому перезагрузка не срабатывает.
 14. **`page_chat.html`** и `bridge.js` — это форк; оригинал лежит в
-    `C:\Users\WorkPC\Мой диск\Open\page_chat.html` и `oc_server.py`
+    `<old-project>\page_chat.html` и `oc_server.py`
     (там же протокол и Python-реализация для сверки).
 15. **DNS у opencode (musl/Bun).** На Android нет `/etc/resolv.conf`, musl уходит
     на `127.0.0.1` → `getaddrinfo EAI_AGAIN`. Поэтому `ProxyServer` слушает
@@ -503,7 +524,7 @@ adb shell run-as ru.opencode.android cp /data/local/tmp/page.html files/web/page
     дубли `break`). Поэтому в коде остались имена вида
     `m28lambda$exportBackup$16$...`, а часть методов выглядит иначе, чем
     писалось изначально. Перед крупными правками делайте резервную копию
-    `app/src` (архив: `C:\Users\WorkPC\Desktop\OpenCodeAPK-src-2026-11-08.zip`).
+    `app/src` (архив: `<backup>.zip`).
 25. **Периодический `refresh` не должен слать полный `state`.** Иначе страница
     вызывает `renderAll()`, очищает и заново строит весь список сообщений —
     экран мигает каждые ~25–30 секунд. `refreshAll(false)` в `bridge.js` шлёт
@@ -640,8 +661,8 @@ python tools\clean_project.py --yes    # удалить
 локальный репозиторий, **git-каталог вынесен за пределы Drive**:
 
 ```
-worktree: C:\Users\WorkPC\Мой диск\OpenCodeAPK
-git-dir:  C:\Users\WorkPC\OpenCodeAPK-src.git   (файл .git в проекте — ссылка)
+worktree: <project>
+git-dir:  <git-dir>   (файл .git в проекте — ссылка)
 ```
 
 - Отслеживаются: `app/`, `assets/`, `tools/`, скрипты сборки, документация,
@@ -654,7 +675,7 @@ git-dir:  C:\Users\WorkPC\OpenCodeAPK-src.git   (файл .git в проекте
 Команды:
 
 ```powershell
-cd "C:\Users\WorkPC\Мой диск\OpenCodeAPK"
+cd "<project>"
 git status
 git add -A
 git commit -m "что изменили"

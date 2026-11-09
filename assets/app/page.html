@@ -197,6 +197,17 @@ details>summary::-webkit-details-marker{display:none}
   border-bottom:1px solid var(--line)}
 .dhead .t{flex:1;font-weight:600;font-size:16px}
 .dhead #dset{margin-right:auto}
+.gearwrap{position:relative;flex:0 0 34px;margin-right:auto}
+.gearwrap #dset{margin-right:0}
+.upd{display:none;position:absolute;right:-6px;bottom:-6px;width:19px;height:19px;border-radius:50%;
+  align-items:center;justify-content:center;font-size:14px;line-height:1;color:#ffd75e;cursor:pointer;
+  background:#1b2430;border:1px solid #6b5a20;text-shadow:0 0 7px #ffd75e;
+  animation:updpulse 2s ease-in-out infinite}
+.upd.on{display:flex}
+@keyframes updpulse{
+  0%,100%{box-shadow:0 0 3px rgba(255,215,94,.45)}
+  50%{box-shadow:0 0 13px rgba(255,215,94,.95)}
+}
 /* настройки в меню чатов */
 .setrow{display:flex;align-items:center;gap:12px;padding:13px 12px;border-bottom:1px solid var(--line);cursor:pointer}
 .setrow .em{font-size:19px;width:26px;text-align:center;flex:0 0 26px}
@@ -543,7 +554,10 @@ img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top
 
 <div id="drawer">
   <div class="dhead">
-    <div class="iconbtn" id="dset" title="Настройки" style="width:34px;height:34px;flex:0 0 34px">⚙</div>
+    <div class="gearwrap">
+      <div class="iconbtn" id="dset" title="Настройки" style="width:34px;height:34px;flex:0 0 34px">⚙</div>
+      <div class="upd" id="dsetupd" title="Доступно обновление">⟳</div>
+    </div>
     <div class="iconbtn" id="dclose" style="width:34px;height:34px;flex:0 0 34px">✕</div>
   </div>
   <div class="dtools">
@@ -673,7 +687,8 @@ let S = {
   providers: [], usageErr: "", sub: null, login: null, zenOpen: false,
   catalog: null, catShown: 60, catQ: "", provOpen: null, provKey: "", provForm: {},
   provModels: {}, oauth: null, provBusy: false,
-  websearch: null, wsKey: "", wsCheck: {}
+  websearch: null, wsKey: "", wsCheck: {},
+  appUpdate: null, appUpdateAsked: false
 };
 let drawerOpen = false, sheetMode = null, fsPath = "", armed = null, stopArm = 0, lastUpd = 0;
 
@@ -1121,6 +1136,7 @@ function applyState(st){
   renderHead();
   renderDrawer();
   renderAsks();
+  if(!S.appUpdateAsked){ S.appUpdateAsked = true; send({t:"appupdate", force:false}); }
 }
 
 function renderHead(){
@@ -1614,6 +1630,11 @@ function handle(m){
       S.wsCheck[m.integration] = { busy: !!m.busy, ok: !!m.ok, error: m.error || "",
                                    providerID: m.providerID || "", results: m.items || [] };
       if(sheetMode === "settings" && setTab === "websearch") renderWebsearch();
+      break;
+    case "appupdate":
+      S.appUpdate = m;
+      renderUpdateBadge();
+      if(sheetMode === "appupdate") renderUpdateSheet();
       break;
     case "oauth":
       S.oauth = { integration: m.integration, status: m.status, url: m.url || "",
@@ -3058,6 +3079,72 @@ function renderWebsearch(){
   });
 }
 
+/* ---- обновление приложения через GitHub Releases ---- */
+function renderUpdateBadge(){
+  const b = $("dsetupd");
+  if(!b) return;
+  const on = !!(S.appUpdate && S.appUpdate.available);
+  b.classList.toggle("on", on);
+  b.title = on ? ("Доступно обновление " + (S.appUpdate.version || "")) : "Обновление приложения";
+}
+
+function openAppUpdate(){
+  openSheet("appupdate", "Обновление приложения");
+  renderUpdateSheet();
+  send({t: "appupdate", force: false});
+}
+
+function renderUpdateSheet(){
+  const box = $("sbody");
+  if(!box) return;
+  const u = S.appUpdate || {};
+  const cur = u.current || "";
+  const mb = u.size ? (u.size / 1048576).toFixed(1) + " МБ" : "";
+  let h = "";
+  if(u.error) h += '<div class="setnote" style="color:#ff6b6b">' + esc(u.error) + '</div>';
+  if(u.checking) h += '<div class="setnote">Проверяю релизы на GitHub…</div>';
+  if(u.available){
+    h += '<div class="setnote">Установлено <b>' + esc(cur) + '</b>, доступно <b>' +
+         esc(u.version || "") + '</b>' + (mb ? ' · ' + esc(mb) : '') + '.</div>';
+    if(u.notes){
+      h += '<div class="setnote" style="white-space:pre-wrap;max-height:220px;overflow:auto">' +
+           esc(String(u.notes).slice(0, 3000)) + '</div>';
+    }
+    h += '<div class="btn pri" id="updinstall">⬇ Скачать и установить</div>';
+  } else if(!u.checking){
+    h += '<div class="setnote">Установлено <b>' + esc(cur) + '</b>. ' +
+         (u.checkedAt ? "Обновлений нет." : "Проверка ещё не выполнялась.") + '</div>';
+  }
+  h += '<div class="btn" id="updcheck">⟳ Проверить снова</div>' +
+       '<div class="btn" id="updgithub">Открыть релизы на GitHub</div>' +
+       '<div class="btn" id="updauto">Автопроверка: ' + (u.auto ? "вкл" : "выкл") + '</div>' +
+       '<div class="setnote">Обновление скачивается с GitHub (~' +
+       (mb || "190 МБ") + '). После загрузки Android попросит подтвердить установку; ' +
+       'чаты, настройки и ключи сохраняются.</div>';
+  box.innerHTML = h;
+  const ins = $("updinstall");
+  if(ins) ins.onclick = () => {
+    if(BR.appUpdateAllowed && !BR.appUpdateAllowed()){
+      toast("Сначала разрешите установку из этого источника", "err");
+      if(BR.appUpdateOpenInstallSettings) BR.appUpdateOpenInstallSettings();
+      return;
+    }
+    ins.textContent = "Скачивание…";
+    send({t: "appupdateinstall"});
+  };
+  $("updcheck").onclick = () => {
+    S.appUpdate = Object.assign({}, u, {checking: true, error: ""});
+    renderUpdateSheet();
+    send({t: "appupdate", force: true});
+  };
+  $("updgithub").onclick = () => { if(BR.appUpdateOpenPage) BR.appUpdateOpenPage(); };
+  $("updauto").onclick = () => {
+    if(BR.appUpdateAuto) BR.appUpdateAuto(!u.auto);
+    send({t: "appupdate", force: false});
+  };
+}
+
+$("dsetupd").onclick = openAppUpdate;
 $("dset").onclick = openSettings;
 /* вкладки живут в отдельной полосе — слушаем клики на ней */
 $("settabs").addEventListener("click", e => {

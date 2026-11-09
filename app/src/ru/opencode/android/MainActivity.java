@@ -180,6 +180,9 @@ public class MainActivity extends Activity {
         setContentView(this.root);
         requestPermissionsIfNeeded();
         RuntimeService.start(this);
+        if (AppUpdater.autoEnabled()) {
+            AppUpdater.checkAsync(this, false, null);
+        }
         waitAndLoad();
     }
 

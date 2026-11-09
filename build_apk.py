@@ -133,8 +133,11 @@ def runtime_manifest():
 
 def main():
     release = "--release" in sys.argv[1:]
+    no_debug = "--no-debug" in sys.argv[1:]
     if release:
         print("режим: РЕЛИЗ (строгая проверка ключа подписи)")
+    if no_debug and not release:
+        print("режим: без android:debuggable (публичная сборка)")
     aapt2, zipalign, apksigner, d8, android_jar = find_tools()
     print("SDK:", SDK)
     print("android.jar:", android_jar)
@@ -152,15 +155,15 @@ def main():
     # 1. ресурсы
     run([aapt2, "compile", "--dir", APP / "res", "-o", BUILD / "res.zip"])
 
-    # 2. манифест: --release вырезает android:debuggable
+    # 2. манифест: --release/--no-debug вырезают android:debuggable
     manifest = APP / "AndroidManifest.xml"
-    if release:
+    if release or no_debug:
         text = manifest.read_text(encoding="utf-8")
         stripped = re.sub(r'\s*android:debuggable\s*=\s*"true"', "", text)
         if stripped != text:
             manifest = BUILD / "AndroidManifest.xml"
             manifest.write_text(stripped, encoding="utf-8")
-            print("релиз: android:debuggable удалён из манифеста")
+            print("сборка: android:debuggable удалён из манифеста")
 
     # 3. link (маленькие assets; тяжёлый runtime добавим позже)
     run([aapt2, "link", "-o", BUILD / "base.apk", "-I", android_jar,

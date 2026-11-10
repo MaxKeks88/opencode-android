@@ -196,14 +196,20 @@ details>summary::-webkit-details-marker{display:none}
 .dhead{display:flex;align-items:center;gap:8px;padding:calc(env(safe-area-inset-top,0px) + 12px) 12px 12px;
   border-bottom:1px solid var(--line)}
 .dhead .t{flex:1;font-weight:600;font-size:16px}
-.dhead #dset{margin-right:auto}
-.gearwrap{position:relative;flex:0 0 34px;margin-right:auto}
-.gearwrap #dset{margin-right:0}
-.upd{display:none;position:absolute;right:-6px;bottom:-6px;width:19px;height:19px;border-radius:50%;
-  align-items:center;justify-content:center;font-size:14px;line-height:1;color:#ffd75e;cursor:pointer;
-  background:#1b2430;border:1px solid #6b5a20;text-shadow:0 0 7px #ffd75e;
-  animation:updpulse 2s ease-in-out infinite}
+.dhead #dclose{margin-left:auto}
+.upd{display:none;width:34px;height:34px;flex:0 0 34px;align-items:center;justify-content:center;
+  border-radius:11px;background:var(--panel2);border:1px solid #6b5a20;color:#ffd75e;font-size:17px;
+  cursor:pointer;text-shadow:0 0 7px #ffd75e;animation:updpulse 2s ease-in-out infinite}
 .upd.on{display:flex}
+/* баннер обновления в настройках */
+.updbar{display:none;align-items:center;gap:11px;margin:8px 12px 0;padding:11px 12px;border-radius:12px;
+  background:rgba(255,215,94,.08);border:1px solid #6b5a20;cursor:pointer}
+.updbar.on{display:flex}
+.updbar .ic{width:26px;flex:0 0 26px;text-align:center;color:#ffd75e;font-size:19px;text-shadow:0 0 8px #ffd75e}
+.updbar .n{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.updbar .a{font-size:14.5px;font-weight:600;color:#ffe9a8}
+.updbar .b{font-size:12px;color:var(--dim)}
+.updbar .go{color:#ffd75e;font-size:20px}
 @keyframes updpulse{
   0%,100%{box-shadow:0 0 3px rgba(255,215,94,.45)}
   50%{box-shadow:0 0 13px rgba(255,215,94,.95)}
@@ -509,10 +515,8 @@ a.site:active{background:#18324a}
 
 <div id="drawer">
   <div class="dhead">
-    <div class="gearwrap">
-      <div class="iconbtn" id="dset" title="Настройки" style="width:34px;height:34px;flex:0 0 34px">⚙</div>
-      <div class="upd" id="dsetupd" title="Доступно обновление">⟳</div>
-    </div>
+    <div class="iconbtn" id="dset" title="Настройки" style="width:34px;height:34px;flex:0 0 34px">⚙</div>
+    <div class="upd" id="dsetupd" title="Доступно обновление">⟳</div>
     <div class="iconbtn" id="dclose" style="width:34px;height:34px;flex:0 0 34px">✕</div>
   </div>
   <div class="dtools">
@@ -530,6 +534,11 @@ a.site:active{background:#18324a}
 
 <div id="sheet">
   <div class="shead"><div class="t" id="sheettitle">—</div><div class="iconbtn" id="sclose" style="width:32px;height:32px;flex:0 0 32px">✕</div></div>
+  <div class="updbar" id="setupdbar">
+    <div class="ic">⟳</div>
+    <div class="n"><div class="a" id="setupdtext">Доступно обновление</div><div class="b" id="setupdsub">Обновление приложения</div></div>
+    <div class="go">›</div>
+  </div>
   <div class="stabs" id="settabs"></div>
   <div class="fsbar" id="fsbar" style="display:none">
     <div class="fsquick" id="fsquick"></div>
@@ -563,14 +572,14 @@ a.site:active{background:#18324a}
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
-<script src="app/i18n-zh.js?v=37"></script>
-<script src="app/i18n-zh-hant.js?v=37"></script>
-<script src="app/i18n-es.js?v=37"></script>
-<script src="app/i18n-pt.js?v=37"></script>
-<script src="app/i18n-de.js?v=37"></script>
-<script src="app/i18n-fr.js?v=37"></script>
-<script src="app/i18n.js?v=37"></script>
-<script src="app/bridge.js?v=37"></script>
+<script src="app/i18n-zh.js?v=38"></script>
+<script src="app/i18n-zh-hant.js?v=38"></script>
+<script src="app/i18n-es.js?v=38"></script>
+<script src="app/i18n-pt.js?v=38"></script>
+<script src="app/i18n-de.js?v=38"></script>
+<script src="app/i18n-fr.js?v=38"></script>
+<script src="app/i18n.js?v=38"></script>
+<script src="app/bridge.js?v=38"></script>
 <script>
 "use strict";
 const PAGE_VER = 75;
@@ -1475,13 +1484,17 @@ function openSheet(mode, title){
     (mode === "workdir" || mode === "attach-file" || mode === "attach-folder" ||
      mode === "attach-phone") ? "block" : "none";
   // полоса вкладок — только у настроек, и живёт вне прокручиваемого контента
-  if(mode !== "settings") $("settabs").classList.remove("on");
+  if(mode !== "settings") {
+    $("settabs").classList.remove("on");
+    $("setupdbar").classList.remove("on");
+  }
   $("sheet").classList.add("on");
   $("scrim").classList.add("on");
 }
 function closeSheet(){
   sheetMode = null; armed = null;
   $("settabs").classList.remove("on");
+  $("setupdbar").classList.remove("on");
   $("sheet").classList.remove("full");
   $("sheet").classList.remove("on");
   $("scrim").classList.toggle("on", drawerOpen);
@@ -2295,6 +2308,7 @@ function openSettings(){
 let setTab = "lang";
 
 function renderSettings(){
+  renderUpdateBanner();
   const tab = (id, label) => '<div class="ptab' + (setTab === id ? " on" : "") +
     '" data-stab="' + id + '">' + label + '</div>';
   const bar = $("settabs");
@@ -3175,7 +3189,21 @@ function renderUpdateBadge(){
   if(!b) return;
   const on = !!(S.appUpdate && S.appUpdate.available);
   b.classList.toggle("on", on);
-  b.title = on ? ("Доступно обновление " + (S.appUpdate.version || "")) : "Обновление приложения";
+  b.title = on ? (T("Доступно обновление ") + (S.appUpdate.version || "")) : T("Обновление приложения");
+  renderUpdateBanner();
+}
+
+/* баннер в самом верху настроек: виден только когда есть обновление */
+function renderUpdateBanner(){
+  const b = $("setupdbar");
+  if(!b) return;
+  const u = S.appUpdate || {};
+  const on = !!u.available;
+  b.classList.toggle("on", on);
+  if(on){
+    $("setupdtext").textContent = T("Доступно обновление ") + (u.version || "");
+    $("setupdsub").textContent = T("Обновление приложения");
+  }
 }
 
 function openAppUpdate(){
@@ -3235,6 +3263,7 @@ function renderUpdateSheet(){
 }
 
 $("dsetupd").onclick = openAppUpdate;
+$("setupdbar").onclick = openAppUpdate;
 $("dset").onclick = openSettings;
 /* вкладки живут в отдельной полосе — слушаем клики на ней */
 $("settabs").addEventListener("click", e => {

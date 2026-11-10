@@ -3198,7 +3198,7 @@ function renderUpdateBanner(){
   const b = $("setupdbar");
   if(!b) return;
   const u = S.appUpdate || {};
-  const on = !!u.available;
+  const on = !!u.available && sheetMode === "settings";
   b.classList.toggle("on", on);
   if(on){
     $("setupdtext").textContent = T("Доступно обновление ") + (u.version || "");

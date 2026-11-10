@@ -2,7 +2,7 @@
 
 **OpenCode running natively on Android — no PC, no proot, no remote bridge.**
 
-**Languages / Языки:** English 🇬🇧 · Русский 🇷🇺 · 中文（简体） 🇨🇳 · 中文（繁體） 🇹🇼 · Español 🇪🇸
+**Languages / Языки:** English 🇬🇧 · Русский 🇷🇺 · 中文（简体） 🇨🇳 · 中文（繁體） 🇹🇼 · Español 🇪🇸 · Português (Brasil) 🇧🇷
 
 [English](#english) · [Русский](#русский)
 
@@ -38,6 +38,7 @@ commands, clone repositories and talk to any model provider.
   - 中文（简体） 🇨🇳
   - 中文（繁體） 🇹🇼
   - Español 🇪🇸
+  - Português (Brasil) 🇧🇷
 - In-app updates from GitHub Releases.
 
 ### Install

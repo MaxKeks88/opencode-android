@@ -646,11 +646,12 @@ a.site:active{background:#18324a}
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
-<script src="app/i18n-zh.js?v=33"></script>
-<script src="app/i18n-zh-hant.js?v=33"></script>
-<script src="app/i18n-es.js?v=33"></script>
-<script src="app/i18n.js?v=33"></script>
-<script src="app/bridge.js?v=33"></script>
+<script src="app/i18n-zh.js?v=34"></script>
+<script src="app/i18n-zh-hant.js?v=34"></script>
+<script src="app/i18n-es.js?v=34"></script>
+<script src="app/i18n-pt.js?v=34"></script>
+<script src="app/i18n.js?v=34"></script>
+<script src="app/bridge.js?v=34"></script>
 <script>
 "use strict";
 const PAGE_VER = 75;
@@ -2675,7 +2676,8 @@ function usageWhen(ms){
   try{
     const c = window.OCLang && OCLang.code;
     const loc = c === "en" ? "en-US" : (c === "zh" ? "zh-CN" :
-                (c === "zh-Hant" ? "zh-TW" : (c === "es" ? "es-ES" : "ru-RU")));
+                (c === "zh-Hant" ? "zh-TW" : (c === "es" ? "es-ES" :
+                (c === "pt" ? "pt-BR" : "ru-RU"))));
     return new Date(n).toLocaleString(loc,
       {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
   }catch(e){ return ""; }
@@ -3122,7 +3124,8 @@ const LANGUAGES = [
   { code: "ru", name: "Русский 🇷🇺" },
   { code: "zh", name: "中文（简体） 🇨🇳" },
   { code: "zh-Hant", name: "中文（繁體） 🇹🇼" },
-  { code: "es", name: "Español 🇪🇸" }
+  { code: "es", name: "Español 🇪🇸" },
+  { code: "pt", name: "Português (Brasil) 🇧🇷" }
 ];
 
 function renderLanguages(){
@@ -3147,7 +3150,8 @@ function renderLanguages(){
       toast(code === "en" ? "Switching to English…" :
             (code === "zh" ? "正在切换到中文…" :
              (code === "zh-Hant" ? "正在切換到繁體中文…" :
-              (code === "es" ? "Cambiando a español…" : "Переключаю на русский…"))));
+              (code === "es" ? "Cambiando a español…" :
+               (code === "pt" ? "Mudando para português…" : "Переключаю на русский…")))));
       setTimeout(() => location.reload(), 250);
     };
   });

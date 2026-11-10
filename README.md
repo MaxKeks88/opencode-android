@@ -1,8 +1,8 @@
 # OpenCode Android
 
-**OpenCode running natively on Android — no PC, no proot, no remote bridge.**
-
 **Languages / Языки:** English 🇬🇧 · Русский 🇷🇺 · 中文（简体） 🇨🇳 · 中文（繁體） 🇹🇼 · Español 🇪🇸 · Português (Brasil) 🇧🇷
+
+**OpenCode running natively on Android — no PC, no proot, no remote bridge.**
 
 [English](#english) · [Русский](#русский)
 

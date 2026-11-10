@@ -136,7 +136,7 @@ public class AndroidBridge {
     public void setLang(String code) {
         if (Lang.EN.equals(code) || Lang.RU.equals(code) || Lang.ZH.equals(code)
                 || Lang.ZH_HANT.equals(code) || Lang.ES.equals(code)
-                || Lang.PT.equals(code)) {
+                || Lang.PT.equals(code) || Lang.DE.equals(code)) {
             Lang.set(code);
         }
     }

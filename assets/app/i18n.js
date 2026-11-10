@@ -726,6 +726,8 @@
   var ES_SUBS = window.OC_ES_SUBS || [];
   var PT = window.OC_PT || {};
   var PT_SUBS = window.OC_PT_SUBS || [];
+  var DE = window.OC_DE || {};
+  var DE_SUBS = window.OC_DE_SUBS || [];
   var ZH_HANT = window.OC_ZH_HANT || {};
   var ZH_HANT_SUBS = window.OC_ZH_HANT_SUBS || [];
 
@@ -801,6 +803,30 @@
     [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return n + " M tokens de saída por mês"; }]
   ];
 
+  var RULES_DE = [
+    [/^Показать всех \((\d+)\)$/, function (m, n) { return "Alle anzeigen (" + n + ")"; }],
+    [/^Показать ещё \((\d+)\)$/, function (m, n) { return "Mehr anzeigen (" + n + ")"; }],
+    [/^· (\d+)\s+ч$/, function (m, n) { return "· " + n + " Std."; }],
+    [/^· (\d+)\s+дн$/, function (m, n) { return "· " + n + " T."; }],
+    [/^Бесплатные · (\d+)$/, function (m, n) { return "Kostenlos · " + n; }],
+    [/^Платные · (\d+)$/, function (m, n) { return "Kostenpflichtig · " + n; }],
+    [/^Чаты · (\d+)$/, function (m, n) { return "Chats · " + n; }],
+    [/^Модели · (\d+)$/, function (m, n) { return "Modelle · " + n; }],
+    [/^Избранные · (\d+)$/, function (m, n) { return "Favoriten · " + n; }],
+    [/^(\d+(?:[.,]\d+)?)\s+Б$/, function (m, n) { return n + " B"; }],
+    [/^(\d+)\s+ч$/, function (m, n) { return n + " Std."; }],
+    [/^(\d+)\s+дн$/, function (m, n) { return n + " T."; }],
+    [/^(\d+)\s+мин$/, function (m, n) { return n + " Min."; }],
+    [/^(\d+)\s+модел(ей|ь|и)$/i, function (m, n) { return n + (n === "1" ? " Modell" : " Modelle"); }],
+    [/^(\d+)\s+бесплатн(ых|ые)$/i, function (m, n) { return n + (n === "1" ? " kostenloses" : " kostenlose"); }],
+    [/^(\d+)\s+скрыт(ых|ые)$/i, function (m, n) { return n + (n === "1" ? " ausgeblendetes" : " ausgeblendete"); }],
+    [/^(\d+)\s+симв\.$/i, function (m, n) { return n + (n === "1" ? " Zeichen" : " Zeichen"); }],
+    [/^(\d+)\s+файл(ов|а)?$/i, function (m, n) { return n + (n === "1" ? " Datei" : " Dateien"); }],
+    [/^(\d+)\s+из\s+(\d+)$/i, function (m, a, b) { return a + " von " + b; }],
+    [/^(\d+)\s+запросов за 5 часов$/i, function (m, n) { return n + " Anfragen pro 5 Stunden"; }],
+    [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return n + " Mio. Ausgabe-Token pro Monat"; }]
+  ];
+
   var RULES_ZH_HANT = [
     [/^Показать всех \((\d+)\)$/, function (m, n) { return "顯示全部（" + n + "）"; }],
     [/^Показать ещё \((\d+)\)$/, function (m, n) { return "顯示更多（" + n + "）"; }],
@@ -839,14 +865,15 @@
   var SUBS_ZH = ZH_SUBS.concat(buildLong(ZH)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_ES = ES_SUBS.concat(buildLong(ES)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_PT = PT_SUBS.concat(buildLong(PT)).sort(function (a, b) { return b[0].length - a[0].length; });
+  var SUBS_DE = DE_SUBS.concat(buildLong(DE)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_ZH_HANT = ZH_HANT_SUBS.concat(buildLong(ZH_HANT)).sort(function (a, b) { return b[0].length - a[0].length; });
 
   function tr(s) {
     if (s == null) return s;
-    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : (LANG === "es" ? ES : (LANG === "pt" ? PT : (LANG === "zh-Hant" ? ZH_HANT : null))));
+    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : (LANG === "es" ? ES : (LANG === "pt" ? PT : (LANG === "de" ? DE : (LANG === "zh-Hant" ? ZH_HANT : null)))));
     if (!dict) return s;
-    var rules = LANG === "zh" ? RULES_ZH : (LANG === "es" ? RULES_ES : (LANG === "pt" ? RULES_PT : (LANG === "zh-Hant" ? RULES_ZH_HANT : RULES)));
-    var subs = LANG === "zh" ? SUBS_ZH : (LANG === "es" ? SUBS_ES : (LANG === "pt" ? SUBS_PT : (LANG === "zh-Hant" ? SUBS_ZH_HANT : SUBS_EN)));
+    var rules = LANG === "zh" ? RULES_ZH : (LANG === "es" ? RULES_ES : (LANG === "pt" ? RULES_PT : (LANG === "de" ? RULES_DE : (LANG === "zh-Hant" ? RULES_ZH_HANT : RULES))));
+    var subs = LANG === "zh" ? SUBS_ZH : (LANG === "es" ? SUBS_ES : (LANG === "pt" ? SUBS_PT : (LANG === "de" ? SUBS_DE : (LANG === "zh-Hant" ? SUBS_ZH_HANT : SUBS_EN))));
     var str = String(s);
     if (dict[str] != null) return dict[str];
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);

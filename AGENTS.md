@@ -31,8 +31,8 @@
 - Токен доступа к локальному серверу: без `X-Bridge-Token` запросы к `/oc`, `/android`,
   `/files`, `/thumb`, `/upload` возвращают **403** (проверено).
 - **Языки интерфейса:** `en` (по умолчанию для новых установок), `ru`, `zh`,
-  `zh-Hant`, `es`, `pt` (pt-BR); переключение — ⚙ → «Языки». Английский добит
-  на всех основных экранах (страница, чат-подписи, провайдеры, файлы,
+  `zh-Hant`, `es`, `pt` (pt-BR), `de`; переключение — ⚙ → «Языки». Английский
+  добит на всех основных экранах (страница, чат-подписи, провайдеры, файлы,
   настройки, тосты и диалоги). Подробности — `docs/LOCALIZATION.md`.
 
 ## 2. Архитектура
@@ -94,8 +94,8 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | ripgrep | 15.1.0, 3 152 312 байт + `libpcre2-8.so.0` | Alpine v3.24 community/main aarch64 |
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
-| APK | `OpenCodeAndroid.apk`, 202 105 518 байт (~192.7 МиБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 33, versionName 1.20.0 | `app/AndroidManifest.xml` |
+| APK | `OpenCodeAndroid.apk`, 202 126 065 байт (~192.8 МиБ) | `python build_apk.py` |
+| Пакет | `ru.opencode.android`, versionCode 34, versionName 1.21.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `<temp>\opencode-src`
@@ -373,43 +373,45 @@ URL внутри `` ` `` не превращается в ссылку.
 ### Языки интерфейса (1.17)
 
 - Преф `lang`: `en` (по умолчанию для новых установок), `ru`, `zh`,
-  `zh-Hant`, `es` или `pt` (pt-BR). `Lang.get()` для старых установок без префа
-  возвращает `ru`, чтобы не менять язык внезапно.
+  `zh-Hant`, `es`, `pt` (pt-BR) или `de`. `Lang.get()` для старых установок без
+  префа возвращает `ru`, чтобы не менять язык внезапно.
 - Первый запуск: `MainActivity` при `!onboarded` и пустом `lang` открывает
   `LanguageActivity` (English 🇬🇧 выбран по умолчанию, затем Русский 🇷🇺,
-  中文（简体） 🇨🇳, 中文（繁體） 🇹🇼, Español 🇪🇸, Português (Brasil) 🇧🇷),
-  затем `OnboardingActivity`. Если `lang` уже выбран — сразу онбординг.
+  中文（简体） 🇨🇳, 中文（繁體） 🇹🇼, Español 🇪🇸, Português (Brasil) 🇧🇷,
+  Deutsch 🇩🇪), затем `OnboardingActivity`. Если `lang` уже выбран — сразу
+  онбординг.
 - Страница: `assets/app/i18n.js` — словарь RU→EN и правила; `i18n-zh.js` —
   RU→ZH; `i18n-zh-hant.js` — RU→ZH-Hant (конвертация OpenCC s2twp);
-  `i18n-es.js` — RU→ES; `i18n-pt.js` — RU→PT-BR (579 строк). У каждого языка
+  `i18n-es.js` — RU→ES; `i18n-pt.js` — RU→PT-BR (579 строк); `i18n-de.js` —
+  RU→DE (579 строк). У каждого языка
   свои `RULES`/`SUBS`. Автоматический перевод текстовых узлов и атрибутов
   (`title`, `placeholder`, `aria-label`) через MutationObserver; `#msgs`, код,
   ввод и `[data-noi18n]` не трогаются. `window.__t(s)` — перевод строк;
   `OCLang.code/tr/run`.
 - **`tr()` выбирает словарь по `LANG`:** `en` → EN, `zh` → ZH,
-  `zh-Hant` → ZH_HANT, `es` → ES, `pt` → PT, `ru` и всё остальное → исходная
-  строка. Это важно: `T()` внутри `#msgs` и тосты вызывают `__t` даже при
-  русском.
+  `zh-Hant` → ZH_HANT, `es` → ES, `pt` → PT, `de` → DE, `ru` и всё остальное →
+  исходная строка. Это важно: `T()` внутри `#msgs` и тосты вызывают `__t` даже
+  при русском.
 - Динамические подписи чата (`#msgs`) оборачиваются в `T("...")` — авто-перевод
   туда не применяется. Пользовательские данные (названия чатов, имена файлов,
   пути, названия моделей) помечаются `data-noi18n`.
-- Длинные фразы переводятся как подстроки: `LONG` в `i18n.js` (для EN/ZH/ES/PT)
-  и `LangZh.LONG`/`LangEs.LONG`/`LangPt.LONG`. Поэтому склеенные тексты
-  переводятся целиком.
+- Длинные фразы переводятся как подстроки: `LONG` в `i18n.js` (для EN/ZH/ES/PT/DE)
+  и `LangZh.LONG`/`LangEs.LONG`/`LangPt.LONG`/`LangDe.LONG`. Поэтому склеенные
+  тексты переводятся целиком.
 - Вкладка «Языки» — первая в ⚙; выбор вызывает `BR.setLang(code)` и
   `location.reload()` (страница перечитывает преф). Нативные экраны
   локализуются `Lang.localizeView(root)` (TextView/Button/EditText hint);
   карты строк — `Lang.EN_MAP`, `LangZh.MAP`, `LangZhHant.MAP`, `LangEs.MAP`,
-  `LangPt.MAP`, плюс шаблоны и подстановки. Тосты/диалоги оборачиваются в
-  `Lang.tr(...)`.
+  `LangPt.MAP`, `LangDe.MAP`, плюс шаблоны и подстановки. Тосты/диалоги
+  оборачиваются в `Lang.tr(...)`.
 - Даты использования: `usageWhen()` выбирает
-  `en-US`/`ru-RU`/`zh-CN`/`zh-TW`/`es-ES`/`pt-BR` по `OCLang.code`.
+  `en-US`/`ru-RU`/`zh-CN`/`zh-TW`/`es-ES`/`pt-BR`/`de-DE` по `OCLang.code`.
 - Новый язык = код в `LANGUAGES` (`page.html`), словарь `i18n-xx.js`, ветка в
   `Lang`/`LangXx`; остальная логика не меняется.
-- **Статус 1.20: английский, упрощённый и традиционный китайский, испанский
-  и португальский (Бразилия) проверены на телефоне (страница, вкладки
+- **Статус 1.21: английский, упрощённый и традиционный китайский, испанский,
+  португальский (Бразилия) и немецкий проверены на телефоне (страница, вкладки
   настроек, нативные настройки; онбординг — для прежних языков).** Остались
-  DE/FR, скриншоты и мёртвый код панели ПК —
+  FR, скриншоты и мёртвый код панели ПК —
   [`docs/LOCALIZATION.md`](docs/LOCALIZATION.md).
 
 ### Обновление приложения (GitHub Releases, 1.12)

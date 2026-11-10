@@ -22,6 +22,7 @@ public class LanguageActivity extends Activity {
     private RadioButton es;
     private RadioButton pt;
     private RadioButton de;
+    private RadioButton fr;
 
     @Override
     protected void onCreate(Bundle bundle) {
@@ -65,6 +66,7 @@ public class LanguageActivity extends Activity {
         this.es = option("Español 🇪🇸", "Interfaz en español");
         this.pt = option("Português (Brasil) 🇧🇷", "Interface em português");
         this.de = option("Deutsch 🇩🇪", "Deutsche Oberfläche");
+        this.fr = option("Français 🇫🇷", "Interface en français");
         this.en.setId(1001);
         this.ru.setId(1002);
         this.zh.setId(1003);
@@ -72,6 +74,7 @@ public class LanguageActivity extends Activity {
         this.zhHant.setId(1005);
         this.pt.setId(1006);
         this.de.setId(1007);
+        this.fr.setId(1008);
         this.group.addView(this.en);
         this.group.addView(this.ru);
         this.group.addView(this.zh);
@@ -79,13 +82,15 @@ public class LanguageActivity extends Activity {
         this.group.addView(this.es);
         this.group.addView(this.pt);
         this.group.addView(this.de);
+        this.group.addView(this.fr);
         String current = Lang.get();
         this.group.check(Lang.RU.equals(current) ? this.ru.getId()
                 : (Lang.ZH.equals(current) ? this.zh.getId()
                 : (Lang.ZH_HANT.equals(current) ? this.zhHant.getId()
                 : (Lang.ES.equals(current) ? this.es.getId()
                 : (Lang.PT.equals(current) ? this.pt.getId()
-                : (Lang.DE.equals(current) ? this.de.getId() : this.en.getId()))))));
+                : (Lang.DE.equals(current) ? this.de.getId()
+                : (Lang.FR.equals(current) ? this.fr.getId() : this.en.getId())))))));
         root.addView(this.group);
 
         TextView more = new TextView(this);
@@ -112,7 +117,8 @@ public class LanguageActivity extends Activity {
                         : (checked == zhHant.getId() ? Lang.ZH_HANT
                         : (checked == es.getId() ? Lang.ES
                         : (checked == pt.getId() ? Lang.PT
-                        : (checked == de.getId() ? Lang.DE : Lang.EN))))));
+                        : (checked == de.getId() ? Lang.DE
+                        : (checked == fr.getId() ? Lang.FR : Lang.EN)))))));
                 Class<?> nextClass = App.prefs().getBoolean("onboarded", false)
                         ? MainActivity.class : OnboardingActivity.class;
                 startActivity(new Intent(LanguageActivity.this, nextClass));

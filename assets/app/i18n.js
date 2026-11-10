@@ -61,9 +61,7 @@
     "Не удалось получить статистику: ": "Failed to load usage: ",
     "Ошибка: ": "Error: ",
     "Ошибка": "Error",
-    "Всё окно ПК": "Full PC window",
     "Свернуть/развернуть вопросы": "Collapse/expand questions",
-    "Правая панель ПК": "PC side panel",
     "Вниз, к концу чата": "Jump to latest",
     "Открыть настройки": "Open settings",
     "Не удалось открыть настройки": "Could not open settings",
@@ -247,7 +245,6 @@
     "если у аккаунта нет доступа к провайдеру (нет подписки) или ключ не подошёл. ": "the account has no provider access (no subscription) or the key is wrong. ",
     "Можно отключить провайдера и попробовать другой способ входа.": "You can disconnect the provider and try another sign-in method.",
     "Подключаю…": "Connecting…",
-    "Подключаюсь…": "Connecting…",
     "Подключить по ключу": "Connect with key",
     "Войти": "Sign in",
     "Выйти из аккаунта": "Sign out",
@@ -437,18 +434,9 @@
     "Нужны Shizuku и включённый Wi‑Fi; интернет не обязателен.": "Requires Shizuku and Wi-Fi; internet is optional.",
     "Полный доступ даёт агенту права shell (uid 2000): удаление и отключение ": "Full access gives the agent shell rights (uid 2000): uninstalling and disabling ",
     "приложений, pm revoke, input, установка APK. Без него агент может менять настройки и читать ": "apps, pm revoke, input, installing APK. Without it the agent can change settings and read ",
-    "Окно OpenCode на компьютере не найдено.\\nОткройте приложение OpenCode на ПК — панель подключится сама.": "OpenCode window not found on the computer.\\nOpen OpenCode on the PC — the panel connects automatically.",
-    "Смотрю панель просмотра на компьютере.": "Watching the computer preview panel.",
-    "Печать в окно ПК…": "Printing to the PC window…",
-    "Панель / всё окно": "Panel / full window",
-    "Панель просмотра": "Preview panel",
     "С телефона": "From phone",
-    "Нет кадра": "No frame",
-    "Обновить кадр": "Refresh frame",
-    "Клавиатура": "Keyboard",
     "Страница не обновилась сама — перезапустите приложение": "The page did not reload — restart the app",
     "Откройте приложение через поиск компьютера": "Open the app via computer discovery",
-    "Неверный пин-код": "Wrong PIN",
     "Сообщение OpenCode…": "Message OpenCode…",
     "Ошибка загрузки": "Load error",
     "Проверяю обновления…": "Checking for updates…",
@@ -487,9 +475,6 @@
     "Выбор модели": "Choose a model",
     "➕ Новая папка": "➕ New folder",
     "Хорошо": "OK",
-    "← В чат": "← Back to chat",
-    "сброс": "reset",
-    "Введите пин-код": "Enter PIN",
     "отменено": "cancelled",
     "работает…": "working…",
     "OpenCodeAndroid.apk — с телефона": "OpenCodeAndroid.apk — from phone",
@@ -728,6 +713,8 @@
   var PT_SUBS = window.OC_PT_SUBS || [];
   var DE = window.OC_DE || {};
   var DE_SUBS = window.OC_DE_SUBS || [];
+  var FR = window.OC_FR || {};
+  var FR_SUBS = window.OC_FR_SUBS || [];
   var ZH_HANT = window.OC_ZH_HANT || {};
   var ZH_HANT_SUBS = window.OC_ZH_HANT_SUBS || [];
 
@@ -827,6 +814,30 @@
     [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return n + " Mio. Ausgabe-Token pro Monat"; }]
   ];
 
+  var RULES_FR = [
+    [/^Показать всех \((\d+)\)$/, function (m, n) { return "Afficher tous (" + n + ")"; }],
+    [/^Показать ещё \((\d+)\)$/, function (m, n) { return "Afficher plus (" + n + ")"; }],
+    [/^· (\d+)\s+ч$/, function (m, n) { return "· " + n + " h"; }],
+    [/^· (\d+)\s+дн$/, function (m, n) { return "· " + n + " j"; }],
+    [/^Бесплатные · (\d+)$/, function (m, n) { return "Gratuits · " + n; }],
+    [/^Платные · (\d+)$/, function (m, n) { return "Payants · " + n; }],
+    [/^Чаты · (\d+)$/, function (m, n) { return "Discussions · " + n; }],
+    [/^Модели · (\d+)$/, function (m, n) { return "Modèles · " + n; }],
+    [/^Избранные · (\d+)$/, function (m, n) { return "Favoris · " + n; }],
+    [/^(\d+(?:[.,]\d+)?)\s+Б$/, function (m, n) { return n + " o"; }],
+    [/^(\d+)\s+ч$/, function (m, n) { return n + " h"; }],
+    [/^(\d+)\s+дн$/, function (m, n) { return n + " j"; }],
+    [/^(\d+)\s+мин$/, function (m, n) { return n + " min"; }],
+    [/^(\d+)\s+модел(ей|ь|и)$/i, function (m, n) { return n + (n === "1" ? " modèle" : " modèles"); }],
+    [/^(\d+)\s+бесплатн(ых|ые)$/i, function (m, n) { return n + (n === "1" ? " gratuit" : " gratuits"); }],
+    [/^(\d+)\s+скрыт(ых|ые)$/i, function (m, n) { return n + (n === "1" ? " masqué" : " masqués"); }],
+    [/^(\d+)\s+симв\.$/i, function (m, n) { return n + (n === "1" ? " caractère" : " caractères"); }],
+    [/^(\d+)\s+файл(ов|а)?$/i, function (m, n) { return n + (n === "1" ? " fichier" : " fichiers"); }],
+    [/^(\d+)\s+из\s+(\d+)$/i, function (m, a, b) { return a + " sur " + b; }],
+    [/^(\d+)\s+запросов за 5 часов$/i, function (m, n) { return n + " requêtes par 5 heures"; }],
+    [/^(\d+)\s+млн токенов выхода в месяц$/i, function (m, n) { return n + " M tokens de sortie par mois"; }]
+  ];
+
   var RULES_ZH_HANT = [
     [/^Показать всех \((\d+)\)$/, function (m, n) { return "顯示全部（" + n + "）"; }],
     [/^Показать ещё \((\d+)\)$/, function (m, n) { return "顯示更多（" + n + "）"; }],
@@ -866,14 +877,15 @@
   var SUBS_ES = ES_SUBS.concat(buildLong(ES)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_PT = PT_SUBS.concat(buildLong(PT)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_DE = DE_SUBS.concat(buildLong(DE)).sort(function (a, b) { return b[0].length - a[0].length; });
+  var SUBS_FR = FR_SUBS.concat(buildLong(FR)).sort(function (a, b) { return b[0].length - a[0].length; });
   var SUBS_ZH_HANT = ZH_HANT_SUBS.concat(buildLong(ZH_HANT)).sort(function (a, b) { return b[0].length - a[0].length; });
 
   function tr(s) {
     if (s == null) return s;
-    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : (LANG === "es" ? ES : (LANG === "pt" ? PT : (LANG === "de" ? DE : (LANG === "zh-Hant" ? ZH_HANT : null)))));
+    var dict = LANG === "en" ? EN : (LANG === "zh" ? ZH : (LANG === "es" ? ES : (LANG === "pt" ? PT : (LANG === "de" ? DE : (LANG === "fr" ? FR : (LANG === "zh-Hant" ? ZH_HANT : null))))));
     if (!dict) return s;
-    var rules = LANG === "zh" ? RULES_ZH : (LANG === "es" ? RULES_ES : (LANG === "pt" ? RULES_PT : (LANG === "de" ? RULES_DE : (LANG === "zh-Hant" ? RULES_ZH_HANT : RULES))));
-    var subs = LANG === "zh" ? SUBS_ZH : (LANG === "es" ? SUBS_ES : (LANG === "pt" ? SUBS_PT : (LANG === "de" ? SUBS_DE : (LANG === "zh-Hant" ? SUBS_ZH_HANT : SUBS_EN))));
+    var rules = LANG === "zh" ? RULES_ZH : (LANG === "es" ? RULES_ES : (LANG === "pt" ? RULES_PT : (LANG === "de" ? RULES_DE : (LANG === "fr" ? RULES_FR : (LANG === "zh-Hant" ? RULES_ZH_HANT : RULES)))));
+    var subs = LANG === "zh" ? SUBS_ZH : (LANG === "es" ? SUBS_ES : (LANG === "pt" ? SUBS_PT : (LANG === "de" ? SUBS_DE : (LANG === "fr" ? SUBS_FR : (LANG === "zh-Hant" ? SUBS_ZH_HANT : SUBS_EN)))));
     var str = String(s);
     if (dict[str] != null) return dict[str];
     var m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);
@@ -895,6 +907,11 @@
                      .replace(/(\d+(?:[.,]\d+)?)\s+КБ/g, "$1 KB")
                      .replace(/(\d+(?:[.,]\d+)?)\s+ГБ/g, "$1 GB")
                      .replace(/(\d+(?:[.,]\d+)?)\s+Б\b/g, "$1 B");
+      if (LANG === "fr") {
+        subbed = subbed.replace(/(\d+(?:[.,]\d+)?)\s+MB/g, "$1 Mo")
+                       .replace(/(\d+(?:[.,]\d+)?)\s+KB/g, "$1 Ko")
+                       .replace(/(\d+(?:[.,]\d+)?)\s+GB/g, "$1 Go");
+      }
       return subbed;
     }
     return str;

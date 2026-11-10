@@ -444,60 +444,8 @@ details>summary::-webkit-details-marker{display:none}
 #critical .text{font-size:14px;line-height:1.5;color:#d7e0ea;white-space:pre-wrap;text-align:center}
 #critical .ok{margin-top:19px;width:100%;padding:12px;border:0;border-radius:11px;background:#376fd1;color:white;
   font-size:15px;font-weight:700}
-#pin{position:fixed;inset:0;background:rgba(5,8,12,.9);display:none;align-items:center;justify-content:center;z-index:90}
-#pin.on{display:flex}
-#pin .box{background:var(--bg2);border:1px solid var(--line);border-radius:16px;padding:20px;width:80%;max-width:320px}
-#pin input{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--txt);
-  padding:11px;font-size:16px;margin:12px 0;outline:none;text-align:center;letter-spacing:3px}
 .empty{color:var(--dim2);text-align:center;padding:40px 20px;font-size:13.5px}
 
-/* ---------- панель просмотра ПК ---------- */
-#pane{position:fixed;inset:0;z-index:75;display:none;flex-direction:column;background:var(--bg)}
-#pane.on{display:flex}
-.phead{display:flex;align-items:center;gap:8px;flex:0 0 auto;
-  padding:calc(env(safe-area-inset-top,0px) + 9px) 12px 9px;
-  background:linear-gradient(180deg,#111a25,#0d141c);border-bottom:1px solid var(--line)}
-.pback{display:flex;align-items:center;gap:5px;padding:9px 12px;border-radius:11px;background:var(--panel2);
-  border:1px solid var(--line);font-size:13.5px;color:var(--txt);user-select:none;-webkit-user-select:none;
-  cursor:pointer;white-space:nowrap}
-.pback:active{background:#22303f}
-.pttl{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;
-  font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.pico{width:38px;height:38px;flex:0 0 38px;display:flex;align-items:center;justify-content:center;
-  border-radius:11px;background:var(--panel2);border:1px solid var(--line);font-size:17px;
-  cursor:pointer;user-select:none;-webkit-user-select:none}
-.pico:active{background:#22303f}
-.pico.on{background:#1d3157;border-color:#3763bd;color:#d9e6ff}
-.pbody{flex:1;min-height:0;position:relative;overflow:hidden;background:#05080c;
-  display:flex;align-items:center;justify-content:center;touch-action:none;
-  -webkit-user-select:none;user-select:none;cursor:grab}
-.pbody.grabbing{cursor:grabbing}
-#pimg{display:block;max-width:100%;max-height:100%;width:auto;height:auto;
-  transform-origin:center center;will-change:transform;visibility:hidden;
-  -webkit-user-drag:none;user-select:none;-webkit-touch-callout:none}
-#pimg.on{visibility:visible}
-.pmsg{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;
-  color:var(--dim);font-size:13.5px;line-height:1.6;padding:28px;background:var(--bg);white-space:pre-line}
-.pmsg.on{display:flex}
-.pmsg .box{max-width:320px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
-  padding:18px 20px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
-.pmsg .t{color:var(--txt);font-weight:600;margin-bottom:6px}
-.pdot{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#39465a}
-.pdot.on{background:#37d67a;box-shadow:0 0 6px rgba(55,214,122,.65)}
-.pkeys{flex:0 0 auto;display:none;padding:7px 10px;background:var(--bg2);border-top:1px solid var(--line)}
-.pkeys.on{display:block}
-#pki{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;color:var(--txt);
-  font-size:16px;padding:10px 12px;outline:none}
-#pki:focus{border-color:var(--acc)}
-.pzoom{position:absolute;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
-  display:none;align-items:center;gap:2px;background:rgba(15,21,29,.84);border:1px solid var(--line);
-  border-radius:22px;padding:3px;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:2}
-.pzoom.on{display:flex}
-.pzoom .pbtn{min-width:34px;text-align:center;padding:6px 9px;border-radius:18px;background:transparent;
-  border:0;font-size:12.5px;color:var(--dim);white-space:nowrap;user-select:none;-webkit-user-select:none;
-  cursor:pointer}
-.pzoom .pbtn:active{background:var(--panel2);color:var(--txt)}
-.pzoom .pbtn.on{background:#1d3157;color:#d9e6ff}
 /* Сгенерированные картинки/видео в чате */
 img.media{display:block;max-width:100%;height:auto;border-radius:10px;margin-top:6px;cursor:pointer}
 a.site{display:inline-flex;align-items:center;gap:5px;margin-top:6px;padding:6px 10px;border-radius:9px;
@@ -530,7 +478,7 @@ a.site:active{background:#18324a}
   <div class="h1wrap">    <div class="h1" id="htitle">OpenCode</div>    <div class="h2" id="hsub">подключение…</div>
   </div>
   <div class="dot" id="dot"></div>
-  <div class="iconbtn" id="panebtn" title="Правая панель ПК">◫</div>
+  <div class="iconbtn" id="panebtn" title="Настройки">⚙</div>
 </header>
 
 <div id="msgs"></div>
@@ -602,38 +550,7 @@ a.site:active{background:#18324a}
   </div>
 </div>
 
-<div id="pane">
-  <div class="phead">
-    <div class="pback" id="pback">← В чат</div>
-    <div class="pttl"><span class="pdot" id="pdot"></span><span id="ptitle">Панель просмотра</span></div>
-    <div class="pico" id="pview" title="Панель / всё окно">◫</div>
-    <div class="pico" id="pwin" title="Обновить кадр">⟳</div>
-    <div class="pico" id="pkbd" title="Клавиатура">⌨</div>
-  </div>
-  <div class="pbody" id="pbody">
-    <img id="pimg" alt="" draggable="false">
-    <div class="pmsg on" id="pmsg">
-      <div class="box"><div class="t" id="pmsgt">Подключаюсь…</div>
-        <div id="pmsgb">Смотрю панель просмотра на компьютере.</div></div>
-    </div>
-    <div class="pzoom" id="pzoom">
-      <div class="pbtn" id="pzoomout">−</div>
-      <div class="pbtn" id="pzoomval">1×</div>
-      <div class="pbtn" id="pzoomin">+</div>
-      <div class="pbtn" id="pall">сброс</div>
-    </div>
-  </div>
-  <div class="pkeys" id="pkeys">
-    <input id="pki" type="text" placeholder="Печать в окно ПК…" autocomplete="off"
-           autocorrect="off" autocapitalize="off" spellcheck="false">
-  </div>
-</div>
 
-<div id="pin"><div class="box">
-  <div style="font-weight:600;text-align:center">Введите пин-код</div>
-  <input id="pinv" type="tel" inputmode="numeric" placeholder="••••">
-  <div class="btn pri" id="pinok">Войти</div>
-</div></div>
 
 <div id="mediaview">
   <div class="mvbar"><div class="iconbtn" id="mvclose">✕</div></div>
@@ -646,13 +563,14 @@ a.site:active{background:#18324a}
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
-<script src="app/i18n-zh.js?v=35"></script>
-<script src="app/i18n-zh-hant.js?v=35"></script>
-<script src="app/i18n-es.js?v=35"></script>
-<script src="app/i18n-pt.js?v=35"></script>
-<script src="app/i18n-de.js?v=35"></script>
-<script src="app/i18n.js?v=35"></script>
-<script src="app/bridge.js?v=35"></script>
+<script src="app/i18n-zh.js?v=37"></script>
+<script src="app/i18n-zh-hant.js?v=37"></script>
+<script src="app/i18n-es.js?v=37"></script>
+<script src="app/i18n-pt.js?v=37"></script>
+<script src="app/i18n-de.js?v=37"></script>
+<script src="app/i18n-fr.js?v=37"></script>
+<script src="app/i18n.js?v=37"></script>
+<script src="app/bridge.js?v=37"></script>
 <script>
 "use strict";
 const PAGE_VER = 75;
@@ -667,7 +585,7 @@ function authQuery(){ return BRIDGE_TOKEN ? "&token=" + encodeURIComponent(BRIDG
 
 const $ = id => document.getElementById(id);
 const IMG_RE = /\.(jpe?g|png|webp|gif|bmp)$/i;
-const msgsEl = $("msgs"), txt = $("txt"), sendBtn = $("send"), pimg = $("pimg");
+const msgsEl = $("msgs"), txt = $("txt"), sendBtn = $("send");
 
 /* Картинка/видео из ответа инструмента может не отдаться (файла нет в папках,
    которые раздаёт сервер). Тогда вместо пустого места пишем, что не открылось.
@@ -2678,7 +2596,8 @@ function usageWhen(ms){
     const c = window.OCLang && OCLang.code;
     const loc = c === "en" ? "en-US" : (c === "zh" ? "zh-CN" :
                 (c === "zh-Hant" ? "zh-TW" : (c === "es" ? "es-ES" :
-                (c === "pt" ? "pt-BR" : (c === "de" ? "de-DE" : "ru-RU")))));
+                (c === "pt" ? "pt-BR" : (c === "de" ? "de-DE" :
+                (c === "fr" ? "fr-FR" : "ru-RU"))))));
     return new Date(n).toLocaleString(loc,
       {day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit"});
   }catch(e){ return ""; }
@@ -3127,7 +3046,8 @@ const LANGUAGES = [
   { code: "zh-Hant", name: "中文（繁體） 🇹🇼" },
   { code: "es", name: "Español 🇪🇸" },
   { code: "pt", name: "Português (Brasil) 🇧🇷" },
-  { code: "de", name: "Deutsch 🇩🇪" }
+  { code: "de", name: "Deutsch 🇩🇪" },
+  { code: "fr", name: "Français 🇫🇷" }
 ];
 
 function renderLanguages(){
@@ -3154,7 +3074,8 @@ function renderLanguages(){
              (code === "zh-Hant" ? "正在切換到繁體中文…" :
               (code === "es" ? "Cambiando a español…" :
                (code === "pt" ? "Mudando para português…" :
-                (code === "de" ? "Wechsle zu Deutsch…" : "Переключаю на русский…"))))));
+                (code === "de" ? "Wechsle zu Deutsch…" :
+                 (code === "fr" ? "Passage au français…" : "Переключаю на русский…")))))));
       setTimeout(() => location.reload(), 250);
     };
   });
@@ -3643,11 +3564,7 @@ txt.addEventListener("keydown", e => {
   if(e.key === "Enter" && !e.shiftKey){ e.preventDefault(); doSend(); }
 });
 
-$("pinok").onclick = () => {
-  S.pin = $("pinv").value.trim();
-  send({t:"auth", pin: S.pin});
-  $("pin").classList.remove("on");
-};
+
 
 msgsEl.addEventListener("click", e => {
   const c = e.target.closest("[data-cb]");
@@ -3668,330 +3585,6 @@ msgsEl.addEventListener("click", e => {
   }
   const o = e.target.closest("#olderbtn");
   if(o){ send({t:"older"}); }
-});
-
-/* ------------------- панель просмотра ПК: живой поток кадров ---------- */
-const pbody = $("pbody");
-let paneShown = false, paneZ = 1, paneTx = 0, paneTy = 0;
-let paneDrag = null, panePinch = null, paneTimer = 0, paneWatch = 0, paneWait = 0;
-let paneStreamTimer = 0, paneLive = false, paneMode = 0;   // 0 — панель, 1 — всё окно
-let paneTapT = 0, paneTapX = 0, paneTapY = 0, paneTapTimer = 0;
-const panePts = new Map();
-
-function paneMsg(title, text){
-  const el = $("pmsg");
-  if(!title && !text){ el.classList.remove("on"); return; }
-  $("pmsgt").textContent = title || "";
-  $("pmsgb").textContent = text || "";
-  el.classList.add("on");
-}
-
-/* не даём утащить картинку за край */
-function paneClamp(){
-  const bw = pimg.clientWidth, bh = pimg.clientHeight;
-  const mx = Math.max(0, (paneZ - 1) * bw / 2);
-  const my = Math.max(0, (paneZ - 1) * bh / 2);
-  paneTx = Math.max(-mx, Math.min(mx, paneTx));
-  paneTy = Math.max(-my, Math.min(my, paneTy));
-}
-
-function paneApply(){
-  paneClamp();
-  pimg.style.transform = "translate(" + paneTx.toFixed(1) + "px," +
-    paneTy.toFixed(1) + "px) scale(" + paneZ.toFixed(3) + ")";
-  $("pzoomval").textContent = (Math.round(paneZ * 10) / 10) + "×";
-  $("pzoomout").classList.toggle("on", paneZ > 1.01);
-  $("pzoomin").classList.toggle("on", paneZ < 4.99);
-  $("pall").classList.toggle("on", paneZ > 1.01);
-}
-
-/* увеличение вокруг точки (cx, cy — координаты внутри #pbody) */
-function paneZoomAt(z, cx, cy){
-  z = Math.max(1, Math.min(5, z));
-  if(Math.abs(z - paneZ) < 0.005){
-    if(z <= 1.001){ paneZ = 1; paneTx = 0; paneTy = 0; paneApply(); }
-    return;
-  }
-  const ax = cx - pbody.clientWidth / 2;
-  const ay = cy - pbody.clientHeight / 2;
-  const k = z / paneZ;
-  paneTx = ax - (ax - paneTx) * k;
-  paneTy = ay - (ay - paneTy) * k;
-  paneZ = z;
-  if(paneZ <= 1.001){ paneZ = 1; paneTx = 0; paneTy = 0; }
-  paneApply();
-}
-
-/* отложенный одиночный тап: если пользователь тапнул дважды — клик отменяем */
-function paneCancelTap(){
-  if(paneTapTimer){ clearTimeout(paneTapTimer); paneTapTimer = 0; }
-  paneTapT = 0;
-}
-
-function paneImgUrl(){
-  return "/pane/frame" + (paneMode ? "?full=1&" : "?") + "t=" + Date.now() + authQuery();
-}
-
-function paneStreamUrl(){
-  return "/pane/stream" + (paneMode ? "?full=1&" : "?") + "t=" + Date.now() + authQuery();
-}
-
-function paneTitle(){
-  $("ptitle").textContent = paneMode ? "Всё окно ПК" : "Панель просмотра";
-}
-
-function paneReconnect(){
-  if(!paneShown) return;
-  clearTimeout(paneTimer);
-  clearTimeout(paneStreamTimer);
-  paneLive = false;
-  $("pdot").classList.remove("on");
-  pimg.classList.remove("on");
-  $("pzoom").classList.remove("on");
-  paneMsg("Подключаюсь…", "Смотрю панель просмотра на компьютере.");
-  // сперва мгновенный кадр (сервер отдаёт кэш сразу, без ожидания потока)
-  pimg.src = paneImgUrl();
-}
-
-function paneOpen(){
-  if(paneShown) return;
-  paneShown = true;
-  paneZ = 1; paneTx = 0; paneTy = 0;
-  paneDrag = null; panePinch = null; panePts.clear();
-  paneWait = 0;
-  paneTitle();
-  $("pview").classList.toggle("on", !!paneMode);
-  $("pane").classList.add("on");
-  paneApply();
-  paneReconnect();
-  clearTimeout(paneWatch);
-  paneWatch = setTimeout(paneWatchdog, 1600);
-}
-
-function paneClose(){
-  paneShown = false;
-  clearTimeout(paneTimer);
-  clearTimeout(paneWatch);
-  clearTimeout(paneStreamTimer);
-  paneCancelTap();
-  paneLive = false;
-  paneDrag = null; panePinch = null; panePts.clear();
-  $("pane").classList.remove("on");
-  $("pkeys").classList.remove("on");
-  $("pkbd").classList.remove("on");
-  $("pzoom").classList.remove("on");
-  $("pdot").classList.remove("on");
-  $("pki").blur();
-  pimg.classList.remove("on");
-  pimg.removeAttribute("src");          // закрываем поток
-  pimg.style.transform = "";
-}
-
-function paneAct(data){
-  fetch("/pane/input", {
-    method: "POST",
-     headers: Object.assign({"Content-Type": "application/json"}, authHeaders()),
-    body: JSON.stringify(data)
-  }).then(r => r.json()).then(j => {
-    if(j && j.ok === false && j.error) toast(j.error, "err");
-  }).catch(() => {});
-}
-
-/* первый кадр пришёл — показываем картинку */
-pimg.addEventListener("load", () => {
-  if(!paneShown) return;
-  const live = /pane\/stream/.test(pimg.getAttribute("src") || "");
-  paneLive = live;
-  paneWait = 0;
-  pimg.classList.add("on");
-  $("pzoom").classList.add("on");
-  $("pdot").classList.toggle("on", live);
-  paneMsg("");
-  paneApply();
-  if(!live){            // статичный кадр уже виден — бесшовно уходим в живой поток
-    clearTimeout(paneStreamTimer);
-    paneStreamTimer = setTimeout(() => {
-      if(paneShown && !paneLive) pimg.src = paneStreamUrl();
-    }, 500);
-  }
-});
-
-pimg.addEventListener("error", () => {
-  if(!paneShown) return;
-  paneLive = false;
-  $("pdot").classList.remove("on");
-  pimg.classList.remove("on");
-  $("pzoom").classList.remove("on");
-  paneMsg("Нет кадра",
-    "Окно OpenCode на компьютере не найдено.\nОткройте приложение OpenCode на ПК — панель подключится сама.");
-  clearTimeout(paneTimer);
-  paneTimer = setTimeout(() => { if(paneShown) paneReconnect(); }, 2200);
-});
-
-/* сторож: если поток замолчал (окно свернули/закрыли) — честно скажем */
-async function paneWatchdog(){
-  if(!paneShown) return;
-  let ok = false;
-  try{
-    const r = await fetch("/pane/state?t=" + Date.now() + authQuery(), {cache: "no-store", headers: authHeaders()});
-    const j = await r.json();
-    ok = !!(j && j.ok);
-  }catch(e){}
-  if(!paneShown) return;
-  if(ok){
-    paneWait = 0;
-    paneMsg("");
-  } else if(pimg.classList.contains("on")){
-    pimg.classList.remove("on");
-    $("pzoom").classList.remove("on");
-    paneMsg("Нет кадра",
-      "Окно OpenCode на компьютере не найдено.\nОткройте приложение OpenCode на ПК — панель подключится сама.");
-  } else {
-    paneWait++;
-    if(paneWait >= 2){
-      paneMsg("Нет кадра",
-        "Окно OpenCode на компьютере не найдено.\nОткройте приложение OpenCode на ПК — панель подключится сама.");
-    }
-  }
-  clearTimeout(paneWatch);
-  paneWatch = setTimeout(paneWatchdog, 3000);
-}
-
-/* жесты: тап — клик на ПК, одним пальцем — сдвиг, двумя — увеличение */
-pbody.addEventListener("pointerdown", e => {
-  if(e.pointerType === "mouse" && e.button !== 0) return;
-  const r = pbody.getBoundingClientRect();
-  panePts.set(e.pointerId, {x: e.clientX - r.left, y: e.clientY - r.top});
-  if(panePts.size === 1){
-    paneDrag = {id: e.pointerId, x: e.clientX, y: e.clientY, t: Date.now(),
-                moved: false, tx: paneTx, ty: paneTy};
-    pbody.classList.add("grabbing");
-  } else if(panePts.size === 2){
-    paneDrag = null;
-    paneCancelTap();                      // жест стал зумом — отложенный клик не нужен
-    pbody.classList.remove("grabbing");
-    const v = Array.from(panePts.values());
-    panePinch = {
-      d: Math.hypot(v[0].x - v[1].x, v[0].y - v[1].y) || 1,
-      z: paneZ, tx: paneTx, ty: paneTy,
-      mx: (v[0].x + v[1].x) / 2, my: (v[0].y + v[1].y) / 2
-    };
-  }
-});
-
-pbody.addEventListener("pointermove", e => {
-  const r = pbody.getBoundingClientRect();
-  if(panePts.has(e.pointerId)){
-    panePts.set(e.pointerId, {x: e.clientX - r.left, y: e.clientY - r.top});
-  }
-  if(panePinch && panePts.size >= 2){
-    const v = Array.from(panePts.values());
-    const d = Math.hypot(v[0].x - v[1].x, v[0].y - v[1].y) || 1;
-    const mx = (v[0].x + v[1].x) / 2, my = (v[0].y + v[1].y) / 2;
-    const z = Math.max(1, Math.min(5, panePinch.z * d / panePinch.d));
-    const W = pbody.clientWidth, H = pbody.clientHeight;
-    const ax = panePinch.mx - W / 2, ay = panePinch.my - H / 2;
-    const k = z / panePinch.z;
-    paneZ = z;
-    paneTx = (mx - W / 2) - (ax - panePinch.tx) * k;
-    paneTy = (my - H / 2) - (ay - panePinch.ty) * k;
-    if(paneZ <= 1.001){ paneZ = 1; paneTx = 0; paneTy = 0; }
-    paneApply();
-    return;
-  }
-  if(paneDrag && paneDrag.id === e.pointerId){
-    const dx = e.clientX - paneDrag.x, dy = e.clientY - paneDrag.y;
-    if(!paneDrag.moved && Math.hypot(dx, dy) < 10) return;
-    if(!paneDrag.moved) paneCancelTap();  // это не тап, а сдвиг картинки
-    paneDrag.moved = true;
-    paneTx = paneDrag.tx + dx;
-    paneTy = paneDrag.ty + dy;
-    paneApply();
-  }
-});
-
-function panePointerEnd(e){
-  const wasPinch = !!panePinch;
-  panePts.delete(e.pointerId);
-  if(panePinch && panePts.size < 2) panePinch = null;
-  if(paneDrag && paneDrag.id === e.pointerId){
-    const d = paneDrag;
-    paneDrag = null;
-    pbody.classList.remove("grabbing");
-    if(!d.moved && !wasPinch && Date.now() - d.t < 900){
-      const r = pimg.getBoundingClientRect();
-      if(r.width && r.height){
-        const nx = (e.clientX - r.left) / r.width;
-        const ny = (e.clientY - r.top) / r.height;
-        if(nx >= 0 && nx <= 1 && ny >= 0 && ny <= 1){
-          const now = Date.now();
-          if(paneTapT && now - paneTapT < 300){
-            // второму тапу подряд — двойной тап: зум «туда-обратно», клика нет
-            paneCancelTap();
-            const rb = pbody.getBoundingClientRect();
-            const z = paneZ > 1.5 ? 1 : 2.2;
-            paneZoomAt(z, e.clientX - rb.left, e.clientY - rb.top);
-          } else {
-            paneTapT = now;
-            paneTapX = nx; paneTapY = ny;
-            clearTimeout(paneTapTimer);
-            // одиночный тап подтверждаем небольшой паузой — так двойной
-            // тап не уходит на ПК как лишний клик
-            paneTapTimer = setTimeout(() => {
-              paneTapTimer = 0;
-              if(paneShown) paneAct({a: "tap",
-                                     x: +paneTapX.toFixed(4), y: +paneTapY.toFixed(4)});
-            }, 230);
-          }
-        }
-      }
-    }
-  }
-  if(panePts.size === 0) pbody.classList.remove("grabbing");
-}
-pbody.addEventListener("pointerup", panePointerEnd);
-pbody.addEventListener("pointercancel", panePointerEnd);
-
-/* кнопка справа в шапке — настройки; привязка в bridge.js (injectUiFixes) */
-$("pback").onclick = paneClose;
-$("pwin").onclick = paneReconnect;
-$("pview").onclick = () => {
-  paneMode = 1 - paneMode;
-  $("pview").classList.toggle("on", !!paneMode);
-  paneTitle();
-  if(paneShown) paneReconnect();
-};
-$("pzoomin").onclick = () => paneZoomAt(paneZ + 1, pbody.clientWidth / 2, pbody.clientHeight / 2);
-$("pzoomout").onclick = () => paneZoomAt(paneZ - 1, pbody.clientWidth / 2, pbody.clientHeight / 2);
-$("pzoomval").onclick = () => { paneZ = 1; paneTx = 0; paneTy = 0; paneApply(); };
-$("pall").onclick = () => { paneZ = 1; paneTx = 0; paneTy = 0; paneApply(); };
-$("pkbd").onclick = () => {
-  const on = !$("pkeys").classList.contains("on");
-  $("pkeys").classList.toggle("on", on);
-  $("pkbd").classList.toggle("on", on);
-  if(on) setTimeout(() => $("pki").focus(), 40);
-  else $("pki").blur();
-};
-$("pki").addEventListener("input", e => {
-  const v = e.target.value;
-  e.target.value = "";
-  if(v) paneAct({a: "text", text: v});
-});
-$("pki").addEventListener("keydown", e => {
-  const map = {Enter: "enter", Backspace: "backspace", Tab: "tab", Escape: "esc",
-               ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right"};
-  const k = map[e.key];
-  if(k){ e.preventDefault(); paneAct({a: "key", key: k}); }
-});
-document.addEventListener("visibilitychange", () => {
-  if(document.hidden) return;
-  if(sheetMode === "settings" && setTab === "perms") renderSettings();
-  if(sheetMode === "power") renderPower();
-});
-window.addEventListener("resize", () => { if(paneShown) paneApply(); });
-document.addEventListener("visibilitychange", () => {
-  if(document.hidden || !paneShown) return;
-  paneReconnect();                       // на телефоне поток мог замолчать
 });
 
 /* ---------------------------------------------------------------- старт -- */

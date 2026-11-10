@@ -40,7 +40,17 @@ commands, clone repositories and talk to any model provider.
   - Español 🇪🇸
   - Português (Brasil) 🇧🇷
   - Deutsch 🇩🇪
+  - Français 🇫🇷
 - In-app updates from GitHub Releases.
+
+### Screenshots
+
+| | |
+|---|---|
+| ![](docs/screenshots/lang-en.png) | ![](docs/screenshots/lang-ru.png) |
+| ![](docs/screenshots/lang-zh.png) | ![](docs/screenshots/lang-zh-Hant.png) |
+| ![](docs/screenshots/lang-es.png) | ![](docs/screenshots/lang-pt.png) |
+| ![](docs/screenshots/lang-de.png) | ![](docs/screenshots/lang-fr.png) |
 
 ### Install
 

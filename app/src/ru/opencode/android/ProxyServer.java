@@ -96,6 +96,7 @@ public class ProxyServer {
     public static void handle(Socket socket) {
         Socket upstream = null;
         try {
+            socket.setTcpNoDelay(true);
             socket.setSoTimeout(30000);
             InputStream in = socket.getInputStream();
             ByteArrayOutputStream head = new ByteArrayOutputStream();
@@ -137,7 +138,7 @@ public class ProxyServer {
                 if (create.getRawQuery() != null) {
                     rawPath = rawPath + "?" + create.getRawQuery();
                 }
-                upstream = new Socket(host, port2);
+                upstream = connectUpstream(host, port2);
                 socket.setSoTimeout(0);
                 upstream.setSoTimeout(0);
                 String rest = indexOf >= 0 ? str.substring(indexOf + 2) : "";
@@ -165,7 +166,7 @@ public class ProxyServer {
                 host = target;
                 port2 = 443;
             }
-            upstream = new Socket(host, port2);
+            upstream = connectUpstream(host, port2);
             socket.setSoTimeout(0);
             upstream.setSoTimeout(0);
             OutputStream outputStream2 = socket.getOutputStream();
@@ -185,6 +186,21 @@ public class ProxyServer {
                 socket.close();
             } catch (Throwable th3) {
             }
+        }
+    }
+
+    private static Socket connectUpstream(String host, int port) throws IOException {
+        Socket s = new Socket();
+        try {
+            s.setTcpNoDelay(true);
+            s.connect(new InetSocketAddress(host, port), 15000);
+            return s;
+        } catch (IOException e) {
+            try {
+                s.close();
+            } catch (Throwable th) {
+            }
+            throw e;
         }
     }
 

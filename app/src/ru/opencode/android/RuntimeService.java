@@ -37,13 +37,17 @@ import org.json.JSONObject;
 /* JADX INFO: loaded from: C:\Users\WorkPC\AppData\Local\Temp\opencode\apkdex\classes.dex */
 public class RuntimeService extends Service {
     public static final String ACTION_STOP = "ru.opencode.android.STOP";
-    private static final String CHANNEL = "opencode";
+    private static final String CHANNEL = "opencode_bg";
     private static final int NOTIF_ID = 1;
+    private static volatile RuntimeService INSTANCE;
     private Thread notifier;
     private Process proc;
     private Thread reader;
     private volatile boolean started = false;
     private volatile boolean stopping = false;
+    private volatile boolean foregroundActive = false;
+    private volatile boolean bootHold = false;
+    private volatile int busyCount = 0;
     private Thread worker;
     private final ScheduledExecutorService notifierScheduler = Executors.newSingleThreadScheduledExecutor();
     private final Map<String, Long> pendingStamp = new ConcurrentHashMap<String, Long>();
@@ -52,6 +56,24 @@ public class RuntimeService extends Service {
 
     public static void start(Context context) {
         context.startForegroundService(new Intent(context, (Class<?>) RuntimeService.class));
+    }
+
+    /* После перезагрузки держим foreground, пока пользователь не откроет приложение. */
+    public static void startOnBoot(Context context) {
+        context.startForegroundService(new Intent(context, (Class<?>) RuntimeService.class).putExtra("boot", true));
+    }
+
+    public static void refreshForeground(Context context) {
+        /* Совместимость: сервис в том же процессе, обновляемся напрямую. */
+        uiChanged();
+    }
+
+    /* MainActivity сообщает о видимости — сразу пересчитываем foreground. */
+    public static void uiChanged() {
+        RuntimeService s = INSTANCE;
+        if (s != null) {
+            s.updateForeground();
+        }
     }
 
     public static void stop(Context context) {
@@ -63,12 +85,53 @@ public class RuntimeService extends Service {
     @Override // android.app.Service
     public void onCreate() {
         super.onCreate();
+        INSTANCE = this;
         createChannel();
+        /* startForegroundService требует foreground за 5 секунд — заявляем сразу,
+           а через мгновение прячем, если приложение на экране и задач нет. */
         startForeground(NOTIF_ID, notification("Запуск OpenCode…"));
+        foregroundActive = true;
+        try {
+            notifierScheduler.schedule(new Runnable() {
+                public void run() {
+                    updateForeground();
+                }
+            }, 1500L, TimeUnit.MILLISECONDS);
+            notifierScheduler.scheduleWithFixedDelay(new Runnable() {
+                public void run() {
+                    updateForeground();
+                }
+            }, 20L, 20L, TimeUnit.SECONDS);
+        } catch (Throwable th) {
+        }
+    }
+
+    /* Уведомление сервиса нужно только когда задача реально идёт в фоне. */
+    private void updateForeground() {
+        try {
+            if (MainActivity.visible) {
+                bootHold = false;
+            }
+            boolean need = bootHold || (!MainActivity.visible && busyCount > 0);
+            if (need) {
+                if (!foregroundActive) {
+                    startForeground(NOTIF_ID, notification("OpenCode работает…"));
+                    foregroundActive = true;
+                }
+            } else if (foregroundActive) {
+                stopForeground(true);
+                foregroundActive = false;
+            }
+        } catch (Throwable th) {
+            App.log("fgs: " + String.valueOf(th));
+        }
     }
 
     @Override // android.app.Service
     public int onStartCommand(Intent intent, int i, int i2) {
+        if (intent != null && intent.getBooleanExtra("boot", false)) {
+            bootHold = true;
+        }
         if (intent != null && ACTION_STOP.equals(intent.getAction())) {
             this.stopping = true;
             stopEverything();
@@ -290,19 +353,40 @@ public class RuntimeService extends Service {
     public void notifyLoop() {
         HashSet hashSet = new HashSet();
         try {
-            JSONObject json = getJson("/api/session?limit=20&order=desc", 12000);
-            JSONArray jSONArrayOptJSONArray = json == null ? null : json.optJSONArray("data");
-            if (jSONArrayOptJSONArray != null) {
-                for (int i = 0; i < jSONArrayOptJSONArray.length(); i++) {
-                    JSONObject session = jSONArrayOptJSONArray.optJSONObject(i);
-                    JSONObject time;
-                    if (session != null && (time = session.optJSONObject("time")) != null && time.optLong("busy", 0L) > time.optLong("idle", 0L)) {
-                        hashSet.add(session.optString("id"));
+            /* Точный список активных сессий: time.busy > time.idle бывает
+               «залипшим» после падения провайдера. */
+            JSONObject active = getJson("/api/session/active", 12000);
+            JSONObject activeData = active == null ? null : active.optJSONObject("data");
+            if (activeData != null) {
+                java.util.Iterator<String> it = activeData.keys();
+                while (it.hasNext()) {
+                    String sid = it.next();
+                    if (sid != null && !sid.isEmpty()) {
+                        hashSet.add(sid);
                     }
                 }
             }
         } catch (Throwable th) {
         }
+        if (hashSet.isEmpty()) {
+            try {
+                JSONObject json = getJson("/api/session?limit=20&order=desc", 12000);
+                JSONArray jSONArrayOptJSONArray = json == null ? null : json.optJSONArray("data");
+                if (jSONArrayOptJSONArray != null) {
+                    for (int i = 0; i < jSONArrayOptJSONArray.length(); i++) {
+                        JSONObject session = jSONArrayOptJSONArray.optJSONObject(i);
+                        JSONObject time;
+                        if (session != null && session.optString("outcome", "").isEmpty()
+                                && (time = session.optJSONObject("time")) != null
+                                && time.optLong("busy", 0L) > time.optLong("idle", 0L)) {
+                            hashSet.add(session.optString("id"));
+                        }
+                    }
+                }
+            } catch (Throwable th) {
+            }
+        }
+        busyCount = hashSet.size();
         while (!this.stopping) {
             HttpURLConnection httpURLConnection = null;
             BufferedReader bufferedReader = null;
@@ -330,12 +414,16 @@ public class RuntimeService extends Service {
                                 if (strOptString.equals("session.execution.started")) {
                                     if (!strOptString2.isEmpty()) {
                                         hashSet.add(strOptString2);
+                                        busyCount = hashSet.size();
+                                        updateForeground();
                                         pendingStamp.remove(strOptString2);
                                         pendingType.remove(strOptString2);
                                     }
                                 } else if (strOptString.equals("session.execution.succeeded") || strOptString.equals("session.execution.failed") || strOptString.equals("session.execution.interrupted")) {
                                     if (!strOptString2.isEmpty()) {
                                         hashSet.remove(strOptString2);
+                                        busyCount = hashSet.size();
+                                        updateForeground();
                                         scheduleCheck(strOptString2, strOptString);
                                     }
                                 } else if (strOptString.equals("permission.asked") || strOptString.equals("form.created")) {
@@ -353,7 +441,8 @@ public class RuntimeService extends Service {
                                         askedIds.add(key);
                                         if (!MainActivity.visible && App.prefs().getBoolean("notify", true)
                                                 && jCurrentTimeMillis - Notifications.lastShownAt > 2000) {
-                                            Notifications.show(this, App.TAG, "OpenCode ждёт вашего ответа");
+                                            /* Запрос требует ответа, но не должен вибрировать на каждом шаге. */
+                                            Notifications.showQuiet(this, App.TAG, "OpenCode ждёт вашего ответа");
                                         }
                                     }
                                 }
@@ -391,15 +480,15 @@ public class RuntimeService extends Service {
         try {
             notifierScheduler.schedule(new Runnable() {
                 public void run() {
-                    checkDone(sid, stamp, 0);
+                    checkDone(sid, stamp, 0, false);
                 }
-            }, 1800L, TimeUnit.MILLISECONDS);
+            }, 2600L, TimeUnit.MILLISECONDS);
         } catch (Throwable ignored) {
         }
     }
 
     /** Проверяем, что сессия реально свободна, и показываем одно уведомление. */
-    private void checkDone(final String sid, final long stamp, final int attempt) {
+    private void checkDone(final String sid, final long stamp, final int attempt, final boolean confirmed) {
         Long cur = pendingStamp.get(sid);
         if (cur == null || cur.longValue() != stamp) {
             return;
@@ -410,6 +499,7 @@ public class RuntimeService extends Service {
             return;
         }
         boolean done = false;
+        boolean idleMsg = false;
         try {
             JSONObject j = getJson("/api/session/" + sid, 8000);
             JSONObject d = j == null ? null : j.optJSONObject("data");
@@ -424,12 +514,22 @@ public class RuntimeService extends Service {
             }
         } catch (Throwable ignored) {
         }
-        if (!done) {
-            if (attempt < 5) {
+        /* Полный ход заканчивается служебным сообщением type:"idle". */
+        try {
+            JSONObject mj = getJson("/api/session/" + sid + "/message?limit=1", 8000);
+            JSONArray arr = mj == null ? null : mj.optJSONArray("data");
+            if (arr != null && arr.length() > 0) {
+                JSONObject mm = arr.optJSONObject(0);
+                idleMsg = mm != null && "idle".equals(mm.optString("type"));
+            }
+        } catch (Throwable ignored) {
+        }
+        if (!done || !idleMsg) {
+            if (attempt < 6) {
                 try {
                     notifierScheduler.schedule(new Runnable() {
                         public void run() {
-                            checkDone(sid, stamp, attempt + 1);
+                            checkDone(sid, stamp, attempt + 1, false);
                         }
                     }, 1500L, TimeUnit.MILLISECONDS);
                 } catch (Throwable ignored) {
@@ -437,6 +537,18 @@ public class RuntimeService extends Service {
             } else {
                 pendingStamp.remove(sid, Long.valueOf(stamp));
                 pendingType.remove(sid);
+            }
+            return;
+        }
+        /* Ещё одна пауза: execution.* приходит на каждый шаг, не будим телефон зря. */
+        if (!confirmed) {
+            try {
+                notifierScheduler.schedule(new Runnable() {
+                    public void run() {
+                        checkDone(sid, stamp, attempt, true);
+                    }
+                }, 1400L, TimeUnit.MILLISECONDS);
+            } catch (Throwable ignored) {
             }
             return;
         }
@@ -608,6 +720,9 @@ public class RuntimeService extends Service {
 
     @Override // android.app.Service
     public void onDestroy() {
+        if (INSTANCE == this) {
+            INSTANCE = null;
+        }
         stopEverything();
         super.onDestroy();
     }
@@ -619,9 +734,19 @@ public class RuntimeService extends Service {
 
     private void createChannel() {
         NotificationManager notificationManager = (NotificationManager) getSystemService("notification");
-        NotificationChannel notificationChannel = new NotificationChannel("opencode", App.TAG, 2);
+        /* Канал без важности: foreground-сервис обязан иметь уведомление,
+           но в шторке оно не показывается и не мешает. */
+        NotificationChannel notificationChannel = new NotificationChannel(
+                CHANNEL, App.TAG, NotificationManager.IMPORTANCE_NONE);
         notificationChannel.setShowBadge(false);
+        notificationChannel.setSound(null, null);
+        notificationChannel.enableVibration(false);
+        notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_SECRET);
         notificationManager.createNotificationChannel(notificationChannel);
+        try {
+            notificationManager.deleteNotificationChannel("opencode");
+        } catch (Throwable th) {
+        }
     }
 
     private Notification notification(String str) {
@@ -631,15 +756,15 @@ public class RuntimeService extends Service {
         Intent intent2 = new Intent(this, (Class<?>) RuntimeService.class);
         intent2.setAction(ACTION_STOP);
         PendingIntent service = PendingIntent.getService(this, NOTIF_ID, intent2, 201326592);
-        Notification.Builder builder = new Notification.Builder(this, "opencode");
-        builder.setContentTitle(App.TAG).setContentText(Lang.tr(str)).setSmallIcon(android.R.drawable.stat_sys_download_done).setOngoing(true).setContentIntent(activity).addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, Lang.t("Стоп", "Stop"), service).build());
+        Notification.Builder builder = new Notification.Builder(this, CHANNEL);
+        builder.setContentTitle(App.TAG).setContentText(Lang.tr(str)).setSmallIcon(android.R.drawable.stat_sys_download_done)
+                .setOngoing(false).setShowWhen(false).setContentIntent(activity)
+                .addAction(new Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, Lang.t("Стоп", "Stop"), service).build());
         return builder.build();
     }
 
     private void update(String str) {
-        try {
-            ((NotificationManager) getSystemService("notification")).notify(NOTIF_ID, notification(str));
-        } catch (Throwable th) {
-        }
+        /* Статус сервиса не показываем: уведомление только когда задача идёт в фоне. */
+        updateForeground();
     }
 }

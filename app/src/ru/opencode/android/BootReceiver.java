@@ -12,9 +12,9 @@ public class BootReceiver extends BroadcastReceiver {
             return;
         }
         String action = intent.getAction();
-        if ("android.intent.action.BOOT_COMPLETED".equals(action) || "android.intent.action.MY_PACKAGE_REPLACED".equals(action) || "android.intent.action.QUICKBOOT_POWERON".equals(action)) {
+        if ("android.intent.action.BOOT_COMPLETED".equals(action) || "android.intent.action.QUICKBOOT_POWERON".equals(action)) {
             try {
-                RuntimeService.start(context);
+                RuntimeService.startOnBoot(context);
             } catch (Throwable th) {
                 App.log("boot start: " + String.valueOf(th));
             }

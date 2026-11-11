@@ -447,6 +447,7 @@ public class MainActivity extends Activity {
     protected void onResume() {
         super.onResume();
         visible = true;
+        RuntimeService.refreshForeground(this);
         try {
             if (App.prefs().getBoolean("keep_screen_on", false)) {
                 getWindow().addFlags(128);
@@ -461,6 +462,7 @@ public class MainActivity extends Activity {
     protected void onPause() {
         visible = false;
         super.onPause();
+        RuntimeService.refreshForeground(this);
     }
 
     @Override // android.app.Activity

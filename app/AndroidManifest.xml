@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="ru.opencode.android"
-    android:versionCode="36"
-    android:versionName="1.23.0">
+    android:versionCode="37"
+    android:versionName="1.24.0">
 
     <!-- targetSdk 28: как у Termux — разрешает запуск своих исполняемых файлов
          из каталога приложения. Приложение ставится вручную, не из Play. -->

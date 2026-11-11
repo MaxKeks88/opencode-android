@@ -572,14 +572,14 @@ a.site:active{background:#18324a}
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
-<script src="app/i18n-zh.js?v=38"></script>
-<script src="app/i18n-zh-hant.js?v=38"></script>
-<script src="app/i18n-es.js?v=38"></script>
-<script src="app/i18n-pt.js?v=38"></script>
-<script src="app/i18n-de.js?v=38"></script>
-<script src="app/i18n-fr.js?v=38"></script>
-<script src="app/i18n.js?v=38"></script>
-<script src="app/bridge.js?v=38"></script>
+<script src="app/i18n-zh.js?v=39"></script>
+<script src="app/i18n-zh-hant.js?v=39"></script>
+<script src="app/i18n-es.js?v=39"></script>
+<script src="app/i18n-pt.js?v=39"></script>
+<script src="app/i18n-de.js?v=39"></script>
+<script src="app/i18n-fr.js?v=39"></script>
+<script src="app/i18n.js?v=39"></script>
+<script src="app/bridge.js?v=39"></script>
 <script>
 "use strict";
 const PAGE_VER = 75;
@@ -1327,7 +1327,6 @@ function renderAsks(){
   box.innerHTML = h;
   renderHead();
   if(fresh){
-    BR.vibrate && BR.vibrate(220);
     toast("OpenCode спрашивает — выберите вариант");
   }
 }
@@ -1637,9 +1636,9 @@ function handle(m){
       renderHead();
       if(m.chats) renderDrawer();
       if(wasBusy && !m.busy){
-        /* Работа закончилась — сворачиваем размышления, чтобы чат не был завален текстом. */
+        /* Работа закончилась — сворачиваем размышления, чтобы чат не был завален текстом.
+           Вибрация — отдельное событие done (после проверки, что сессия свободна). */
         document.querySelectorAll("details.rsn[data-live]").forEach(d => { d.open = false; });
-        BR.vibrate && BR.vibrate(180);
         if(!document.hidden) markDoneSeen(S.chat && S.chat.id);   // человек уже видит ответ в этом чате
       }
       break;
@@ -1724,10 +1723,19 @@ function handle(m){
     case "notify":
       /* Уведомление от плагина OpenCode: ответ готов / нужен ответ / ошибка. */
       toast(m.text, m.kind === "err" ? "err" : undefined);
-      BR.vibrate && BR.vibrate(m.critical ? 300 : 180);
       if(m.critical && !document.hidden) showCritical(m.title, m.text);
       if(document.hidden)
         BR.notify && BR.notify(m.title || "OpenCode", m.text || "");
+      break;
+    case "done":
+      /* Полное окончание ответа (после паузы и проверки сессии). */
+      if(m.id === (S.chat && S.chat.id)){
+        document.querySelectorAll("details.rsn[data-live]").forEach(d => { d.open = false; });
+        if(!document.hidden){
+          markDoneSeen(m.id);
+          BR.vibrate && BR.vibrate(180);
+        }
+      }
       break;
     case "sent": S.pending = null; clearDraft(); break;
     case "pong": break;

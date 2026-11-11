@@ -10,24 +10,43 @@ import android.content.Intent;
 /* JADX INFO: loaded from: C:\Users\WorkPC\AppData\Local\Temp\opencode\apkdex\classes.dex */
 public final class Notifications {
     private static final String CHANNEL = "messages";
+    private static final String CHANNEL_QUIET = "asks";
     public static volatile long lastShownAt = 0;
 
     private Notifications() {
     }
 
     public static void show(Context context, String str, String str2) {
+        show(context, str, str2, false);
+    }
+
+    /* Тихий вариант: запросы/формы — без вибрации и звука. */
+    public static void showQuiet(Context context, String str, String str2) {
+        show(context, str, str2, true);
+    }
+
+    private static void show(Context context, String str, String str2, boolean quiet) {
         try {
             if (!App.prefs().getBoolean("notify", true)) {
                 return;
             }
             NotificationManager notificationManager = (NotificationManager) context.getSystemService("notification");
-            NotificationChannel notificationChannel = new NotificationChannel(CHANNEL, Lang.tr("Сообщения OpenCode"), 3);
-            notificationChannel.setShowBadge(true);
+            NotificationChannel notificationChannel = new NotificationChannel(
+                    quiet ? CHANNEL_QUIET : CHANNEL,
+                    Lang.tr(quiet ? "Запросы OpenCode" : "Сообщения OpenCode"),
+                    quiet ? 2 : 3);
+            if (quiet) {
+                notificationChannel.setSound(null, null);
+                notificationChannel.enableVibration(false);
+                notificationChannel.setShowBadge(false);
+            } else {
+                notificationChannel.setShowBadge(true);
+            }
             notificationManager.createNotificationChannel(notificationChannel);
             Intent intent = new Intent(context, (Class<?>) MainActivity.class);
             intent.setFlags(536870912);
             PendingIntent activity = PendingIntent.getActivity(context, 10, intent, 201326592);
-            Notification.Builder builder = new Notification.Builder(context, CHANNEL);
+            Notification.Builder builder = new Notification.Builder(context, quiet ? CHANNEL_QUIET : CHANNEL);
             if (str == null || str.isEmpty()) {
                 str = App.TAG;
             }
@@ -43,7 +62,7 @@ public final class Notifications {
             }
             contentText.setStyle(bigTextStyle.bigText(str2)).setSmallIcon(android.R.drawable.stat_notify_chat).setAutoCancel(true).setContentIntent(activity);
             lastShownAt = System.currentTimeMillis();
-            notificationManager.notify(1001, builder.build());
+            notificationManager.notify(quiet ? 1002 : 1001, builder.build());
         } catch (Throwable th) {
             App.log("notification: " + String.valueOf(th));
         }

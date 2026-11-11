@@ -267,6 +267,34 @@
 
   function busy() { return !!(BS.sid && BS.active.has(BS.sid) && !BS.execDone); }
 
+  /* «Ответ готов» — только когда сессия реально освободилась.
+     OpenCode шлёт execution.* на каждый шаг, поэтому ждём служебное сообщение
+     type:"idle" (оно появляется в конце полного хода) и сверяем время сессии. */
+  function armDone(sid) {
+    BS.doneArmed = true;
+    if (BS.doneTimer) clearTimeout(BS.doneTimer);
+    BS.doneTimer = setTimeout(function(){ checkTurnDone(sid, 0); }, 2200);
+  }
+  async function checkTurnDone(sid, attempt) {
+    BS.doneTimer = 0;
+    if (!sid || sid !== BS.sid || BS.active.has(sid) || !BS.doneArmed) return;
+    try { await syncMeta(); await tailRefresh(); } catch (e) {}
+    const last = BS.lastRaw || {};
+    if (last.type !== "idle") {
+      if (attempt < 4) {
+        BS.doneTimer = setTimeout(function(){ checkTurnDone(sid, attempt + 1); }, 2000);
+      }
+      return;
+    }
+    const t = (BS.chat && BS.chat.time) || {};
+    const idle = Number(t.idle) || 0, busyTs = Number(t.busy) || 0;
+    if (busyTs > idle) return;
+    const key = sid + ":" + (last.id || idle);
+    if (BS.doneKey === key) return;
+    BS.doneKey = key;
+    handle({ t: "done", id: sid });
+  }
+
   function push() {
     const changed = [];
     for (const m of messageList()) {
@@ -1358,7 +1386,11 @@
     if (t === "session.execution.started") {
       if (sid) {
         BS.active.add(sid);
-        if (sid === BS.sid) BS.execDone = false;
+        if (sid === BS.sid) {
+          BS.execDone = false;
+          BS.doneArmed = false;
+          if (BS.doneTimer) { clearTimeout(BS.doneTimer); BS.doneTimer = 0; }
+        }
       }
       schedulePush(60);
       return;
@@ -1371,6 +1403,7 @@
       }
       if (sid === BS.sid) {
         try { await tailRefresh(); await syncMeta(); } catch (e) {}
+        armDone(sid);
       }
       if (t === "session.execution.failed") {
         const err = d.error || d.message || "";

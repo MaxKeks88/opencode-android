@@ -95,8 +95,8 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | ripgrep | 15.1.0, 3 152 312 байт + `libpcre2-8.so.0` | Alpine v3.24 community/main aarch64 |
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
-| APK | `OpenCodeAndroid.apk`, 202 138 420 байт (~192.8 МиБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 36, versionName 1.23.0 | `app/AndroidManifest.xml` |
+| APK | `OpenCodeAndroid.apk`, 199 861 044 байт (~190.6 МБ) | `python build_apk.py` |
+| Пакет | `ru.opencode.android`, versionCode 37, versionName 1.24.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 Исходники OpenCode для справки: `<temp>\opencode-src`
@@ -319,6 +319,27 @@ URL внутри `` ` `` не превращается в ссылку.
   Записи живут до перезапуска, максимум 16.
 - Ограничение: абсолютные пути внутри сайта (`/style.css`) не работают —
   нужны относительные; SPA-роутинг без реальных файлов даёт 404.
+
+### Уведомления и вибрация (1.24)
+
+- Вибрация — **только один раз в конце полного ответа**. Bridge ждёт служебное
+  сообщение `type:"idle"` (оно появляется в конце хода, а не на каждом шаге),
+  затем проверяет `time.idle >= time.busy` и шлёт `{t:"done"}`. В `page.html`
+  вибрация есть только в `case "done"`; запросы-формы и промежуточные шаги
+  больше не вибрируют.
+- Нативные уведомления: `RuntimeService.checkDone()` тоже требует `idle`-
+  сообщение и делает две проверки подряд; `permission.asked`/`form.created`
+  идут в тихий канал `asks` (`Notifications.showQuiet`) — без звука и вибрации.
+- Постоянное уведомление foreground-сервиса: Android требует его, пока сервис
+  в фоне, поэтому оно показывается **только когда задача реально идёт в фоне**
+  (`!MainActivity.visible && busyCount > 0`). Когда приложение открыто или
+  ничего не выполняется — `stopForeground(true)`, уведомления нет. После
+  перезагрузки `bootHold` держит его до первого открытия приложения.
+- Активные сессии для `busyCount` берутся из `GET /api/session/active`, а не из
+  `time.busy > time.idle` (последнее «залипает» после падения провайдера).
+- `ProxyServer`: upstream-сокет подключается с таймаутом 15 с и `TCP_NODELAY`;
+  при обрыве VPN/сети запрос падает быстро и OpenCode повторяет его, вместо
+  многоминутного зависания.
 
 ### Правила агента (1.10)
 

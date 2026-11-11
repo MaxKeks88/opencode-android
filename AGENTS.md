@@ -99,6 +99,14 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | Пакет | `ru.opencode.android`, versionCode 37, versionName 1.24.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
+> ПК-приложение OpenCode обновилось до **2.2.7** (2026-11-10). Сравнение
+> `openapi.json` с нашим 2.2.6: 139 путей и 511 схем совпадают, отличия только
+> аддитивные (`credential.updated` с ID, `session.generate` tokens/cost,
+> `console_watches`, `source` и т.п.). Мост совместим, обновлять встроенный
+> рантайм не обязательно. Если обновлять — учесть, что в 2.2.7
+> `/api/integration` и `usage.limits` больше не ждут загрузки плагинов
+> (не кэшировать неполный каталог).
+
 Исходники OpenCode для справки: `<temp>\opencode-src`
 (ветка `dev`). API-схема живого сервера: `openapi.json` в корне проекта
 (снята с v2.2.6; можно обновить `GET /openapi.json`).

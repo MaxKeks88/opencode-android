@@ -116,7 +116,6 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 ```
 <project>\
 ├── AGENTS.md                     ← этот файл
-├── СДЕЛАНО.md                    ← краткий русский журнал
 ├── build_apk.py                  ← сборщик APK без Gradle
 ├── build_apk.bat / install_apk.bat ← обёртки для Windows
 ├── keystore.jks / keystore.properties  ← подпись (не публиковать)
@@ -775,7 +774,7 @@ python tools\smoke_test.py --deep   # + сообщение, ответ и уве
 - `app/`, `assets/`, `runtime/`, `tools/` — исходники и рантайм;
 - `build_apk.py`, `build_apk.bat`, `install_apk.bat`;
 - `keystore.jks`, `keystore.properties`;
-- `AGENTS.md`, `СДЕЛАНО.md`, `ПЛАН.md`, `ЗАДАЧИ.md`, `README.md`, `openapi.json`;
+- `AGENTS.md`, `README.md`, `openapi.json`;
 - **ровно один** `OpenCodeAndroid.apk` — последний рабочий.
 
 **Удалять:**

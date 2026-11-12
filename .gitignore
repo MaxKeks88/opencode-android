@@ -22,5 +22,10 @@ keystore.properties
 # генерируется build_apk.py (хеши рантайма)
 assets/runtime/manifest.txt
 
-# ��������� ������
+# Личные журналы разработки (не публикуются)
+/ЗАДАЧИ.md
+/СДЕЛАНО.md
+/ПЛАН.md
+
+# Контрольные суммы
 /SHA256SUMS.txt

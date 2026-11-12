@@ -28,7 +28,8 @@ private storage on every start, so UI changes only need a rebuild.
 
 - Keep the existing style (Russian comments are fine).
 - Describe what you tested: build, device, Android version, steps.
-- Update `СДЕЛАНО.md` / `ЗАДАЧИ.md` when behaviour changes.
+- Update `AGENTS.md` and the relevant `docs/` page when behaviour changes.
+- Development journals are kept locally and are not part of the repository.
 - Never include tokens, device serials or personal paths in screenshots/logs.
 
 By contributing you agree that your changes are licensed under the MIT

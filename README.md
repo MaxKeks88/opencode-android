@@ -26,6 +26,7 @@ commands, clone repositories and talk to any model provider.
   and markdown images), with an in-app fullscreen viewer.
 - Links open in the system browser; a site the agent built (`index.html` in the
   working folder) opens with one tap on the 🌐 chip.
+- Animated splash screen; the side menu shows the app and OpenCode core version.
 - Provider catalog (239 integrations): API key, OAuth device flow, OpenCode Go.
 - Built-in `git` (HTTPS + SSH), `python3`/`pip`, `node`/`bun`/`npx`, `rg`.
 - Files on `/sdcard`, project folders, share/attachments.
@@ -159,6 +160,8 @@ OpenCode 2.2.6 (musl arm64), git, OpenSSH, Python 3.12, обёртки Node/Bun 
   (файлы инструмента, пути в тексте, markdown-картинки) с полноэкранным просмотром.
 - Ссылки открываются в браузере по умолчанию, а собранный агентом сайт
   (`index.html` в рабочей папке) — одним тапом по чипу 🌐.
+- Анимированный экран загрузки; в боковом меню видны версия приложения и версия
+  ядра OpenCode.
 - Каталог из 239 провайдеров: ключ, OAuth, OpenCode Go.
 - Встроенные `git` (HTTPS и SSH), `python3`/`pip`, `node`/`bun`/`npx`, `rg`.
 - Файлы на `/sdcard`, рабочие папки, вложения.

@@ -197,6 +197,15 @@ details>summary::-webkit-details-marker{display:none}
   border-bottom:1px solid var(--line)}
 .dhead .t{flex:1;font-weight:600;font-size:16px}
 .dhead #dclose{margin-left:auto}
+/* шапка меню: название и версия */
+.dbrand{display:flex;align-items:center;gap:11px;margin:10px 12px 6px;padding:10px 12px;
+  border:1px solid var(--line);border-radius:12px;
+  background:linear-gradient(135deg,rgba(91,140,255,.12),rgba(34,211,238,.04))}
+.dbrand .lg{width:40px;height:40px;flex:0 0 40px;border-radius:11px;background:#0b0f14;
+  border:1px solid #2a405c;color:var(--acc2);font:700 17px/38px ui-monospace,Menlo,Consolas,monospace;
+  text-align:center;letter-spacing:-1px;text-shadow:0 0 10px rgba(34,211,238,.55)}
+.dbrand .nm{font-size:15.5px;font-weight:700;letter-spacing:.2px}
+.dbrand .vr{font-size:11.5px;color:var(--dim);margin-top:1px}
 .upd{display:none;width:34px;height:34px;flex:0 0 34px;align-items:center;justify-content:center;
   border-radius:11px;background:var(--panel2);border:1px solid #6b5a20;color:#ffd75e;font-size:17px;
   cursor:pointer;text-shadow:0 0 7px #ffd75e;animation:updpulse 2s ease-in-out infinite}
@@ -526,6 +535,10 @@ a.site:active{background:#18324a}
       <div class="ic" style="color:var(--dim2)">›</div>
     </div>
   </div>
+  <div class="dbrand">
+    <div class="lg">&gt;_</div>
+    <div><div class="nm">OpenCode</div><div class="vr" id="dbrandver"></div></div>
+  </div>
   <div class="dlist" id="dlist"></div>
   <div class="dfoot">
     <div class="btn pri" id="dnew2">📁 Новый чат в папке…</div>
@@ -572,14 +585,14 @@ a.site:active{background:#18324a}
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
-<script src="app/i18n-zh.js?v=39"></script>
-<script src="app/i18n-zh-hant.js?v=39"></script>
-<script src="app/i18n-es.js?v=39"></script>
-<script src="app/i18n-pt.js?v=39"></script>
-<script src="app/i18n-de.js?v=39"></script>
-<script src="app/i18n-fr.js?v=39"></script>
-<script src="app/i18n.js?v=39"></script>
-<script src="app/bridge.js?v=39"></script>
+<script src="app/i18n-zh.js?v=40"></script>
+<script src="app/i18n-zh-hant.js?v=40"></script>
+<script src="app/i18n-es.js?v=40"></script>
+<script src="app/i18n-pt.js?v=40"></script>
+<script src="app/i18n-de.js?v=40"></script>
+<script src="app/i18n-fr.js?v=40"></script>
+<script src="app/i18n.js?v=40"></script>
+<script src="app/bridge.js?v=40"></script>
 <script>
 "use strict";
 const PAGE_VER = 75;
@@ -628,8 +641,12 @@ let S = {
   catalog: null, catShown: 60, catQ: "", provOpen: null, provKey: "", provForm: {},
   provModels: {}, oauth: null, provBusy: false,
   websearch: null, wsKey: "", wsCheck: {},
-  appUpdate: null, appUpdateAsked: false
+  appUpdate: null, appUpdateAsked: false, app_version: "", oc_version: ""
 };
+try{
+  const ns = JSON.parse(BR.getSettings ? BR.getSettings() : "{}");
+  if(ns && ns.version) S.app_version = String(ns.version);
+}catch(e){}
 let drawerOpen = false, sheetMode = null, fsPath = "", armed = null, stopArm = 0, lastUpd = 0;
 
 /* ---------------------------------------------------------- утилиты ---- */
@@ -1165,6 +1182,7 @@ function applyState(st){
   S.asks = st.asks || [];
   S.server = st.server || {};
   S.media = st.media || S.media || [];
+  S.oc_version = st.oc_version || S.oc_version || "";
   setBusy(S.busy);
   /* Полное состояние приходит и при периодической сверке. Если сообщения
      не изменились — не пересобираем список (иначе экран мигает). */
@@ -1438,6 +1456,12 @@ function markDoneSeen(id){
 }
 
 function renderDrawer(){
+  const dv = $("dbrandver");
+  if(dv){
+    const av = S.app_version || "";
+    const cv = S.oc_version ? ("core " + S.oc_version) : "";
+    dv.textContent = [av, cv].filter(Boolean).join(" · ");
+  }
   const curModel = (S.chat && S.chat.model && (S.chat.model.id || S.chat.model.modelID)) || "по умолчанию";
   const cmEl = $("curmodel");
   if(cmEl) cmEl.textContent = curModel;          // в меню пункта модели больше нет

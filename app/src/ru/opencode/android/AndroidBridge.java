@@ -96,6 +96,7 @@ public class AndroidBridge {
             jSONObject.put("sound", App.prefs().getBoolean("sound", false));
             jSONObject.put("vib", App.prefs().getBoolean("vib", true));
             jSONObject.put("keep_screen_on", App.prefs().getBoolean("keep_screen_on", false));
+            jSONObject.put("version", App.versionName(this.act));
             jSONObject.put("allFiles", allFiles());
             jSONObject.put("notif", Build.VERSION.SDK_INT < 33 || this.act.checkSelfPermission("android.permission.POST_NOTIFICATIONS") == 0);
             jSONObject.put("battery", batteryOk());

@@ -95,8 +95,8 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | ripgrep | 15.1.0, 3 152 312 байт + `libpcre2-8.so.0` | Alpine v3.24 community/main aarch64 |
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
-| APK | `OpenCodeAndroid.apk`, 199 861 044 байт (~190.6 МБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 37, versionName 1.24.0 | `app/AndroidManifest.xml` |
+| APK | `OpenCodeAndroid.apk`, 199 910 409 байт (~190.7 МБ) | `python build_apk.py` |
+| Пакет | `ru.opencode.android`, versionCode 38, versionName 1.25.0 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 > ПК-приложение OpenCode обновилось до **2.2.7** (2026-11-10). Сравнение
@@ -347,6 +347,19 @@ URL внутри `` ` `` не превращается в ссылку.
 - `ProxyServer`: upstream-сокет подключается с таймаутом 15 с и `TCP_NODELAY`;
   при обрыве VPN/сети запрос падает быстро и OpenCode повторяет его, вместо
   многоминутного зависания.
+
+### Экран загрузки и шапка меню (1.25)
+
+- Нативный splash (`MainActivity`) — тёмный фон, анимированный `>_`:
+  пульсирующие кольца, вращающаяся дуга, бегущий блик, орбитальная точка и
+  «пыль» (`SplashLogoView`, `ValueAnimator`, без сторонних библиотек).
+- Страница открывается с fade: `showWeb()` держит splash минимум ~1.1 с, затем
+  плавно проявляет WebView и растворяет splash (alpha + лёгкий scale).
+- В шапке меню (над списком чатов) — блок `OpenCode` и версия:
+  `S.getSettings().version` (версия APK) + `core <версия OpenCode>`.
+  Версия приложения добавлена в `AndroidBridge.getSettings()`.
+- При правках `page.html`/`bridge.js` поднимать `?v=N` в тегах `<script>`
+  (в 1.25 — `v=40`).
 
 ### Правила агента (1.10)
 

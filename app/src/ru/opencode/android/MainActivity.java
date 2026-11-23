@@ -2,16 +2,29 @@ package ru.opencode.android;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.animation.ValueAnimator;
 import android.content.DialogInterface;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.database.Cursor;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.LinearGradient;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.RadialGradient;
+import android.graphics.RectF;
+import android.graphics.Shader;
+import android.graphics.SweepGradient;
+import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.animation.LinearInterpolator;
 import android.webkit.ConsoleMessage;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
@@ -43,6 +56,9 @@ public class MainActivity extends Activity {
     private ValueCallback<Uri[]> fileCallback;
     private volatile boolean loaded = false;
     private volatile boolean ready = false;
+    private long splashStartedAt = 0;
+    private boolean splashLeaving = false;
+    private SplashLogoView splashLogo;
     private FrameLayout root;
     private LinearLayout splash;
     private TextView status;
@@ -60,6 +76,7 @@ public class MainActivity extends Activity {
         }
         getWindow().setStatusBarColor(-16052460);
         getWindow().setNavigationBarColor(-16052460);
+        this.splashStartedAt = System.currentTimeMillis();
         this.root = new FrameLayout(this);
         this.root.setBackgroundColor(-16052460);
         this.web = new WebView(this);
@@ -132,11 +149,11 @@ public class MainActivity extends Activity {
         this.splash.setPadding(dp(26), dp(40), dp(26), dp(26));
         this.splash.setBackgroundColor(-16052460);
         this.splash.setGravity(1);
-        TextView textView = new TextView(this);
-        textView.setText("⌨️");
-        textView.setTextSize(46.0f);
-        textView.setGravity(17);
-        this.splash.addView(textView);
+        SplashLogoView logo = new SplashLogoView(this);
+        this.splashLogo = logo;
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(-1, dp(230));
+        logo.setLayoutParams(logoParams);
+        this.splash.addView(logo);
         TextView textView2 = new TextView(this);
         textView2.setText(App.TAG + " " + App.versionName(this));
         textView2.setTextSize(24.0f);
@@ -252,10 +269,31 @@ public class MainActivity extends Activity {
 
     /* JADX INFO: Access modifiers changed from: private */
     public void showWeb() {
-        if (this.loaded) {
-            this.splash.setVisibility(8);
-            this.web.setVisibility(0);
+        if (!this.loaded || this.splashLeaving) {
+            return;
         }
+        this.splashLeaving = true;
+        long wait = Math.max(0L, 1100L - (System.currentTimeMillis() - this.splashStartedAt));
+        this.web.setVisibility(0);
+        this.web.setAlpha(0.0f);
+        this.splash.postDelayed(new Runnable() { // from class: ru.opencode.android.MainActivity.5
+            @Override // java.lang.Runnable
+            public void run() {
+                MainActivity.this.web.animate().alpha(1.0f).setDuration(430L).setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator()).start();
+                MainActivity.this.splash.animate().alpha(0.0f).scaleX(1.045f).scaleY(1.045f)
+                        .setDuration(380L)
+                        .setInterpolator(new android.view.animation.AccelerateDecelerateInterpolator())
+                        .withEndAction(new Runnable() { // from class: ru.opencode.android.MainActivity.5.1
+                            @Override // java.lang.Runnable
+                            public void run() {
+                                MainActivity.this.splash.setVisibility(8);
+                                if (MainActivity.this.splashLogo != null) {
+                                    MainActivity.this.splashLogo.stop();
+                                }
+                            }
+                        }).start();
+            }
+        }, wait);
     }
 
     private void requestPermissionsIfNeeded() {
@@ -473,5 +511,139 @@ public class MainActivity extends Activity {
         } catch (Throwable th) {
         }
         super.onDestroy();
+    }
+
+    /* Анимированный экран загрузки: свечение, кольца, «>_» и бегущий блик. */
+    private final class SplashLogoView extends View {
+        private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        private final RectF rect = new RectF();
+        private final Path clip = new Path();
+        private final float density;
+        private final ValueAnimator anim;
+        private float t = 0.0f;
+
+        SplashLogoView(Context context) {
+            super(context);
+            this.density = getResources().getDisplayMetrics().density;
+            this.textPaint.setTypeface(Typeface.create(Typeface.MONOSPACE, Typeface.BOLD));
+            this.textPaint.setTextAlign(Paint.Align.CENTER);
+            this.textPaint.setColor(0xFFE8EEF6);
+            this.textPaint.setTextSize(44.0f * this.density);
+            this.anim = ValueAnimator.ofFloat(0.0f, 1.0f);
+            this.anim.setDuration(2400L);
+            this.anim.setRepeatCount(ValueAnimator.INFINITE);
+            this.anim.setInterpolator(new LinearInterpolator());
+            this.anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override // android.animation.ValueAnimator.AnimatorUpdateListener
+                public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                    t = ((Float) valueAnimator.getAnimatedValue()).floatValue();
+                    invalidate();
+                }
+            });
+            this.anim.start();
+        }
+
+        @Override // android.view.View
+        protected void onDetachedFromWindow() {
+            this.anim.cancel();
+            super.onDetachedFromWindow();
+        }
+
+        void stop() {
+            this.anim.cancel();
+        }
+
+        @Override // android.view.View
+        protected void onDraw(Canvas canvas) {
+            float w = getWidth();
+            float h = getHeight();
+            float cx = w / 2.0f;
+            float cy = h / 2.0f;
+            float r = Math.min(w, h) * 0.27f;
+
+            paint.setStyle(Paint.Style.FILL);
+            paint.setShader(new RadialGradient(cx, cy, r * 2.4f,
+                    new int[]{0x335B8CFF, 0x125B8CFF, 0x000B0F14},
+                    new float[]{0.0f, 0.55f, 1.0f}, Shader.TileMode.CLAMP));
+            canvas.drawCircle(cx, cy, r * 2.4f, paint);
+            paint.setShader(null);
+
+            for (int i = 0; i < 3; i++) {
+                float p = (t + i / 3.0f) % 1.0f;
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(1.15f * this.density);
+                paint.setColor(Color.argb((int) (64.0f * (1.0f - p)), 91, 140, 255));
+                canvas.drawCircle(cx, cy, r * (1.08f + p * 0.62f), paint);
+            }
+
+            rect.set(cx - r * 1.32f, cy - r * 1.32f, cx + r * 1.32f, cy + r * 1.32f);
+            paint.setStrokeCap(Paint.Cap.ROUND);
+            paint.setStrokeWidth(2.1f * this.density);
+            paint.setShader(new SweepGradient(cx, cy,
+                    new int[]{0x005B8CFF, 0x0022D3EE, 0xFF22D3EE, 0x005B8CFF},
+                    new float[]{0.0f, 0.55f, 0.85f, 1.0f}));
+            canvas.save();
+            canvas.rotate(t * 360.0f, cx, cy);
+            canvas.drawArc(rect, -34.0f, 190.0f, false, paint);
+            canvas.restore();
+            paint.setShader(null);
+            paint.setStrokeCap(Paint.Cap.BUTT);
+
+            float s = r * 0.92f;
+            rect.set(cx - s, cy - s, cx + s, cy + s);
+            float rr = s * 0.3f;
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(0xFF121A24);
+            canvas.drawRoundRect(rect, rr, rr, paint);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(1.4f * this.density);
+            paint.setColor(0xFF2A405C);
+            canvas.drawRoundRect(rect, rr, rr, paint);
+
+            canvas.save();
+            clip.reset();
+            clip.addRoundRect(rect, rr, rr, Path.Direction.CW);
+            canvas.clipPath(clip);
+            float slide = (t * 2.6f - 0.8f) * s * 2.0f;
+            paint.setStyle(Paint.Style.FILL);
+            paint.setShader(new LinearGradient(cx - s + slide, cy - s,
+                    cx - s + slide + s * 0.8f, cy + s,
+                    new int[]{0x00FFFFFF, 0x14FFFFFF, 0x00FFFFFF}, null, Shader.TileMode.CLAMP));
+            canvas.drawRect(rect, paint);
+            canvas.restore();
+            paint.setShader(null);
+
+            String glyph = ">_";
+            float tw = textPaint.measureText(glyph);
+            float tx = cx - tw / 2.0f;
+            float ty = cy - (textPaint.descent() + textPaint.ascent()) / 2.0f;
+            canvas.drawText(glyph, cx, ty, textPaint);
+
+            float blink = 0.5f + 0.5f * (float) Math.sin(t * Math.PI * 4.0f);
+            paint.setStyle(Paint.Style.FILL);
+            paint.setColor(Color.argb((int) (60.0f + 195.0f * blink), 34, 211, 238));
+            float caretW = 3.2f * this.density;
+            float caretH = 22.0f * this.density;
+            canvas.drawRoundRect(tx + tw + 7.0f * this.density, ty - caretH * 0.78f,
+                    tx + tw + 7.0f * this.density + caretW, ty + caretH * 0.22f,
+                    1.6f * this.density, 1.6f * this.density, paint);
+
+            double angle = t * Math.PI * 4.0 - Math.PI / 2.0;
+            float ox = cx + (float) Math.cos(angle) * r * 1.32f;
+            float oy = cy + (float) Math.sin(angle) * r * 1.32f;
+            paint.setColor(0x3322D3EE);
+            canvas.drawCircle(ox, oy, 8.0f * this.density, paint);
+            paint.setColor(0xFF22D3EE);
+            canvas.drawCircle(ox, oy, 3.0f * this.density, paint);
+
+            for (int i = 0; i < 20; i++) {
+                double a = i * 2.399963229728653 + t * 0.35;
+                float rad = r * (1.45f + (i % 7) * 0.055f);
+                paint.setColor(Color.argb(35 + (i % 4) * 14, 139, 160, 184));
+                canvas.drawCircle(cx + (float) Math.cos(a) * rad,
+                        cy + (float) Math.sin(a) * rad, 1.05f * this.density, paint);
+            }
+        }
     }
 }

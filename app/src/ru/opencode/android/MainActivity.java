@@ -34,7 +34,6 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -51,8 +50,8 @@ public class MainActivity extends Activity {
     private static final int REQ_STORAGE = 100;
     private static final int TEXT_ZOOM = 100;
     public static volatile boolean visible = false;
-    private ProgressBar bar;
     private TextView detail;
+    private Button settingsButton;
     private ValueCallback<Uri[]> fileCallback;
     private volatile boolean loaded = false;
     private volatile boolean ready = false;
@@ -148,43 +147,34 @@ public class MainActivity extends Activity {
         this.splash.setOrientation(1);
         this.splash.setPadding(dp(26), dp(40), dp(26), dp(26));
         this.splash.setBackgroundColor(-16052460);
-        this.splash.setGravity(1);
+        this.splash.setGravity(17);
         SplashLogoView logo = new SplashLogoView(this);
         this.splashLogo = logo;
-        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(-1, dp(230));
+        LinearLayout.LayoutParams logoParams = new LinearLayout.LayoutParams(-1, dp(240));
         logo.setLayoutParams(logoParams);
         this.splash.addView(logo);
-        TextView textView2 = new TextView(this);
-        textView2.setText(App.TAG + " " + App.versionName(this));
-        textView2.setTextSize(24.0f);
-        textView2.setTextColor(-1);
-        textView2.setGravity(17);
-        textView2.setPadding(0, dp(8), 0, dp(6));
-        this.splash.addView(textView2);
         this.status = new TextView(this);
         this.status.setText(Lang.tr("Запуск…"));
         this.status.setTextColor(-7626568);
         this.status.setTextSize(14.0f);
         this.status.setGravity(17);
+        this.status.setPadding(0, dp(8), 0, 0);
+        this.status.setVisibility(8);
         this.splash.addView(this.status);
-        this.bar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
-        this.bar.setIndeterminate(true);
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, dp(3));
-        layoutParams.topMargin = dp(18);
-        this.bar.setLayoutParams(layoutParams);
-        this.splash.addView(this.bar);
         this.detail = new TextView(this);
         this.detail.setText("");
         this.detail.setTextColor(-10520429);
         this.detail.setTextSize(12.0f);
         this.detail.setPadding(0, dp(16), 0, 0);
         this.detail.setGravity(17);
+        this.detail.setVisibility(8);
         this.splash.addView(this.detail);
-        Button button = new Button(this);
-        button.setText(Lang.tr("Настройки"));
-        button.setTextColor(-1);
-        button.getBackground().setAlpha(60);
-        button.setOnClickListener(new View.OnClickListener() { // from class: ru.opencode.android.MainActivity.3
+        this.settingsButton = new Button(this);
+        this.settingsButton.setText(Lang.tr("Настройки"));
+        this.settingsButton.setTextColor(-1);
+        this.settingsButton.getBackground().setAlpha(60);
+        this.settingsButton.setVisibility(8);
+        this.settingsButton.setOnClickListener(new View.OnClickListener() { // from class: ru.opencode.android.MainActivity.3
             @Override // android.view.View.OnClickListener
             public void onClick(View view) {
                 MainActivity.this.startActivity(new Intent(MainActivity.this, (Class<?>) SettingsActivity.class));
@@ -192,8 +182,14 @@ public class MainActivity extends Activity {
         });
         LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(-2, -2);
         layoutParams2.topMargin = dp(22);
-        button.setLayoutParams(layoutParams2);
-        this.splash.addView(button);
+        this.settingsButton.setLayoutParams(layoutParams2);
+        this.splash.addView(this.settingsButton);
+        this.splash.postDelayed(new Runnable() { // from class: ru.opencode.android.MainActivity.6
+            @Override // java.lang.Runnable
+            public void run() {
+                MainActivity.this.showSlowUi();
+            }
+        }, 12000L);
         this.root.addView(this.web, new FrameLayout.LayoutParams(-1, -1));
         this.root.addView(this.splash, new FrameLayout.LayoutParams(-1, -1));
         setContentView(this.root);
@@ -264,6 +260,18 @@ public class MainActivity extends Activity {
             if (httpURLConnection != null) {
                 httpURLConnection.disconnect();
             }
+        }
+    }
+
+    /* Если запуск затянулся (первая распаковка рантайма), показываем статус и настройки. */
+    private void showSlowUi() {
+        if (this.splashLeaving) {
+            return;
+        }
+        this.status.setVisibility(0);
+        this.detail.setVisibility(0);
+        if (this.settingsButton != null) {
+            this.settingsButton.setVisibility(0);
         }
     }
 
@@ -560,7 +568,8 @@ public class MainActivity extends Activity {
             float h = getHeight();
             float cx = w / 2.0f;
             float cy = h / 2.0f;
-            float r = Math.min(w, h) * 0.27f;
+            float r = Math.min(w, h) * 0.5f;
+            float k = r / (62.0f * this.density);
 
             paint.setStyle(Paint.Style.FILL);
             paint.setShader(new RadialGradient(cx, cy, r * 2.4f,
@@ -572,14 +581,14 @@ public class MainActivity extends Activity {
             for (int i = 0; i < 3; i++) {
                 float p = (t + i / 3.0f) % 1.0f;
                 paint.setStyle(Paint.Style.STROKE);
-                paint.setStrokeWidth(1.15f * this.density);
+                paint.setStrokeWidth(1.15f * this.density * k);
                 paint.setColor(Color.argb((int) (64.0f * (1.0f - p)), 91, 140, 255));
-                canvas.drawCircle(cx, cy, r * (1.08f + p * 0.62f), paint);
+                canvas.drawCircle(cx, cy, r * (0.98f + p * 0.26f), paint);
             }
 
-            rect.set(cx - r * 1.32f, cy - r * 1.32f, cx + r * 1.32f, cy + r * 1.32f);
+            rect.set(cx - r * 1.24f, cy - r * 1.24f, cx + r * 1.24f, cy + r * 1.24f);
             paint.setStrokeCap(Paint.Cap.ROUND);
-            paint.setStrokeWidth(2.1f * this.density);
+            paint.setStrokeWidth(2.1f * this.density * k);
             paint.setShader(new SweepGradient(cx, cy,
                     new int[]{0x005B8CFF, 0x0022D3EE, 0xFF22D3EE, 0x005B8CFF},
                     new float[]{0.0f, 0.55f, 0.85f, 1.0f}));
@@ -597,7 +606,7 @@ public class MainActivity extends Activity {
             paint.setColor(0xFF121A24);
             canvas.drawRoundRect(rect, rr, rr, paint);
             paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(1.4f * this.density);
+            paint.setStrokeWidth(1.4f * this.density * k);
             paint.setColor(0xFF2A405C);
             canvas.drawRoundRect(rect, rr, rr, paint);
 
@@ -615,6 +624,7 @@ public class MainActivity extends Activity {
             paint.setShader(null);
 
             String glyph = ">_";
+            textPaint.setTextSize(44.0f * this.density * k);
             float tw = textPaint.measureText(glyph);
             float tx = cx - tw / 2.0f;
             float ty = cy - (textPaint.descent() + textPaint.ascent()) / 2.0f;
@@ -623,26 +633,26 @@ public class MainActivity extends Activity {
             float blink = 0.5f + 0.5f * (float) Math.sin(t * Math.PI * 4.0f);
             paint.setStyle(Paint.Style.FILL);
             paint.setColor(Color.argb((int) (60.0f + 195.0f * blink), 34, 211, 238));
-            float caretW = 3.2f * this.density;
-            float caretH = 22.0f * this.density;
-            canvas.drawRoundRect(tx + tw + 7.0f * this.density, ty - caretH * 0.78f,
-                    tx + tw + 7.0f * this.density + caretW, ty + caretH * 0.22f,
-                    1.6f * this.density, 1.6f * this.density, paint);
+            float caretW = 3.2f * this.density * k;
+            float caretH = 22.0f * this.density * k;
+            canvas.drawRoundRect(tx + tw + 7.0f * this.density * k, ty - caretH * 0.78f,
+                    tx + tw + 7.0f * this.density * k + caretW, ty + caretH * 0.22f,
+                    1.6f * this.density * k, 1.6f * this.density * k, paint);
 
             double angle = t * Math.PI * 4.0 - Math.PI / 2.0;
-            float ox = cx + (float) Math.cos(angle) * r * 1.32f;
-            float oy = cy + (float) Math.sin(angle) * r * 1.32f;
+            float ox = cx + (float) Math.cos(angle) * r * 1.24f;
+            float oy = cy + (float) Math.sin(angle) * r * 1.24f;
             paint.setColor(0x3322D3EE);
-            canvas.drawCircle(ox, oy, 8.0f * this.density, paint);
+            canvas.drawCircle(ox, oy, 8.0f * this.density * k, paint);
             paint.setColor(0xFF22D3EE);
-            canvas.drawCircle(ox, oy, 3.0f * this.density, paint);
+            canvas.drawCircle(ox, oy, 3.0f * this.density * k, paint);
 
             for (int i = 0; i < 20; i++) {
                 double a = i * 2.399963229728653 + t * 0.35;
-                float rad = r * (1.45f + (i % 7) * 0.055f);
+                float rad = r * (1.10f + (i % 7) * 0.02f);
                 paint.setColor(Color.argb(35 + (i % 4) * 14, 139, 160, 184));
                 canvas.drawCircle(cx + (float) Math.cos(a) * rad,
-                        cy + (float) Math.sin(a) * rad, 1.05f * this.density, paint);
+                        cy + (float) Math.sin(a) * rad, 1.05f * this.density * k, paint);
             }
         }
     }

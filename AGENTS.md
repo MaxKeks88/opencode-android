@@ -96,7 +96,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, 199 910 409 байт (~190.7 МБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 39, versionName 1.25.1 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 40, versionName 1.25.2 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 > ПК-приложение OpenCode обновилось до **2.2.7** (2026-11-10). Сравнение
@@ -359,11 +359,11 @@ URL внутри `` ` `` не превращается в ссылку.
   затянулся (или при ошибке).
 - Страница открывается с fade: `showWeb()` держит splash минимум ~1.1 с, затем
   плавно проявляет WebView и растворяет splash (alpha + лёгкий scale).
-- В шапке меню (над списком чатов) — блок `OpenCode` и версия:
-  `S.getSettings().version` (версия APK) + `core <версия OpenCode>`.
+- В шапке меню, по центру между шестерёнкой и крестиком — `>_ OpenCode`
+  и версия: `S.getSettings().version` (APK) + `core <версия OpenCode>`.
   Версия приложения добавлена в `AndroidBridge.getSettings()`.
 - При правках `page.html`/`bridge.js` поднимать `?v=N` в тегах `<script>`
-  (в 1.25 — `v=40`).
+  (в 1.25.2 — `v=41`).
 
 ### Правила агента (1.10)
 

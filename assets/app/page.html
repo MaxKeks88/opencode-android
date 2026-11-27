@@ -580,14 +580,14 @@ a.site:active{background:#18324a}
 <script>
 window.Remote = window.Android || {notify(){},vibrate(){},copyText(){},openUrl(){},getSettings(){return "{}";},saveSetting(){},openSettings(){},log(){},pickFile(){},requestStorage(){},allFiles(){return true;}};
 </script>
-<script src="app/i18n-zh.js?v=41"></script>
-<script src="app/i18n-zh-hant.js?v=41"></script>
-<script src="app/i18n-es.js?v=41"></script>
-<script src="app/i18n-pt.js?v=41"></script>
-<script src="app/i18n-de.js?v=41"></script>
-<script src="app/i18n-fr.js?v=41"></script>
-<script src="app/i18n.js?v=41"></script>
-<script src="app/bridge.js?v=41"></script>
+<script src="app/i18n-zh.js?v=42"></script>
+<script src="app/i18n-zh-hant.js?v=42"></script>
+<script src="app/i18n-es.js?v=42"></script>
+<script src="app/i18n-pt.js?v=42"></script>
+<script src="app/i18n-de.js?v=42"></script>
+<script src="app/i18n-fr.js?v=42"></script>
+<script src="app/i18n.js?v=42"></script>
+<script src="app/bridge.js?v=42"></script>
 <script>
 "use strict";
 const PAGE_VER = 75;
@@ -1763,6 +1763,7 @@ function handle(m){
 
 /* ------------------------------------------------------ файловая система */
 const DRIVES = "::drives";
+const PHONE_ROOT = "/storage/emulated/0";     // корень памяти телефона
 let fsParent = null, fsDrives = false;
 
 function renderFs(m){
@@ -1778,7 +1779,6 @@ function renderFs(m){
     q += '<div class="chip' + (sc.path === m.path ? " on" : "") + '" data-quick="' + esc(sc.path) + '">' +
          esc(sc.name) + '</div>';
   });
-  if(sheetMode !== "workdir") q += '<div class="chip" data-phone="1">📱 Телефон</div>';
   $("fsquick").innerHTML = q;
   const nf = $("fsnew");
   if(nf) nf.style.display = (!m.drives && sheetMode !== "attach-phone") ? "block" : "none";
@@ -1792,6 +1792,11 @@ function renderFs(m){
   if(sheetMode === "workdir" && !m.drives){
     h += '<div class="mi" data-pickdir="' + esc(m.path) + '" style="background:#16202d;border:1px solid #2b3f58;margin:4px 6px">' +
          '<div class="n"><div class="a">✅ Работать в этой папке</div><div class="b">' + esc(m.path) + '</div></div></div>';
+  }
+  /* Вложение папки: единственный вход теперь здесь (меню «+» сразу открывает файлы). */
+  if(sheetMode === "attach-file" && !m.drives && m.path && m.path !== PHONE_ROOT){
+    h += '<div class="mi" data-attdir="' + esc(m.path) + '" style="background:#16202d;border:1px solid #2b3f58;margin:4px 6px">' +
+         '<div class="n"><div class="a">📁 Прикрепить эту папку</div><div class="b">' + esc(m.path) + '</div></div></div>';
   }
   const entries = m.entries || [];
   if(!entries.length) h += '<div class="empty">' + (m.drives ? "Диски не найдены" : "Пусто") + '</div>';
@@ -3422,16 +3427,13 @@ $("dnew2").onclick = () => { openDrawer(false); openSheet("workdir", "📁 Гд�
 $("modelbtn").onclick = () => { openDrawer(false); send({t:"models"}); };
 
 $("plus").onclick = () => {
-  openSheet("attachmenu", "Добавить");
-  $("sbody").innerHTML =
-    '<div class="mi" data-att="phone"><span>📱</span><div class="n"><div class="a">Файл с телефона</div><div class="b">снимки, загрузки, документы из памяти телефона</div></div></div>' +
-    '<div class="mi" data-att="file"><span>📄</span><div class="n"><div class="a">Файл</div><div class="b">прикрепить файл к сообщению</div></div></div>' +
-    '<div class="mi" data-att="folder"><span>📁</span><div class="n"><div class="a">Папка</div><div class="b">прикрепить папку к сообщению</div></div></div>' +
-    '<div class="mi" data-att="workdir"><span>🗂</span><div class="n"><div class="a">Где работать</div><div class="b">выбрать рабочую папку, создать новый чат</div></div></div>';
+  /* Сразу проводник телефона: без промежуточного меню «файл / папка / где работать». */
+  openSheet("attach-file", "📄 Выберите файл");
+  fsOpen(PHONE_ROOT);
 };
 
 $("sbody").onclick = e => {
-  const t = e.target.closest("[data-model],[data-fs],[data-pickdir],[data-att],[data-where],[data-ph],[data-phf],[data-phallow],[data-phrecheck],[data-renok],[data-fav]");
+  const t = e.target.closest("[data-model],[data-fs],[data-pickdir],[data-attdir],[data-where],[data-ph],[data-phf],[data-phallow],[data-phrecheck],[data-renok],[data-fav]");
   if(!t) return;
   if(t.dataset.renok){
     renSave(t.dataset.renok);
@@ -3481,12 +3483,10 @@ $("sbody").onclick = e => {
     else send({t:"move", directory: dir});
     return;
   }
-  if(t.dataset.att){
-    const kind = t.dataset.att;
-    if(kind === "file"){ openSheet("attach-file", "📄 Выберите файл"); fsOpen(S.home); }
-    else if(kind === "folder"){ openSheet("attach-folder", "📁 Выберите папку"); fsOpen(S.home); }
-    else if(kind === "phone"){ openSheet("attach-phone", "📱 Телефон"); phPath = ""; phonePanel(); }
-    else { openSheet("workdir", "📁 Где работать"); fsOpen(S.home || DRIVES); }
+  if(t.dataset.attdir){
+    send({t:"attach", path: t.dataset.attdir, kind: "folder"});
+    closeSheet();
+    toast("Папка прикреплена");
     return;
   }
   if(t.dataset.pickdir){

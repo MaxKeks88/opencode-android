@@ -96,7 +96,7 @@ Android-ядро исполняет musl-loader, а тот подгружает 
 | git | 2.54.0, 3 213 592 байт + `libpcre2-8.so.0`, `libz.so.1` | Alpine v3.24 main aarch64 |
 | Python | 3.12.16 static musl, ~42 МБ | python-build-standalone `20261026` |
 | APK | `OpenCodeAndroid.apk`, 199 910 409 байт (~190.7 МБ) | `python build_apk.py` |
-| Пакет | `ru.opencode.android`, versionCode 40, versionName 1.25.2 | `app/AndroidManifest.xml` |
+| Пакет | `ru.opencode.android`, versionCode 41, versionName 1.25.3 | `app/AndroidManifest.xml` |
 | minSdk / targetSdk | 26 / **28** | target 28 нужен для exec из каталога приложения (как Termux) |
 
 > ПК-приложение OpenCode обновилось до **2.2.7** (2026-11-10). Сравнение
@@ -363,7 +363,7 @@ URL внутри `` ` `` не превращается в ссылку.
   и версия: `S.getSettings().version` (APK) + `core <версия OpenCode>`.
   Версия приложения добавлена в `AndroidBridge.getSettings()`.
 - При правках `page.html`/`bridge.js` поднимать `?v=N` в тегах `<script>`
-  (в 1.25.2 — `v=41`).
+  (в 1.25.3 — `v=42`).
 
 ### Правила агента (1.10)
 
@@ -498,6 +498,15 @@ URL внутри `` ` `` не превращается в ссылку.
 
 - `/android/fs?path=` → `{ok,path,parent,drives,entries,shortcuts}`.
   `entries[]` = `{name,path,dir,size,img,label}`.
+- **Кнопка «＋» (1.25.3)** сразу открывает проводник памяти телефона
+  (`/storage/emulated/0`), без промежуточного меню «файл / папка / где работать».
+  Папку можно прикрепить строкой «📁 Прикрепить эту папку» в текущем каталоге
+  (в корне она не показывается). Рабочая папка чата — в боковом меню
+  («Где работать»).
+- Чипы над списком — `Download`, `Pictures`, `Screenshots`
+  (`shortcutsJson()` в `LocalServer`); папка скриншотов ищется по факту:
+  `Pictures/Screenshots`, `DCIM/Screenshots`, `Screenshots`, затем любая
+  `*screenshot*` в корне/`Pictures`/`DCIM`. Если такой папки нет — чипа нет.
 - `/android/mkdir?parent=&name=`.
 - `/upload` (multipart) → `{ok,files:[{path,name,size}]}`; файл в `files/uploads`.
 - Вложение в prompt: `{uri:"file:///...", name}`; сервер сам читает файл и

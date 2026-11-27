@@ -796,12 +796,35 @@ public final class LocalServer {
     private static JSONArray shortcutsJson() throws Exception {
         JSONArray jSONArray = new JSONArray();
         File externalStorageDirectory = Environment.getExternalStorageDirectory();
-        jSONArray.put(chip("Память", externalStorageDirectory));
-        jSONArray.put(chip(App.TAG, new File(App.defaultDirectory())));
-        jSONArray.put(chip("Загрузки", new File(externalStorageDirectory, "Download")));
-        jSONArray.put(chip("Документы", new File(externalStorageDirectory, "Documents")));
-        jSONArray.put(chip("Фото", new File(externalStorageDirectory, "Pictures")));
+        jSONArray.put(chip("Download", new File(externalStorageDirectory, "Download")));
+        jSONArray.put(chip("Pictures", new File(externalStorageDirectory, "Pictures")));
+        File shots = screenshotsDir(externalStorageDirectory);
+        if (shots != null) {
+            jSONArray.put(chip("Screenshots", shots));
+        }
         return jSONArray;
+    }
+
+    /* Папка скриншотов у каждого вендора своя: Pictures/Screenshots, DCIM/Screenshots,
+       Screenshots в корне и т. п. Ищем реально существующую. */
+    private static File screenshotsDir(File ext) {
+        String[] rel = {"Pictures/Screenshots", "DCIM/Screenshots", "Screenshots",
+                        "Pictures/ScreenShots", "DCIM/ScreenShots", "Pictures/Screen recordings"};
+        for (String r : rel) {
+            File f = new File(ext, r);
+            if (f.isDirectory()) return f;
+        }
+        File[] bases = {ext, new File(ext, "Pictures"), new File(ext, "DCIM")};
+        for (File base : bases) {
+            File[] list = base.listFiles();
+            if (list == null) continue;
+            for (File f : list) {
+                if (f.isDirectory() && f.getName().toLowerCase(Locale.ROOT).contains("screenshot")) {
+                    return f;
+                }
+            }
+        }
+        return null;
     }
 
     private static JSONObject chip(String str, File file) throws Exception {
